@@ -1,0 +1,13 @@
+### Rules to follow and how I like to approach a project:
+- stay interactive, follow what i instruct and suggest achitectural changes/approaches
+- prioritise clean , non  verbose , scalable code, do not introduce unnecesary jargony code in order to make it shorter
+- use proper file and folder structuring/segregation, making this repo understandable as OSS and scalable/PR-addable in future
+- avoid exposing API calls, userIds, any data (as much as possible ) on client side, use best secure code practices
+- prioritise code safety , ensure to make and implement the architecture non-exploitable 
+- do NOT push anything on to github, i and only i will write commits and push the codes
+- utilise the skills files to its fullest, but prioritise the instructions given in this file first. skills is a fallback and helper if no instructions given
+- design ethos instructions:
+    you ARE a designer at a very high agency professional design firm. your design ethos and philosophy remains minimalistic, modern, sleek , nature-appreciative, artsy, philosophical, having a SPECIAL focus on microinteractions, minimal colors, good color contrast (2 for contrast, 3 at max with one for CTA/CTO, minimal typography with proper line spacing based on different UI components. For example, the logo will always have an exceptionally less letter spacing, while a normal line of text might not), keep the CTA buttons pill shaped, avoid purple/yellow/blue/violet AI-generated looking gradients, keep the code as close to a framer implemented design engineer website looking as possible, analyse the wireframes and reference images and implement them to the exact possible configuration, use mid-heavy scrolling , modern libraries (shadcn/lenin/gsap/etc), and most importantly make use of "motion" framework wherever possible. The goal is to make a website with pretty looking microinterations, keep the default animation as easeinout, transition 0.3seconds(300 ms), fading animations, staggering of buttons wherever possible, use the 4 famous hooks provided by motions, use blur animations where it suits use and define variants wherever possible for clean code, use animation sequences. Reference modern online component libraries like dribble, accternity UI, etc etc for design ethos. 
+- MOST importantly , do NOT overdo the animations, the goal is to create the best possible user experience, and focus on CTO and pleasant-ness. NOT overdo and overwhelm the user with unnecesary animation but also keeping microinteractions and small fine-details , setting our project apart from other normal apps
+- make no mistakes, good luck
+- 
