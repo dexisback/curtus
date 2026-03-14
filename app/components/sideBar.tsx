@@ -13,7 +13,7 @@ const navItems = [
 
 const sidebarVariants = {
   closed: { width: "3.5rem" },
-  open: { width: "20%" },
+  open: { width: "12rem" },
 };
 
 const containerVariants = {
@@ -29,18 +29,19 @@ const itemVariants = {
 };
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
   return (
     <motion.aside
       variants={sidebarVariants}
+      initial={isOpen ? "open" : "closed"}
       animate={isOpen ? "open" : "closed"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="relative flex flex-col h-full shrink-0 border-r border-border/50 overflow-hidden"
     >
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-4 self-start cursor-pointer"
+        className="w-[3.5rem] h-[3.5rem] flex items-center justify-center shrink-0 cursor-pointer"
       >
         <AnimatePresence mode="wait" initial={false}>
           {isOpen ? (

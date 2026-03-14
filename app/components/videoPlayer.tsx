@@ -62,9 +62,9 @@ export default function VideoPlayer() {
   }, [isPlaying, scheduleHide]);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center p-8">
+    <div className="w-full h-full flex items-start justify-center pt-4 px-10 pb-6 pl-16">
       <div
-        className="relative w-full max-w-5xl aspect-video rounded-2xl shadow-[0_2px_24px_rgba(0,0,0,0.06)] panel-texture p-3"
+        className="relative w-[75%] max-w-[700px] aspect-video rounded-2xl shadow-[0_2px_20px_rgba(0,0,0,0.05)] panel-texture p-3"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => isPlaying && setShowControls(false)}
       >
