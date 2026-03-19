@@ -35,6 +35,7 @@ export default function VideoPlayer() {
     if (!videoRef.current || !videoSrc) return;
     if (isPlaying) {
       videoRef.current.pause();
+      setShowControls(true);
     } else {
       videoRef.current.play();
     }
@@ -71,7 +72,6 @@ export default function VideoPlayer() {
       scheduleHide();
     } else {
       if (hideTimer.current) clearTimeout(hideTimer.current);
-      setShowControls(true);
     }
     return () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -122,7 +122,10 @@ export default function VideoPlayer() {
               src={videoSrc}
               className="w-full h-full object-contain"
               onTimeUpdate={handleTimeUpdate}
-              onEnded={() => setIsPlaying(false)}
+              onEnded={() => {
+                setIsPlaying(false);
+                setShowControls(true);
+              }}
             />
           ) : (
             <p className="text-neutral-600 text-xs tracking-wide select-none">

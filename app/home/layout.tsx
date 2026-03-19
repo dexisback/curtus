@@ -1,5 +1,6 @@
 import Sidebar from "@/app/components/sideBar";
 import ProfileDropdown from "@/app/components/profileDropdown";
+import FloatingDock from "@/app/components/floatingDock";
 
 export default function HomeLayout({
   children,
@@ -9,12 +10,15 @@ export default function HomeLayout({
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar />
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="flex items-center justify-end shrink-0 px-6 pt-5 pb-2">
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex shrink-0 items-center justify-end px-5 pb-1 pt-4">
           <ProfileDropdown />
         </header>
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {children}
+
+        <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-4 z-40 flex justify-center px-4">
+          <FloatingDock />
         </div>
       </main>
     </div>
