@@ -48,4 +48,4 @@ futureIdeas.md
 .agents/*
 .cursor/*
 
-/lib/generated/prisma
+/generated/prisma

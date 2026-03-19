@@ -1,6 +1,6 @@
-import Sidebar from "@/app/components/sideBar";
-import ProfileDropdown from "@/app/components/profileDropdown";
-import FloatingDock from "@/app/components/floatingDock";
+import Sidebar from "@/components/sideBar";
+import ProfileDropdown from "@/components/profileDropdown";
+import FloatingDock from "@/components/floatingDock";
 
 export default function HomeLayout({
   children,
