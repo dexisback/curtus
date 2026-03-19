@@ -47,3 +47,5 @@ homePage.md
 futureIdeas.md
 .agents/*
 .cursor/*
+
+/lib/generated/prisma
