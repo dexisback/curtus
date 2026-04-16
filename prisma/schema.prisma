@@ -4,10 +4,151 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
+
+
+
+
+model User {
+  id        String       @id @default(cuid())
+  email     String       @unique
+  name      String?
+  avatar    String?
+  password  String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime     @updatedAt
+
+  entries       StorageEntry[]   
+  notes         Note[]
+  tags          Tag[]
+
+  @@map("users")
+}
+
+
+
+
+model StorageEntry{
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  description    String?
+  status         EntryStatus         @default(PROCESSING)
+  thumbnailKey   String?
+  
+
+  //R2 Storage:
+  videoKey    String?     //will dlt after 24 hour
+  isPublic    Boolean     @default(false)
+
+  //gemini output:
+  geminiBrief  String?    //markdown string from gemini
+
+  //metadata:
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  userId      String    
+  user        User         @relation(fields: [userId], references: [id], onDelete:Cascade)
+  
+  
+  captures    CapturedFrame[]
+  notes       Note[]
+  tags        StorageEntryTag[]
+
+  @@map("storage_entries")
+}
+
+
+
+
+
+enum EntryStatus {
+  PROCESSING
+  READY
+  ANALYSING
+  ANALYSED
+  ERROR
+}
+
+
+
+model CapturedFrame {
+  id          String       @id @default(cuid())
+  imageKey    String       //R2 key for the PNG - kept forever
+  timestampMs Int          //exact ms in video that it was caputed at
+  createdAt   DateTime     @default(now())
+
+
+  storageEntryId     String 
+  storageEntry StorageEntry @relation(fields: [storageEntryId], references: [id], onDelete: Cascade)
+
+
+
+
+  @@map("captured_frames")
+}
+
+
+
+
+
+
+model Note {
+  id             String      @id @default(cuid())
+  content        String       
+  timestampMs    Int?         
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  storageEntryId   String 
+  storageEntry StorageEntry @relation(fields: [storageEntryId], references: [id], onDelete: Cascade)
+
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+
+  @@map("notes")
+}
+
+
+
+
+model Tag {
+  id            String       @id @default(cuid())
+  name          String   
+  createdAt     DateTime     @default(now())
+
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+
+  entries      StorageEntryTag[]
+
+  @@unique([name, userId])
+  @@map("tags")
+
+}
+
+
+
+model StorageEntryTag {
+  StorageEntryId      String
+  tagId             String 
+
+  StorageEntry        StorageEntry     @relation(fields: [StorageEntryId],  references: [id], onDelete: Cascade)
+  tag               Tag            @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([StorageEntryId, tagId])
+  @@map("storage_entry_tag")
+}
+
+
+
+
