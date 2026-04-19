@@ -1,19 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { User, UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
-
-const dropdownItems = [
-  { label: "Profile", icon: UserCircle },
-  { label: "Preferences", icon: SlidersHorizontal },
-  { label: "Help", icon: HelpCircle },
-  { label: "Sign Out", icon: LogOut },
-];
+import { useSession, signOut } from "@/lib/auth-client";
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -25,6 +22,24 @@ export default function ProfileDropdown() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  async function handleSignOut() {
+    setIsOpen(false);
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => router.replace("/login"),
+      },
+    });
+  }
+
+  const avatarUrl = session?.user?.image;
+
+  const menuItems = [
+    { label: "Profile", icon: UserCircle, onClick: () => {} },
+    { label: "Preferences", icon: SlidersHorizontal, onClick: () => {} },
+    { label: "Help", icon: HelpCircle, onClick: () => {} },
+    { label: "Sign Out", icon: LogOut, onClick: handleSignOut },
+  ];
+
   return (
     <div ref={ref} className="relative z-50">
       <motion.button
@@ -32,9 +47,14 @@ export default function ProfileDropdown() {
         whileTap={{ scale: 0.92 }}
         className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center
           hover:bg-accent transition-colors duration-150 cursor-pointer
-          border border-border/40 shadow-[0_1px_2px_rgba(17,24,39,0.04)]"
+          border border-border/40 shadow-[0_1px_2px_rgba(17,24,39,0.04)] overflow-hidden"
       >
-        <User size={14} strokeWidth={1.5} />
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+        ) : (
+          <User size={14} strokeWidth={1.5} />
+        )}
       </motion.button>
 
       <AnimatePresence>
@@ -53,7 +73,7 @@ export default function ProfileDropdown() {
               shadow-[0_1px_2px_rgba(17,24,39,0.05),0_4px_12px_rgba(17,24,39,0.06),0_12px_28px_rgba(17,24,39,0.05)]
               p-1"
           >
-            {dropdownItems.map((item, i) => (
+            {menuItems.map((item, i) => (
               <motion.button
                 key={item.label}
                 initial={{ opacity: 0, y: -3 }}
@@ -64,7 +84,7 @@ export default function ProfileDropdown() {
                   delay: i * 0.03,
                 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => {}}
+                onClick={item.onClick}
                 className="w-full flex items-center gap-2.5 text-left px-2.5 py-[6px] text-xs rounded-lg
                   text-foreground/80 hover:text-foreground hover:bg-accent/70
                   active:bg-accent transition-colors duration-150 cursor-pointer"

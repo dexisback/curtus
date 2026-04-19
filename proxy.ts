@@ -1,31 +1,39 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 
-function buildSignInRedirect(request: NextRequest) {
-  const redirectUrl = new URL("/", request.url);
-  const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+const AUTH_ROUTES = new Set(["/login", "/signup"]);
 
-  redirectUrl.searchParams.set("next", nextPath);
-
-  return redirectUrl;
+function buildLoginRedirect(request: NextRequest): URL {
+  const url = new URL("/login", request.url);
+  const next = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  url.searchParams.set("next", next);
+  return url;
 }
 
 export function proxy(request: NextRequest) {
-  if (process.env.NODE_ENV !== "production") {
+  const { pathname } = request.nextUrl;
+  const hasSession = Boolean(getSessionCookie(request.headers));
+
+  // Reverse guard: signed-in users hitting login/signup go straight to dashboard
+  if (AUTH_ROUTES.has(pathname)) {
+    if (hasSession) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
     return NextResponse.next();
   }
 
-  const sessionToken = getSessionCookie(request.headers);
-
-  if (sessionToken) {
-    return NextResponse.next();
+  // Forward guard: protected routes require a session cookie
+  if (!hasSession) {
+    return NextResponse.redirect(buildLoginRedirect(request));
   }
 
-  return NextResponse.redirect(buildSignInRedirect(request));
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
+    "/login",
+    "/signup",
     "/dashboard/:path*",
     "/profile/:path*",
     "/leaderboard/:path*",
