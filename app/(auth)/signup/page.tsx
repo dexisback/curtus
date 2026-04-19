@@ -1,3 +1,1 @@
-export default function SignupPage() {
-  return <main className="min-h-screen" />;
-}
+export { default } from "@/app/(auth)/login/page";
