@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "./db.js";
 import { redis } from "./redis.js";
+import { bumpLeaderboards } from "./leaderboard.js";
 
 const DAY_RESET_HOUR_UTC = 5;
 
@@ -219,6 +220,7 @@ async function finalizeSession(
 
   await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
   await syncKeyExpiry(socket.data.userId);
+  await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
 
   socket.emit("session:logged", {
     durationMin,
@@ -420,6 +422,7 @@ export function registerSocketEvents(io: StudyServer) {
 
           await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
           await syncKeyExpiry(socket.data.userId);
+          await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
         } catch {
           // Best-effort on disconnect — don't crash the server
         }
