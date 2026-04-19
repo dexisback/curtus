@@ -49,3 +49,9 @@ futureIdeas.md
 .cursor/*
 
 /generated/prisma
+server/node_modules
+server/dist
+server/.env
+
+
+docs/*
