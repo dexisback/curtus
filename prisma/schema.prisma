@@ -1,4 +1,4 @@
-// StudyWithMe — Neon Postgres via Prisma
+// StudyWithMe — Neon Postgres + Better Auth (https://www.better-auth.com/docs/concepts/database)
 
 generator client {
   provider = "prisma-client-js"
@@ -9,37 +9,92 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@map("account")
+}
+
+model Session {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  avatar    String?
-  password  String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  hostedRooms   Room[]       @relation("RoomHost")
+  @@map("session")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+  @@map("verification")
+}
+
+model User {
+  id                    String   @id @default(cuid())
+  email                 String   @unique
+  emailVerified         Boolean  @default(false)
+  name                  String?
+  image                 String?
+  bio                   String?
+  /// Denormalized sum of completed session minutes; keep in sync when logging FocusSession.
+  lifetimeFocusMinutes  Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  hostedRooms   Room[]         @relation("RoomHost")
   roomMembers   RoomMember[]
   focusSessions FocusSession[]
+  dailyStats    DailyStats[]
   streak        Streak?
+  messages      Message[]
+  tasks         Task[]
+  pingSent      Ping[]         @relation("PingSender")
+  pingReceived  Ping[]         @relation("PingReceiver")
 
   @@map("users")
 }
 
 model Room {
-  id               String   @id @default(cuid())
-  code             String   @unique
-  name             String
-  isPublic         Boolean  @default(false)
-  pomodoroDuration Int      @default(25)
-  breakDuration    Int      @default(5)
-  createdAt        DateTime @default(now())
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   hostId String
   host   User   @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
 
   members       RoomMember[]
   focusSessions FocusSession[]
+  messages      Message[]
 
   @@map("rooms")
 }
@@ -47,7 +102,8 @@ model Room {
 model RoomMember {
   userId   String
   roomId   String
-  joinedAt DateTime @default(now())
+  role     MemberRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -56,7 +112,13 @@ model RoomMember {
   @@map("room_members")
 }
 
-/// One completed Pomodoro (session log), per project context.
+enum MemberRole {
+  HOST
+  COHOST
+  MEMBER
+}
+
+/// One completed timer session; daily / weekly / monthly leaderboards aggregate by completedAt; lifetime uses User.lifetimeFocusMinutes + sum(rows).
 model FocusSession {
   id          String   @id @default(cuid())
   durationMin Int
@@ -64,10 +126,24 @@ model FocusSession {
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roomId String
-  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId String?
+  room   Room?  @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
+  @@index([userId, completedAt])
   @@map("focus_sessions")
+}
+
+model DailyStats {
+  id           String   @id @default(cuid())
+  date         DateTime
+  totalMinutes Int      @default(0)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@unique([userId, date])
+  @@map("daily_stats")
 }
 
 model Streak {
@@ -79,4 +155,51 @@ model Streak {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("streaks")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  isCompleted Boolean   @default(false)
+  deadline    DateTime?
+  type        TaskType  @default(DAILY)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+enum TaskType {
+  DAILY
+  YEARLY
+  DEADLINE
+}
+
+model Ping {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  fromUserId String
+  fromUser   User   @relation("PingSender", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User   @relation("PingReceiver", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@map("pings")
 }
