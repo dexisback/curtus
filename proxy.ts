@@ -35,6 +35,7 @@ export const config = {
     "/login",
     "/signup",
     "/dashboard/:path*",
+    "/rooms/:path*",
     "/profile/:path*",
     "/leaderboard/:path*",
     "/settings/:path*",

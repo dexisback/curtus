@@ -4,6 +4,7 @@ type ServerToClientEvents = {
   presence: (payload: {
     roomId: string;
     memberIds: string[];
+    studyingUserIds: string[];
     todayMinutes: Record<string, number>;
   }) => void;
   "chat:message": (payload: {
@@ -30,11 +31,8 @@ type ClientToServerEvents = {
   "room:join": (payload: { roomId: string }) => void;
   "room:leave": (payload: { roomId: string }) => void;
   "chat:send": (payload: { roomId: string; content: string }) => void;
-  "session:completed": (payload: {
-    durationMin: number;
-    roomId?: string | null;
-    completedAt?: string;
-  }) => void;
+  "session:started": (payload: { roomId?: string | null }) => void;
+  "session:stopped": () => void;
   "ping:send": (payload: { toUserId: string }) => void;
 };
 
@@ -44,11 +42,7 @@ let socketSingleton: StudySocket | null = null;
 
 function getSocketUrl() {
   const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-
-  if (!socketUrl) {
-    throw new Error("Missing NEXT_PUBLIC_SOCKET_URL for socket client.");
-  }
-
+  if (!socketUrl) throw new Error("Missing NEXT_PUBLIC_SOCKET_URL for socket client.");
   return socketUrl;
 }
 
@@ -59,9 +53,7 @@ function getCookieAuth() {
 }
 
 export function getSocket() {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   if (!socketSingleton) {
     socketSingleton = io(getSocketUrl(), {
@@ -76,16 +68,10 @@ export function getSocket() {
 
 export function connectWithAuth() {
   const socket = getSocket();
-
-  if (!socket) {
-    return null;
-  }
+  if (!socket) return null;
 
   socket.auth = getCookieAuth();
-
-  if (!socket.connected) {
-    socket.connect();
-  }
+  if (!socket.connected) socket.connect();
 
   return socket;
 }

@@ -6,6 +6,8 @@ import { redis } from "./redis.js";
 
 const DAY_RESET_HOUR_UTC = 5;
 
+// ─── Schemas ────────────────────────────────────────────────────────────────
+
 const roomEventSchema = z.object({
   roomId: z.string().min(1),
 });
@@ -15,19 +17,25 @@ const chatEventSchema = z.object({
   content: z.string().trim().min(1).max(1_000),
 });
 
-const sessionCompletedSchema = z.object({
-  durationMin: z.number().int().positive().max(24 * 60),
+const sessionStartedSchema = z.object({
   roomId: z.string().min(1).nullable().optional(),
-  completedAt: z.string().optional(),
 });
 
 const pingEventSchema = z.object({
   toUserId: z.string().min(1),
 });
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type LiveSession = {
+  startedAt: string; // ISO string
+  roomId: string | null;
+};
+
 export type PresencePayload = {
   roomId: string;
   memberIds: string[];
+  studyingUserIds: string[];
   todayMinutes: Record<string, number>;
 };
 
@@ -41,7 +49,8 @@ type ClientToServerEvents = {
   "room:join": (payload: z.infer<typeof roomEventSchema>) => void;
   "room:leave": (payload: z.infer<typeof roomEventSchema>) => void;
   "chat:send": (payload: z.infer<typeof chatEventSchema>) => void;
-  "session:completed": (payload: z.infer<typeof sessionCompletedSchema>) => void;
+  "session:started": (payload: z.infer<typeof sessionStartedSchema>) => void;
+  "session:stopped": () => void;
   "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
 };
 
@@ -83,6 +92,8 @@ type StudyServer = Server<
   SocketData
 >;
 
+// ─── Redis key helpers ───────────────────────────────────────────────────────
+
 function getRoomMembersKey(roomId: string) {
   return `room:${roomId}:members`;
 }
@@ -91,20 +102,21 @@ function getTodayMinutesKey(userId: string) {
   return `user:${userId}:todayMinutes`;
 }
 
+function getLiveSessionKey(userId: string) {
+  return `user:${userId}:liveSession`;
+}
+
+// ─── Time helpers ────────────────────────────────────────────────────────────
+
 function getSecondsUntilNextFiveAm(now = new Date()) {
   const nextReset = new Date(now);
   nextReset.setUTCHours(DAY_RESET_HOUR_UTC, 0, 0, 0);
-
-  if (now >= nextReset) {
-    nextReset.setUTCDate(nextReset.getUTCDate() + 1);
-  }
-
+  if (now >= nextReset) nextReset.setUTCDate(nextReset.getUTCDate() + 1);
   return Math.max(1, Math.ceil((nextReset.getTime() - now.getTime()) / 1_000));
 }
 
 function getStudyDayStart(date: Date) {
   const shifted = new Date(date.getTime() - DAY_RESET_HOUR_UTC * 60 * 60 * 1_000);
-
   return new Date(
     Date.UTC(
       shifted.getUTCFullYear(),
@@ -118,46 +130,41 @@ function getStudyDayStart(date: Date) {
   );
 }
 
-function toRoomError(message: string) {
-  return {
-    message,
-  };
-}
-
-function addJoinedRoom(socket: StudySocket, roomId: string) {
-  if (!socket.data.joinedRoomIds.includes(roomId)) {
-    socket.data.joinedRoomIds.push(roomId);
-  }
-}
-
-function removeJoinedRoom(socket: StudySocket, roomId: string) {
-  socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter(
-    (joinedRoomId) => joinedRoomId !== roomId,
-  );
-}
-
 async function syncKeyExpiry(userId: string, roomId?: string) {
   const ttl = getSecondsUntilNextFiveAm();
-
   await Promise.all([
     redis.expire(getTodayMinutesKey(userId), ttl),
     roomId ? redis.expire(getRoomMembersKey(roomId), ttl) : Promise.resolve(1),
   ]);
 }
 
+// ─── Presence helpers ────────────────────────────────────────────────────────
+
+async function getStudyingUserIds(memberIds: string[]): Promise<string[]> {
+  if (!memberIds.length) return [];
+  const keys = memberIds.map(getLiveSessionKey);
+  const values = await Promise.all(keys.map((k) => redis.get<LiveSession>(k)));
+  return memberIds.filter((_, i) => values[i] !== null);
+}
+
 async function publishPresence(io: StudyServer, roomId: string) {
   const memberIds = await redis.smembers<string[]>(getRoomMembersKey(roomId));
   const uniqueMemberIds = Array.from(new Set(memberIds)).sort();
-  const minutePairs = await Promise.all(
-    uniqueMemberIds.map(async (memberId) => [
-      memberId,
-      (await redis.get<number>(getTodayMinutesKey(memberId))) ?? 0,
-    ]),
-  );
+
+  const [minutePairs, studyingUserIds] = await Promise.all([
+    Promise.all(
+      uniqueMemberIds.map(async (id) => [
+        id,
+        (await redis.get<number>(getTodayMinutesKey(id))) ?? 0,
+      ]),
+    ),
+    getStudyingUserIds(uniqueMemberIds),
+  ]);
 
   io.to(roomId).emit("presence", {
     roomId,
     memberIds: uniqueMemberIds,
+    studyingUserIds,
     todayMinutes: Object.fromEntries(minutePairs),
   });
 }
@@ -169,33 +176,98 @@ async function maybeRemovePresenceMember(
 ) {
   const socketsStillInRoom = await io.in(roomId).fetchSockets();
   const userStillPresent = socketsStillInRoom.some(
-    (roomSocket) => roomSocket.data.userId === socket.data.userId,
+    (s) => s.data.userId === socket.data.userId,
   );
-
   if (!userStillPresent) {
     await redis.srem(getRoomMembersKey(roomId), socket.data.userId);
   }
-
   await publishPresence(io, roomId);
 }
 
+// ─── Timer helpers ───────────────────────────────────────────────────────────
+
+async function finalizeSession(
+  io: StudyServer,
+  socket: StudySocket,
+  liveSession: LiveSession,
+) {
+  const completedAt = new Date();
+  const startedAt = new Date(liveSession.startedAt);
+  const durationMin = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000));
+  const studyDayStart = getStudyDayStart(completedAt);
+  const roomId = liveSession.roomId ?? null;
+
+  const [, updatedUser] = await prisma.$transaction([
+    prisma.focusSession.create({
+      data: {
+        userId: socket.data.userId,
+        roomId,
+        durationMin,
+        completedAt,
+      },
+    }),
+    prisma.user.update({
+      where: { id: socket.data.userId },
+      data: { lifetimeFocusMinutes: { increment: durationMin } },
+    }),
+    prisma.dailyStats.upsert({
+      where: { userId_date: { userId: socket.data.userId, date: studyDayStart } },
+      update: { totalMinutes: { increment: durationMin } },
+      create: { userId: socket.data.userId, date: studyDayStart, totalMinutes: durationMin },
+    }),
+  ]);
+
+  await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
+  await syncKeyExpiry(socket.data.userId);
+
+  socket.emit("session:logged", {
+    durationMin,
+    lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes,
+    roomId,
+  });
+
+  // Refresh presence for all joined rooms + the session's room
+  const roomsToRefresh = new Set(socket.data.joinedRoomIds);
+  if (roomId) roomsToRefresh.add(roomId);
+  await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
+}
+
+function toRoomError(message: string) {
+  return { message };
+}
+
+function addJoinedRoom(socket: StudySocket, roomId: string) {
+  if (!socket.data.joinedRoomIds.includes(roomId)) {
+    socket.data.joinedRoomIds.push(roomId);
+  }
+}
+
+function removeJoinedRoom(socket: StudySocket, roomId: string) {
+  socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter((id) => id !== roomId);
+}
+
+// ─── Event registration ──────────────────────────────────────────────────────
+
 export function registerSocketEvents(io: StudyServer) {
   io.on("connection", (socket) => {
+
+    // room:join — validate RoomMember row exists before letting in
     socket.on("room:join", async (payload) => {
       const parsed = roomEventSchema.safeParse(payload);
-
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid room join payload."));
         return;
       }
 
-      const room = await prisma.room.findUnique({
-        where: { id: parsed.data.roomId },
-        select: { id: true },
+      const membership = await prisma.roomMember.findUnique({
+        where: {
+          userId_roomId: { userId: socket.data.userId, roomId: parsed.data.roomId },
+        },
+        select: { userId: true },
       });
 
-      if (!room) {
-        socket.emit("room:error", toRoomError("Room not found."));
+      if (!membership) {
+        socket.emit("room:error", toRoomError("Join the room first via the app."));
         return;
       }
 
@@ -207,9 +279,9 @@ export function registerSocketEvents(io: StudyServer) {
       await publishPresence(io, parsed.data.roomId);
     });
 
+    // room:leave
     socket.on("room:leave", async (payload) => {
       const parsed = roomEventSchema.safeParse(payload);
-
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid room leave payload."));
         return;
@@ -220,9 +292,9 @@ export function registerSocketEvents(io: StudyServer) {
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
     });
 
+    // chat:send
     socket.on("chat:send", async (payload) => {
       const parsed = chatEventSchema.safeParse(payload);
-
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid chat payload."));
         return;
@@ -251,98 +323,62 @@ export function registerSocketEvents(io: StudyServer) {
       });
     });
 
-    socket.on("session:completed", async (payload) => {
-      const parsed = sessionCompletedSchema.safeParse(payload);
-
+    // session:started — mark user as studying in Redis
+    socket.on("session:started", async (payload) => {
+      const parsed = sessionStartedSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid session payload."));
+        socket.emit("room:error", toRoomError("Invalid session:started payload."));
         return;
       }
 
-      const completedAt = parsed.data.completedAt
-        ? new Date(parsed.data.completedAt)
-        : new Date();
+      const roomId = parsed.data?.roomId ?? null;
 
-      if (Number.isNaN(completedAt.getTime())) {
-        socket.emit("room:error", toRoomError("Invalid completion timestamp."));
-        return;
+      // If joining with a roomId, verify membership
+      if (roomId) {
+        const membership = await prisma.roomMember.findUnique({
+          where: { userId_roomId: { userId: socket.data.userId, roomId } },
+          select: { userId: true },
+        });
+        if (!membership) {
+          socket.emit("room:error", toRoomError("Not a member of that room."));
+          return;
+        }
       }
 
-      const studyDayStart = getStudyDayStart(completedAt);
-
-      const [, updatedUser] = await prisma.$transaction([
-        prisma.focusSession.create({
-          data: {
-            userId: socket.data.userId,
-            roomId: parsed.data.roomId ?? null,
-            durationMin: parsed.data.durationMin,
-            completedAt,
-          },
-        }),
-        prisma.user.update({
-          where: { id: socket.data.userId },
-          data: {
-            lifetimeFocusMinutes: {
-              increment: parsed.data.durationMin,
-            },
-          },
-        }),
-        prisma.dailyStats.upsert({
-          where: {
-            userId_date: {
-              userId: socket.data.userId,
-              date: studyDayStart,
-            },
-          },
-          update: {
-            totalMinutes: {
-              increment: parsed.data.durationMin,
-            },
-          },
-          create: {
-            userId: socket.data.userId,
-            date: studyDayStart,
-            totalMinutes: parsed.data.durationMin,
-          },
-        }),
-      ]);
-
-      await redis.incrby(
-        getTodayMinutesKey(socket.data.userId),
-        parsed.data.durationMin,
-      );
-      await syncKeyExpiry(socket.data.userId);
-
-      const roomsToRefresh = new Set(socket.data.joinedRoomIds);
-
-      if (parsed.data.roomId) {
-        roomsToRefresh.add(parsed.data.roomId);
-      }
-
-      await Promise.all(
-        Array.from(roomsToRefresh).map((roomId) => publishPresence(io, roomId)),
-      );
-
-      socket.emit("session:logged", {
-        durationMin: parsed.data.durationMin,
-        lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes,
-        roomId: parsed.data.roomId ?? null,
+      // Overwrite any stale liveSession (single active session per user)
+      const liveSession: LiveSession = {
+        startedAt: new Date().toISOString(),
+        roomId,
+      };
+      await redis.set(getLiveSessionKey(socket.data.userId), liveSession, {
+        ex: 12 * 60 * 60,
       });
+
+      // Broadcast updated presence to all joined rooms
+      const roomsToRefresh = new Set(socket.data.joinedRoomIds);
+      if (roomId) roomsToRefresh.add(roomId);
+      await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
     });
 
+    // session:stopped — finalize session, write to DB, broadcast
+    socket.on("session:stopped", async () => {
+      const liveSession = await redis.get<LiveSession>(getLiveSessionKey(socket.data.userId));
+      if (!liveSession) return; // Nothing to finalize
+
+      await redis.del(getLiveSessionKey(socket.data.userId));
+      await finalizeSession(io, socket, liveSession);
+    });
+
+    // ping:send
     socket.on("ping:send", async (payload) => {
       const parsed = pingEventSchema.safeParse(payload);
-
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid ping payload."));
         return;
       }
 
       const ping = await prisma.ping.create({
-        data: {
-          fromUserId: socket.data.userId,
-          toUserId: parsed.data.toUserId,
-        },
+        data: { fromUserId: socket.data.userId, toUserId: parsed.data.toUserId },
       });
 
       io.to(`user:${parsed.data.toUserId}`).emit("ping:received", {
@@ -351,7 +387,44 @@ export function registerSocketEvents(io: StudyServer) {
       });
     });
 
+    // disconnect — auto-finalize live session, clean presence
     socket.on("disconnect", async () => {
+      const liveSession = await redis.get<LiveSession>(getLiveSessionKey(socket.data.userId));
+      if (liveSession) {
+        await redis.del(getLiveSessionKey(socket.data.userId));
+        // Finalize quietly — no `session:logged` emit since socket is gone
+        try {
+          const completedAt = new Date();
+          const startedAt = new Date(liveSession.startedAt);
+          const durationMin = Math.max(
+            1,
+            Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
+          );
+          const studyDayStart = getStudyDayStart(completedAt);
+          const roomId = liveSession.roomId ?? null;
+
+          await prisma.$transaction([
+            prisma.focusSession.create({
+              data: { userId: socket.data.userId, roomId, durationMin, completedAt },
+            }),
+            prisma.user.update({
+              where: { id: socket.data.userId },
+              data: { lifetimeFocusMinutes: { increment: durationMin } },
+            }),
+            prisma.dailyStats.upsert({
+              where: { userId_date: { userId: socket.data.userId, date: studyDayStart } },
+              update: { totalMinutes: { increment: durationMin } },
+              create: { userId: socket.data.userId, date: studyDayStart, totalMinutes: durationMin },
+            }),
+          ]);
+
+          await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
+          await syncKeyExpiry(socket.data.userId);
+        } catch {
+          // Best-effort on disconnect — don't crash the server
+        }
+      }
+
       await Promise.all(
         socket.data.joinedRoomIds.map((roomId) =>
           maybeRemovePresenceMember(io, socket, roomId),
