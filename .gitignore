@@ -54,4 +54,8 @@ server/dist
 server/.env
 
 
-docs/*
+# dev test scripts
+scripts/
+
+docs/
+
