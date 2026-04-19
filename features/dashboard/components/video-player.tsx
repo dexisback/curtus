@@ -12,13 +12,10 @@ const PANEL_SHADOW = [
 ].join(",");
 
 export default function VideoPlayer() {
-  // Slightly tighter frame than the last iteration (less \"fat\" gap).
   const OUTER_RADIUS = 28;
   const GAP = 22;
   const INNER_RADIUS = OUTER_RADIUS - GAP;
   const SCREW_SIZE = 18;
-  // Center screws visually within the *curved* corner band (not the square gap).
-  // We place the screw center on the 45° point of the band mid-arc.
   const midArcRadius = OUTER_RADIUS - GAP / 2;
   const corner45Inset = OUTER_RADIUS - midArcRadius / Math.SQRT2;
   const screwInset = corner45Inset - SCREW_SIZE / 2;
@@ -92,7 +89,6 @@ export default function VideoPlayer() {
         onMouseMove={handleMouseMove}
         onMouseLeave={() => isPlaying && setShowControls(false)}
       >
-        {/* Screws centered within the gap band */}
         <Screw
           className="absolute"
           style={{
@@ -225,7 +221,6 @@ function Screw({
 
   return (
     <div className={`z-10 ${className ?? ""}`} style={style}>
-      {/* Screw head */}
       <div
         className="w-full h-full rounded-full relative"
         style={{
@@ -239,14 +234,12 @@ function Screw({
           ].join(","),
         }}
       >
-        {/* Torx 6-point star recess: 3 rotated slots */}
         <div className="absolute inset-0">
           <div style={slotStyle(0)} />
           <div style={slotStyle(60)} />
           <div style={slotStyle(120)} />
         </div>
 
-        {/* Center dot — the hex recess depth */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
             w-[3px] h-[3px] rounded-full"

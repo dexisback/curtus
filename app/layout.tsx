@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ss-provider",
-  description: "Video player experience",
+  title: "StudyWithMe",
+  description: "Study rooms, shared focus, and accountability.",
 };
 
 export default function RootLayout({

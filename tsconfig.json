@@ -22,7 +22,8 @@
       "@/*": ["./*"],
       "@lib/*": ["./lib/*"],
       "@generated/*": ["./generated/*"],
-      "@components/*": ["./components/*"]
+      "@components/*": ["./components/*"],
+      "@/features/*": ["./features/*"]
     }
   },
   "include": [

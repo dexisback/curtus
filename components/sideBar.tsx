@@ -1,23 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Menu,
   X,
   Plus,
   LayoutDashboard,
-  Library,
-  Clock,
+  Trophy,
+  UserCircle,
   Settings,
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "Library", icon: Library },
-  { label: "History", icon: Clock },
-  { label: "Settings", icon: Settings },
-];
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { label: "Profile", href: "/profile", icon: UserCircle },
+  { label: "Settings", href: "/settings", icon: Settings },
+] as const;
 
 const containerVariants = {
   hidden: {},
@@ -105,20 +106,23 @@ export default function Sidebar() {
 
             <div className="flex flex-col gap-0.5 flex-1">
               {navItems.map((item) => (
-                <motion.button
+                <motion.div
                   key={item.label}
                   variants={itemVariants}
                   exit={itemExit}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => {}}
-                  className="flex items-center gap-2.5 text-left px-2.5 py-[7px] rounded-lg text-xs
-                    text-foreground/80 hover:text-foreground hover:bg-accent/70
-                    active:bg-accent transition-colors duration-150 cursor-pointer
-                    whitespace-nowrap overflow-hidden"
                 >
-                  <item.icon size={14} strokeWidth={1.6} className="shrink-0 opacity-50" />
-                  {item.label}
-                </motion.button>
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-2.5 text-left px-2.5 py-[7px] rounded-lg text-xs
+                      text-foreground/80 hover:text-foreground hover:bg-accent/70
+                      active:bg-accent transition-colors duration-150 cursor-pointer
+                      whitespace-nowrap overflow-hidden"
+                  >
+                    <item.icon size={14} strokeWidth={1.6} className="shrink-0 opacity-50" />
+                    {item.label}
+                  </Link>
+                </motion.div>
               ))}
             </div>
 

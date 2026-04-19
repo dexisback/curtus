@@ -2,7 +2,7 @@ import Sidebar from "@/components/sideBar";
 import ProfileDropdown from "@/components/profileDropdown";
 import FloatingDock from "@/components/floatingDock";
 
-export default function HomeLayout({
+export default function DashboardGroupLayout({
   children,
 }: {
   children: React.ReactNode;
