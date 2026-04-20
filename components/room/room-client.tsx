@@ -45,7 +45,6 @@ export default function RoomClient({
   const [members] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
@@ -65,20 +64,20 @@ export default function RoomClient({
       setTodayMinutes(payload.todayMinutes);
     };
 
-    const onChatMessage = (payload: ChatMessage & { roomId?: string }) => {
-      if (payload.roomId && payload.roomId !== roomId) return;
-      setMessages((prev) => [...prev, payload]);
+    const onKicked = (payload: { roomId: string }) => {
+      if (payload.roomId !== roomId) return;
+      router.push("/rooms");
     };
 
     socket.on("presence", onPresence);
-    socket.on("chat:message", onChatMessage);
+    socket.on("room:kicked", onKicked);
 
     return () => {
       socket.emit("room:leave", { roomId });
       socket.off("presence", onPresence);
-      socket.off("chat:message", onChatMessage);
+      socket.off("room:kicked", onKicked);
     };
-  }, [roomId]);
+  }, [roomId, router]);
 
   async function handleLeave() {
     setLeaving(true);
@@ -113,8 +112,9 @@ export default function RoomClient({
       <div>
         <h2>Chat</h2>
         <Chat
+          roomCode={code}
           roomId={roomId}
-          messages={messages}
+          messages={initialMessages}
           currentUserId={currentUserId}
         />
       </div>

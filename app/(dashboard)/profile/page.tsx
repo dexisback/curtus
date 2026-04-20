@@ -5,7 +5,7 @@ import {
   getWeekStart,
   getMonthStart,
 } from "@/lib/periods";
-import Link from "next/link";
+import SessionsLoadMore from "@/components/sessions-load-more";
 
 function formatMin(min: number): string {
   const h = Math.floor(min / 60);
@@ -14,14 +14,6 @@ function formatMin(min: number): string {
   return `${m}m`;
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 export default async function ProfilePage() {
   const session = await requireSession();
@@ -41,6 +33,7 @@ export default async function ProfilePage() {
 
   const [
     user,
+    streakRow,
     todayAgg,
     weekAgg,
     monthAgg,
@@ -50,6 +43,10 @@ export default async function ProfilePage() {
     prisma.user.findUnique({
       where: { id: userId },
       select: { name: true, image: true, email: true, lifetimeFocusMinutes: true, createdAt: true },
+    }),
+    prisma.streak.findUnique({
+      where: { userId },
+      select: { currentStreak: true, longestStreak: true },
     }),
     prisma.dailyStats.aggregate({
       where: { userId, date: { gte: todayStart, lt: nextDay } },
@@ -71,7 +68,7 @@ export default async function ProfilePage() {
     prisma.focusSession.findMany({
       where: { userId },
       orderBy: { completedAt: "desc" },
-      take: 10,
+      take: 20,
       select: {
         id: true,
         durationMin: true,
@@ -114,12 +111,14 @@ export default async function ProfilePage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Today", value: formatMin(today) },
           { label: "This Week", value: formatMin(thisWeek) },
           { label: "This Month", value: formatMin(thisMonth) },
           { label: "Lifetime", value: formatMin(lifetime) },
+          { label: "Current Streak", value: `${streakRow?.currentStreak ?? 0}d` },
+          { label: "Longest Streak", value: `${streakRow?.longestStreak ?? 0}d` },
         ].map(({ label, value }) => (
           <div key={label} className="rounded border p-3">
             <p className="text-xs text-muted-foreground mb-1">{label}</p>
@@ -147,36 +146,23 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* Recent sessions */}
+      {/* Recent sessions — first page server-rendered, load-more client */}
       <div>
         <p className="text-sm font-medium mb-3">Recent sessions</p>
-        {recentSessions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No sessions logged yet.</p>
-        ) : (
-          <ul className="space-y-1">
-            {recentSessions.map((s) => (
-              <li key={s.id} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium tabular-nums">{formatMin(s.durationMin)}</span>
-                  {s.room ? (
-                    <Link
-                      href={`/room/${s.room.code}`}
-                      className="text-muted-foreground hover:underline text-xs"
-                    >
-                      in {s.room.name}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground text-xs">solo</span>
-                  )}
-                </div>
-                <span className="text-muted-foreground text-xs">
-                  {formatDate(s.completedAt.toISOString())}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <SessionsLoadMore
+          initialItems={recentSessions.map((s) => ({
+            id: s.id,
+            durationMin: s.durationMin,
+            completedAt: s.completedAt.toISOString(),
+            roomCode: s.room?.code ?? null,
+            roomName: s.room?.name ?? null,
+          }))}
+          initialNextCursor={recentSessions.length >= 20 ? (recentSessions[recentSessions.length - 1]?.id ?? null) : null}
+        />
       </div>
     </div>
   );
 }
+
+
+//note: change this later on to match tiling based styles ⚠️⚠️⚠️⚠️⚠️
