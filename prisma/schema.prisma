@@ -167,6 +167,7 @@ model Message {
   roomId String
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
+  @@index([roomId, createdAt])
   @@map("messages")
 }
 
@@ -183,6 +184,7 @@ model Task {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, createdAt])
   @@map("tasks")
 }
 

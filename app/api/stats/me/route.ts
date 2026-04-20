@@ -7,6 +7,7 @@ import {
   getMonthStart,
 } from "@/lib/periods";
 
+//returns lifetime, today/week/month totals, 7-day strip, last 10 sessions
 export async function GET() {
   const session = await requireSession();
   const userId = session.user.id;
@@ -22,9 +23,9 @@ export async function GET() {
   const nextMonth = new Date(
     Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1, 5),
   );
-
   const [
     user,
+    streak,
     todayAgg,
     weekAgg,
     monthAgg,
@@ -34,6 +35,10 @@ export async function GET() {
     prisma.user.findUnique({
       where: { id: userId },
       select: { lifetimeFocusMinutes: true, name: true, image: true },
+    }),
+    prisma.streak.findUnique({
+      where: { userId },
+      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
     }),
     prisma.dailyStats.aggregate({
       where: { userId, date: { gte: todayStart, lt: nextDay } },
@@ -78,6 +83,13 @@ export async function GET() {
     name: user?.name ?? null,
     image: user?.image ?? null,
     lifetimeFocusMinutes: user?.lifetimeFocusMinutes ?? 0,
+    streak: streak
+      ? {
+          currentStreak: streak.currentStreak,
+          longestStreak: streak.longestStreak,
+          lastActiveDate: streak.lastActiveDate?.toISOString() ?? null,
+        }
+      : { currentStreak: 0, longestStreak: 0, lastActiveDate: null },
     today: todayAgg._sum.totalMinutes ?? 0,
     thisWeek: weekAgg._sum.totalMinutes ?? 0,
     thisMonth: monthAgg._sum.totalMinutes ?? 0,

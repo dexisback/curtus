@@ -25,6 +25,7 @@ type ServerToClientEvents = {
     createdAt: string;
   }) => void;
   "room:error": (payload: { message: string }) => void;
+  "room:kicked": (payload: { roomId: string }) => void;
 };
 
 type ClientToServerEvents = {
