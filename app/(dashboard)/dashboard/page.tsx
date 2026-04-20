@@ -1,13 +1,8 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/session";
-import dynamic from "next/dynamic";
+import VideoPlayerWrapper from "@/features/dashboard/components/video-player-wrapper";
 import Timer from "@/components/timer";
 import Link from "next/link";
-
-const VideoPlayer = dynamic(
-  () => import("@/features/dashboard/components/video-player"),
-  { ssr: false, loading: () => <div style={{ minHeight: 240 }} /> },
-);
 
 export default async function DashboardPage() {
   const session = await requireSession();
@@ -24,7 +19,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="h-full w-full pb-24">
-      <VideoPlayer />
+      <VideoPlayerWrapper />
 
       <div>
         <h2>Solo Timer</h2>

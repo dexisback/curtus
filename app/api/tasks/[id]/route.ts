@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,14 +24,13 @@ async function resolveTask(id: string, userId: string) {
   return task;
 }
 
-export async function PATCH(request: Request, { params }: Params) {
-  const session = await requireSession();
+export const PATCH = withApi(async (request: Request, { params }: Params) => {
+  const session = await requireApiSession();
+  await enforce(limiters.tasksWrite, session.user.id);
   const { id } = await params;
 
   const task = await resolveTask(id, session.user.id);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found." }, { status: 404 });
-  }
+  if (!task) return NextResponse.json({ error: "Task not found." }, { status: 404 });
 
   const body = await parseRequestJson(request, patchSchema);
   if (!body.success) return body.response;
@@ -47,29 +47,22 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(type !== undefined ? { type } : {}),
     },
     select: {
-      id: true,
-      title: true,
-      description: true,
-      isCompleted: true,
-      deadline: true,
-      type: true,
-      createdAt: true,
-      updatedAt: true,
+      id: true, title: true, description: true,
+      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
     },
   });
 
   return NextResponse.json(updated);
-}
+});
 
-export async function DELETE(_request: Request, { params }: Params) {
-  const session = await requireSession();
+export const DELETE = withApi(async (_request: Request, { params }: Params) => {
+  const session = await requireApiSession();
+  await enforce(limiters.tasksWrite, session.user.id);
   const { id } = await params;
 
   const task = await resolveTask(id, session.user.id);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found." }, { status: 404 });
-  }
+  if (!task) return NextResponse.json({ error: "Task not found." }, { status: 404 });
 
   await prisma.task.delete({ where: { id } });
   return NextResponse.json({ deleted: true });
-}
+});

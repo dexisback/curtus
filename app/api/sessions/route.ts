@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 const querySchema = z.object({
   cursor: z.string().optional(),
@@ -9,8 +10,9 @@ const querySchema = z.object({
   roomCode: z.string().optional(),
 });
 
-export async function GET(request: Request) {
-  const session = await requireSession();
+export const GET = withApi(async (request: Request) => {
+  const session = await requireApiSession();
+  await enforce(limiters.sessionsRead, session.user.id);
   const url = new URL(request.url);
 
   const parsed = querySchema.safeParse({
@@ -25,18 +27,13 @@ export async function GET(request: Request) {
 
   const { cursor, limit, roomCode } = parsed.data;
 
-  // Resolve roomCode to roomId if provided
   let roomId: string | undefined;
   if (roomCode) {
-    const room = await prisma.room.findUnique({
-      where: { code: roomCode },
-      select: { id: true },
-    });
+    const room = await prisma.room.findUnique({ where: { code: roomCode }, select: { id: true } });
     if (!room) return NextResponse.json({ items: [], nextCursor: null });
     roomId = room.id;
   }
 
-  // Cursor-based pagination on (completedAt desc, id desc)
   let cursorFilter: { completedAt: Date; id: string } | undefined;
   if (cursor) {
     const pivot = await prisma.focusSession.findUnique({
@@ -83,4 +80,4 @@ export async function GET(request: Request) {
     })),
     nextCursor,
   });
-}
+});

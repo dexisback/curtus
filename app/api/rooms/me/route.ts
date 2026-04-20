@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
+import { limiters, enforce } from "@/lib/ratelimit";
 
-// GET /api/rooms/me — rooms the current user is a member of
-export async function GET() {
-  const session = await requireSession();
+export const GET = withApi(async () => {
+  const session = await requireApiSession();
+  const rlHeaders = await enforce(limiters.roomsList, session.user.id);
 
   const memberships = await prisma.roomMember.findMany({
     where: { userId: session.user.id },
@@ -14,10 +15,7 @@ export async function GET() {
       joinedAt: true,
       room: {
         select: {
-          id: true,
-          code: true,
-          name: true,
-          isPublic: true,
+          id: true, code: true, name: true, isPublic: true,
           host: { select: { id: true, name: true, image: true } },
           _count: { select: { members: true } },
         },
@@ -25,15 +23,13 @@ export async function GET() {
     },
   });
 
-  return NextResponse.json({
-    rooms: memberships.map((m) => ({
-      code: m.room.code,
-      name: m.room.name,
-      isPublic: m.room.isPublic,
-      role: m.role,
-      memberCount: m.room._count.members,
-      host: m.room.host,
-      joinedAt: m.joinedAt,
-    })),
-  });
-}
+  return NextResponse.json(
+    {
+      rooms: memberships.map((m) => ({
+        code: m.room.code, name: m.room.name, isPublic: m.room.isPublic,
+        role: m.role, memberCount: m.room._count.members, host: m.room.host, joinedAt: m.joinedAt,
+      })),
+    },
+    { headers: rlHeaders },
+  );
+});

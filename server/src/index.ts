@@ -6,7 +6,14 @@ import { parse as parseCookieHeader } from "cookie";
 import { Server } from "socket.io";
 
 import { prisma } from "./db.js";
-import { registerSocketEvents, type SocketData } from "./events.js";
+import { redis } from "./redis.js";
+import { logger } from "./logger.js";
+import {
+  registerSocketEvents,
+  type SocketData,
+  type ClientToServerEvents,
+  type ServerToClientEvents,
+} from "./events.js";
 
 const port = Number(process.env.PORT ?? 4001);
 const appOrigin = process.env.BETTER_AUTH_URL;
@@ -15,10 +22,33 @@ if (!appOrigin) {
   throw new Error("Missing BETTER_AUTH_URL for socket server CORS.");
 }
 
-const httpServer = createServer((request, response) => {
+// ─── HTTP server ─────────────────────────────────────────────────────────────
+
+const httpServer = createServer(async (request, response) => {
   if (request.url === "/health") {
-    response.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
-    response.end("ok");
+    try {
+      const [dbOk, redisOk] = await Promise.all([
+        prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
+        redis.ping().then((r) => r === "PONG").catch(() => false),
+      ]);
+
+      const body = JSON.stringify({
+        ok: dbOk && redisOk,
+        db: dbOk,
+        redis: redisOk,
+        uptime: process.uptime(),
+        version: process.env.npm_package_version ?? "unknown",
+      });
+
+      response.writeHead(dbOk && redisOk ? 200 : 503, {
+        "content-type": "application/json; charset=utf-8",
+        "content-length": Buffer.byteLength(body),
+      });
+      response.end(body);
+    } catch {
+      response.writeHead(503, { "content-type": "text/plain" });
+      response.end("error");
+    }
     return;
   }
 
@@ -26,43 +56,11 @@ const httpServer = createServer((request, response) => {
   response.end("Not found");
 });
 
+// ─── Socket.IO server ─────────────────────────────────────────────────────────
+
 const io = new Server<
-  {
-    "room:join": (payload: { roomId: string }) => void;
-    "room:leave": (payload: { roomId: string }) => void;
-    "chat:send": (payload: { roomId: string; content: string }) => void;
-    "session:completed": (payload: {
-      durationMin: number;
-      roomId?: string | null;
-      completedAt?: string;
-    }) => void;
-    "ping:send": (payload: { toUserId: string }) => void;
-  },
-  {
-    presence: (payload: {
-      roomId: string;
-      memberIds: string[];
-      todayMinutes: Record<string, number>;
-    }) => void;
-    "chat:message": (payload: {
-      id: string;
-      roomId: string;
-      content: string;
-      userId: string;
-      userName: string;
-      createdAt: string;
-    }) => void;
-    "session:logged": (payload: {
-      durationMin: number;
-      lifetimeFocusMinutes: number;
-      roomId: string | null;
-    }) => void;
-    "ping:received": (payload: {
-      fromUserId: string;
-      createdAt: string;
-    }) => void;
-    "room:error": (payload: { message: string }) => void;
-  },
+  ClientToServerEvents,
+  ServerToClientEvents,
   Record<string, never>,
   SocketData
 >(httpServer, {
@@ -70,15 +68,18 @@ const io = new Server<
     origin: appOrigin,
     credentials: true,
   },
+  // Engine.IO tuning
+  pingTimeout: 25_000,
+  pingInterval: 20_000,
+  connectTimeout: 10_000,
+  maxHttpBufferSize: 32_000,
 });
 
+// ─── Auth middleware ──────────────────────────────────────────────────────────
+
 function extractSessionToken(rawCookieHeader: string | undefined) {
-  if (!rawCookieHeader) {
-    return null;
-  }
-
+  if (!rawCookieHeader) return null;
   const cookies = parseCookieHeader(rawCookieHeader);
-
   return (
     cookies["better-auth.session_token"] ??
     cookies["__Secure-better-auth.session_token"] ??
@@ -91,7 +92,6 @@ function extractSessionToken(rawCookieHeader: string | undefined) {
 io.use(async (socket, next) => {
   try {
     const origin = socket.handshake.headers.origin;
-
     if (origin && origin !== appOrigin) {
       next(new Error("Socket origin not allowed."));
       return;
@@ -103,7 +103,6 @@ io.use(async (socket, next) => {
         : socket.handshake.headers.cookie;
 
     const sessionToken = extractSessionToken(authCookieHeader);
-
     if (!sessionToken) {
       next(new Error("Missing Better Auth session cookie."));
       return;
@@ -124,18 +123,52 @@ io.use(async (socket, next) => {
     socket.data.joinedRoomIds = [];
     socket.join(`user:${session.userId}`);
 
+    logger.info("Socket connected", { socketId: socket.id, userId: session.userId });
     next();
   } catch (error) {
-    next(
-      error instanceof Error
-        ? error
-        : new Error("Socket auth failed unexpectedly."),
-    );
+    next(error instanceof Error ? error : new Error("Socket auth failed unexpectedly."));
   }
 });
 
 registerSocketEvents(io);
 
+// ─── Graceful shutdown ────────────────────────────────────────────────────────
+
+let shuttingDown = false;
+
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info("Shutdown signal received", { signal });
+
+  // Stop accepting new connections
+  httpServer.close();
+
+  // Notify connected clients
+  io.emit("room:error", { message: "server_shutdown" });
+
+  // Give in-flight handlers 10s to complete
+  await new Promise<void>((resolve) => {
+    const timeout = setTimeout(() => {
+      logger.warn("Forced shutdown after timeout");
+      resolve();
+    }, 10_000);
+
+    io.close(() => {
+      clearTimeout(timeout);
+      resolve();
+    });
+  });
+
+  logger.info("Server shutdown complete");
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+
 httpServer.listen(port, () => {
-  console.log(`StudyWithMe socket server listening on :${port}`);
+  logger.info("StudyWithMe socket server listening", { port });
 });

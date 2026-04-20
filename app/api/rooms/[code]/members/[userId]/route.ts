@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 type Params = { params: Promise<{ code: string; userId: string }> };
 
@@ -25,20 +26,17 @@ async function getCallerMembership(roomId: string, callerId: string) {
   });
 }
 
-// DELETE /api/rooms/[code]/members/[userId] — kick a member
-export async function DELETE(_request: Request, { params }: Params) {
-  const session = await requireSession();
+export const DELETE = withApi(async (_request: Request, { params }: Params) => {
+  const session = await requireApiSession();
+  await enforce(limiters.membersRead, session.user.id);
   const { code, userId: targetUserId } = await params;
 
   const room = await resolveRoom(code);
   if (!room) return NextResponse.json({ error: "Room not found." }, { status: 404 });
 
-  // Cannot kick the room host
   if (room.hostId === targetUserId) {
     return NextResponse.json({ error: "Cannot kick the room host." }, { status: 403 });
   }
-
-  // Cannot kick yourself
   if (session.user.id === targetUserId) {
     return NextResponse.json({ error: "Cannot kick yourself — use leave instead." }, { status: 400 });
   }
@@ -48,7 +46,6 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Insufficient permissions." }, { status: 403 });
   }
 
-  // COHOSTs cannot kick other COHOSTs
   const targetMembership = await prisma.roomMember.findUnique({
     where: { userId_roomId: { userId: targetUserId, roomId: room.id } },
     select: { role: true },
@@ -57,7 +54,6 @@ export async function DELETE(_request: Request, { params }: Params) {
   if (!targetMembership) {
     return NextResponse.json({ error: "User is not a member of this room." }, { status: 404 });
   }
-
   if (callerMembership.role === "COHOST" && targetMembership.role === "COHOST") {
     return NextResponse.json({ error: "COHOSTs cannot kick other COHOSTs." }, { status: 403 });
   }
@@ -66,33 +62,27 @@ export async function DELETE(_request: Request, { params }: Params) {
     where: { userId_roomId: { userId: targetUserId, roomId: room.id } },
   });
 
-  // Signal socket server to evict the user via Redis key (60s TTL)
   if (redis) {
     await redis.set(`kick:${targetUserId}:${room.id}`, "1", { ex: 60 });
   }
 
   return NextResponse.json({ kicked: true });
-}
+});
 
-// PATCH /api/rooms/[code]/members/[userId] — change role (HOST only)
-export async function PATCH(request: Request, { params }: Params) {
-  const session = await requireSession();
+export const PATCH = withApi(async (request: Request, { params }: Params) => {
+  const session = await requireApiSession();
+  await enforce(limiters.membersRead, session.user.id);
   const { code, userId: targetUserId } = await params;
 
   const room = await resolveRoom(code);
   if (!room) return NextResponse.json({ error: "Room not found." }, { status: 404 });
 
-  // Only the host can change roles
   if (room.hostId !== session.user.id) {
     return NextResponse.json({ error: "Only the room host can change roles." }, { status: 403 });
   }
-
-  // Cannot change your own role
   if (session.user.id === targetUserId) {
     return NextResponse.json({ error: "Cannot change your own role." }, { status: 400 });
   }
-
-  // Cannot change the role of the host (would be a no-op anyway)
   if (room.hostId === targetUserId) {
     return NextResponse.json({ error: "Cannot change the host's role." }, { status: 400 });
   }
@@ -116,4 +106,4 @@ export async function PATCH(request: Request, { params }: Params) {
   });
 
   return NextResponse.json(updated);
-}
+});

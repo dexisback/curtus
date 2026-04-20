@@ -5,6 +5,8 @@ import { prisma } from "./db.js";
 import { redis } from "./redis.js";
 import { bumpLeaderboards } from "./leaderboard.js";
 import { bumpStreak } from "./streak.js";
+import { logger } from "./logger.js";
+import { socketLimiters, socketAllow } from "./ratelimit.js";
 
 const DAY_RESET_HOUR_UTC = 5;
 
@@ -47,7 +49,7 @@ export type SocketData = {
   joinedRoomIds: string[];
 };
 
-type ClientToServerEvents = {
+export type ClientToServerEvents = {
   "room:join": (payload: z.infer<typeof roomEventSchema>) => void;
   "room:leave": (payload: z.infer<typeof roomEventSchema>) => void;
   "chat:send": (payload: z.infer<typeof chatEventSchema>) => void;
@@ -56,7 +58,7 @@ type ClientToServerEvents = {
   "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
 };
 
-type ServerToClientEvents = {
+export type ServerToClientEvents = {
   presence: (payload: PresencePayload) => void;
   "chat:message": (payload: {
     id: string;
@@ -291,6 +293,11 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
+      if (!await socketAllow(socketLimiters.roomJoin, `room:join:${socket.data.userId}`)) {
+        socket.emit("room:error", { message: "rate_limited" });
+        return;
+      }
+
       const membership = await prisma.roomMember.findUnique({
         where: {
           userId_roomId: { userId: socket.data.userId, roomId: parsed.data.roomId },
@@ -341,6 +348,11 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
+      if (!await socketAllow(socketLimiters.chatSend, `chat:send:${socket.data.userId}`)) {
+        socket.emit("room:error", { message: "rate_limited" });
+        return;
+      }
+
       // Enforce any pending kick before allowing the message through
       const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
       if (wasKicked) return;
@@ -371,6 +383,11 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
+      if (!await socketAllow(socketLimiters.sessionStarted, `session:started:${socket.data.userId}`)) {
+        socket.emit("room:error", { message: "rate_limited" });
+        return;
+      }
+
       const roomId = parsed.data?.roomId ?? null;
 
       // If joining with a roomId, verify membership
@@ -385,7 +402,20 @@ export function registerSocketEvents(io: StudyServer) {
         }
       }
 
-      // Overwrite any stale liveSession (single active session per user)
+      // Atomically grab any existing liveSession and finalize it first
+      // (handles "tab1 stop emit lost, tab2 starts new session" race)
+      const staleLive = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
+      if (staleLive) {
+        try {
+          await finalizeSession(io, socket, staleLive);
+        } catch (err) {
+          logger.error("Failed to finalize stale session on session:started", {
+            userId: socket.data.userId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
       const liveSession: LiveSession = {
         startedAt: new Date().toISOString(),
         roomId,
@@ -400,12 +430,10 @@ export function registerSocketEvents(io: StudyServer) {
       await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
     });
 
-    // session:stopped — finalize session, write to DB, broadcast
+    // session:stopped — atomic GETDEL ensures only one path (stopped vs disconnect) finalizes
     socket.on("session:stopped", async () => {
-      const liveSession = await redis.get<LiveSession>(getLiveSessionKey(socket.data.userId));
-      if (!liveSession) return; // Nothing to finalize
-
-      await redis.del(getLiveSessionKey(socket.data.userId));
+      const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
+      if (!liveSession) return; // Nothing to finalize (or disconnect already claimed it)
       await finalizeSession(io, socket, liveSession);
     });
 
@@ -414,6 +442,11 @@ export function registerSocketEvents(io: StudyServer) {
       const parsed = pingEventSchema.safeParse(payload);
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid ping payload."));
+        return;
+      }
+
+      if (!await socketAllow(socketLimiters.pingSend, `ping:send:${socket.data.userId}`)) {
+        socket.emit("room:error", { message: "rate_limited" });
         return;
       }
 
@@ -427,11 +460,10 @@ export function registerSocketEvents(io: StudyServer) {
       });
     });
 
-    // disconnect — auto-finalize live session, clean presence
+    // disconnect — atomic GETDEL ensures only one of (stopped, disconnect) finalizes
     socket.on("disconnect", async () => {
-      const liveSession = await redis.get<LiveSession>(getLiveSessionKey(socket.data.userId));
+      const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
       if (liveSession) {
-        await redis.del(getLiveSessionKey(socket.data.userId));
         // Finalize quietly — no `session:logged` emit since socket is gone
         try {
           const completedAt = new Date();

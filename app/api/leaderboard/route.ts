@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getServerSession } from "@/lib/session";
 import { getTopN, getUserRankAndScore } from "@/lib/leaderboard";
+import { limiters, enforce } from "@/lib/ratelimit";
+import { withApi } from "@/lib/api-session";
 import type { Period } from "@/lib/periods";
 
 const querySchema = z.object({
@@ -9,7 +11,10 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(50),
 });
 
-export async function GET(request: Request) {
+export const GET = withApi(async (request: Request) => {
+  const ip = request.headers.get("x-forwarded-for") ?? "anonymous";
+  const rlHeaders = await enforce(limiters.leaderboardRead, ip);
+
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
     period: url.searchParams.get("period") ?? undefined,
@@ -33,5 +38,5 @@ export async function GET(request: Request) {
     if (myRank) me = myRank;
   }
 
-  return NextResponse.json({ period, entries, me });
-}
+  return NextResponse.json({ period, entries, me }, { headers: rlHeaders });
+});

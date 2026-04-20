@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 const joinRoomSchema = z.object({
   code: z.string().trim().min(1).max(12),
 });
 
-// POST /api/rooms/join — join a room by code
-export async function POST(request: Request) {
-  const session = await requireSession();
+export const POST = withApi(async (request: Request) => {
+  const session = await requireApiSession();
+  const rlHeaders = await enforce(limiters.roomsJoin, session.user.id);
+
   const parsed = await parseRequestJson(request, joinRoomSchema);
   if (!parsed.success) return parsed.response;
 
@@ -19,16 +21,13 @@ export async function POST(request: Request) {
     select: { id: true, code: true },
   });
 
-  if (!room) {
-    return NextResponse.json({ error: "Room not found." }, { status: 404 });
-  }
+  if (!room) return NextResponse.json({ error: "Room not found." }, { status: 404 });
 
-  // Upsert — idempotent; already a member is fine
   await prisma.roomMember.upsert({
     where: { userId_roomId: { userId: session.user.id, roomId: room.id } },
     update: {},
     create: { userId: session.user.id, roomId: room.id, role: "MEMBER" },
   });
 
-  return NextResponse.json({ code: room.code });
-}
+  return NextResponse.json({ code: room.code }, { headers: rlHeaders });
+});

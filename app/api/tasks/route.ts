@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 const listQuerySchema = z.object({
   type: z.enum(["DAILY", "YEARLY", "DEADLINE"]).optional(),
@@ -21,8 +22,9 @@ const createSchema = z.object({
   type: z.enum(["DAILY", "YEARLY", "DEADLINE"]).default("DAILY"),
 });
 
-export async function GET(request: Request) {
-  const session = await requireSession();
+export const GET = withApi(async (request: Request) => {
+  const session = await requireApiSession();
+  await enforce(limiters.statsRead, session.user.id);
   const url = new URL(request.url);
 
   const parsed = listQuerySchema.safeParse({
@@ -48,14 +50,8 @@ export async function GET(request: Request) {
     orderBy: { createdAt: "desc" },
     take: limit + 1,
     select: {
-      id: true,
-      title: true,
-      description: true,
-      isCompleted: true,
-      deadline: true,
-      type: true,
-      createdAt: true,
-      updatedAt: true,
+      id: true, title: true, description: true,
+      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
     },
   });
 
@@ -64,10 +60,11 @@ export async function GET(request: Request) {
   const nextCursor = hasMore ? page[page.length - 1]?.id : null;
 
   return NextResponse.json({ items: page, nextCursor });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await requireSession();
+export const POST = withApi(async (request: Request) => {
+  const session = await requireApiSession();
+  await enforce(limiters.tasksWrite, session.user.id);
 
   const body = await parseRequestJson(request, createSchema);
   if (!body.success) return body.response;
@@ -83,16 +80,10 @@ export async function POST(request: Request) {
       userId: session.user.id,
     },
     select: {
-      id: true,
-      title: true,
-      description: true,
-      isCompleted: true,
-      deadline: true,
-      type: true,
-      createdAt: true,
-      updatedAt: true,
+      id: true, title: true, description: true,
+      isCompleted: true, deadline: true, type: true, createdAt: true, updatedAt: true,
     },
   });
 
   return NextResponse.json(task, { status: 201 });
-}
+});

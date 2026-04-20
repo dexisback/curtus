@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
+import { limiters, enforce } from "@/lib/ratelimit";
 import { prisma } from "@/lib/db";
 import {
   getStudyDayStart,
@@ -8,8 +9,9 @@ import {
 } from "@/lib/periods";
 
 //returns lifetime, today/week/month totals, 7-day strip, last 10 sessions
-export async function GET() {
-  const session = await requireSession();
+export const GET = withApi(async () => {
+  const session = await requireApiSession();
+  await enforce(limiters.statsRead, session.user.id);
   const userId = session.user.id;
   const now = new Date();
 
@@ -102,4 +104,4 @@ export async function GET() {
       roomName: s.room?.name ?? null,
     })),
   });
-}
+});

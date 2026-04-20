@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
+import { limiters, enforce } from "@/lib/ratelimit";
 
 const patchSchema = z.object({
   name: z.string().trim().min(1).max(60).optional(),
@@ -15,8 +16,9 @@ const patchSchema = z.object({
     .optional(),
 });
 
-export async function PATCH(request: Request) {
-  const session = await requireSession();
+export const PATCH = withApi(async (request: Request) => {
+  const session = await requireApiSession();
+  await enforce(limiters.profileWrite, session.user.id);
 
   const body = await parseRequestJson(request, patchSchema);
   if (!body.success) return body.response;
@@ -38,4 +40,4 @@ export async function PATCH(request: Request) {
   });
 
   return NextResponse.json(updated);
-}
+});
