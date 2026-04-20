@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "./db.js";
 import { redis } from "./redis.js";
 import { bumpLeaderboards } from "./leaderboard.js";
+import { bumpStreak } from "./streak.js";
 
 const DAY_RESET_HOUR_UTC = 5;
 
@@ -77,6 +78,9 @@ type ServerToClientEvents = {
   "room:error": (payload: {
     message: string;
   }) => void;
+  "room:kicked": (payload: {
+    roomId: string;
+  }) => void;
 };
 
 type StudySocket = Socket<
@@ -94,6 +98,10 @@ type StudyServer = Server<
 >;
 
 // ─── Redis key helpers ───────────────────────────────────────────────────────
+
+function getKickKey(userId: string, roomId: string) {
+  return `kick:${userId}:${roomId}`;
+}
 
 function getRoomMembersKey(roomId: string) {
   return `room:${roomId}:members`;
@@ -221,6 +229,7 @@ async function finalizeSession(
   await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
   await syncKeyExpiry(socket.data.userId);
   await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
+  await bumpStreak(socket.data.userId, completedAt);
 
   socket.emit("session:logged", {
     durationMin,
@@ -236,6 +245,27 @@ async function finalizeSession(
 
 function toRoomError(message: string) {
   return { message };
+}
+
+/**
+ * Checks Redis for a pending kick signal. If found, evicts the socket from the
+ * room and emits `room:kicked`. Returns true if the user was kicked.
+ */
+async function checkAndEvictIfKicked(
+  io: StudyServer,
+  socket: StudySocket,
+  roomId: string,
+): Promise<boolean> {
+  const kickKey = getKickKey(socket.data.userId, roomId);
+  const kicked = await redis.getdel(kickKey);
+  if (!kicked) return false;
+
+  socket.leave(roomId);
+  removeJoinedRoom(socket, roomId);
+  await maybeRemovePresenceMember(io, socket, roomId);
+
+  io.to(`user:${socket.data.userId}`).emit("room:kicked", { roomId });
+  return true;
 }
 
 function addJoinedRoom(socket: StudySocket, roomId: string) {
@@ -273,6 +303,10 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
+      // Check if user was kicked since last connect
+      const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
+      if (wasKicked) return;
+
       socket.join(parsed.data.roomId);
       addJoinedRoom(socket, parsed.data.roomId);
 
@@ -306,6 +340,10 @@ export function registerSocketEvents(io: StudyServer) {
         socket.emit("room:error", toRoomError("Join room before sending chat."));
         return;
       }
+
+      // Enforce any pending kick before allowing the message through
+      const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
+      if (wasKicked) return;
 
       const message = await prisma.message.create({
         data: {
@@ -423,8 +461,9 @@ export function registerSocketEvents(io: StudyServer) {
           await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
           await syncKeyExpiry(socket.data.userId);
           await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
+          await bumpStreak(socket.data.userId, completedAt);
         } catch {
-          // Best-effort on disconnect — don't crash the server
+          // Best-effort on disconnect - don't crash the server
         }
       }
 
