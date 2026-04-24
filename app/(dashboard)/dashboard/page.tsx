@@ -1,53 +1,23 @@
-import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/session";
 import VideoPlayerWrapper from "@/features/dashboard/components/video-player-wrapper";
-import Timer from "@/components/timer";
-import Link from "next/link";
+import Leaderboard from "@/features/dashboard/components/leaderboard";
+import TodoComponent from "@/features/dashboard/components/todo-component";
 
 export default async function DashboardPage() {
-  const session = await requireSession();
-
-  const memberships = await prisma.roomMember.findMany({
-    where: { userId: session.user.id },
-    orderBy: { joinedAt: "desc" },
-    take: 5,
-    select: {
-      role: true,
-      room: { select: { code: true, name: true } },
-    },
-  });
+  await requireSession();
 
   return (
-    <div className="h-full w-full pb-24">
-      <VideoPlayerWrapper />
-
-      <div>
-        <h2>Solo Timer</h2>
-        <Timer />
+    <div className="flex h-full min-h-0 w-full flex-col gap-6 overflow-hidden px-5 pb-5 pt-10 sm:gap-8 sm:px-6 sm:pb-6 sm:pt-12 md:gap-10">
+      {/* Top bento: ~40% leaderboard (left) + ~60% video (right); pt-* reserves space for a future nav bar */}
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-6 sm:gap-7 md:gap-8">
+        <Leaderboard />
+        <VideoPlayerWrapper />
       </div>
 
-      {memberships.length > 0 && (
-        <div>
-          <h2>My Rooms</h2>
-          <ul>
-            {memberships.map((m) => (
-              <li key={m.room.code}>
-                <Link href={`/room/${m.room.code}`}>
-                  {m.room.name}
-                </Link>
-                {m.role === "HOST" && " (host)"}
-              </li>
-            ))}
-          </ul>
-          <Link href="/rooms">Browse all rooms →</Link>
-        </div>
-      )}
-
-      {memberships.length === 0 && (
-        <div>
-          <Link href="/rooms">Find or create a study room →</Link>
-        </div>
-      )}
+      {/* Bottom todo/calendar strip */}
+      <div className="h-[25%] min-h-[9.5rem] shrink-0">
+        <TodoComponent />
+      </div>
     </div>
   );
 }
