@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import SocketPrewarm from "@/components/socket-prewarm";
+import Providers from "./providers";
 
 import "./globals.css";
 
@@ -26,10 +27,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SocketPrewarm />
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        <Providers>
+          <SocketPrewarm />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -81,6 +81,37 @@
   --sidebar-ring: oklch(0.65 0 0);
 }
 
+.dark {
+  --background: oklch(0.16 0.006 75);
+  --foreground: oklch(0.97 0.005 75);
+  --card: oklch(0.2 0.006 75);
+  --card-foreground: oklch(0.97 0.005 75);
+  --popover: oklch(0.22 0.006 75);
+  --popover-foreground: oklch(0.97 0.005 75);
+  --primary: oklch(0.97 0.005 75);
+  --primary-foreground: oklch(0.16 0.006 75);
+  --secondary: oklch(0.25 0.006 75);
+  --secondary-foreground: oklch(0.97 0.005 75);
+  --muted: oklch(0.25 0.006 75);
+  --muted-foreground: oklch(0.65 0.01 75);
+  --accent: oklch(0.28 0.008 75);
+  --accent-foreground: oklch(0.97 0.005 75);
+  --destructive: oklch(0.5 0.2 25);
+  --border: oklch(0.32 0.008 75);
+  --input: oklch(0.32 0.008 75);
+  --ring: oklch(0.55 0.02 75);
+  --cta: oklch(0.62 0.12 45);
+  --cta-foreground: oklch(0.98 0.005 75);
+  --sidebar: oklch(0.19 0.006 75);
+  --sidebar-foreground: oklch(0.97 0.005 75);
+  --sidebar-primary: oklch(0.97 0.005 75);
+  --sidebar-primary-foreground: oklch(0.16 0.006 75);
+  --sidebar-accent: oklch(0.25 0.006 75);
+  --sidebar-accent-foreground: oklch(0.97 0.005 75);
+  --sidebar-border: oklch(0.32 0.008 75);
+  --sidebar-ring: oklch(0.55 0.02 75);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -97,4 +128,9 @@
   background-color: oklch(0.945 0.005 75);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
   background-size: 200px 200px;
+}
+
+.dark .panel-texture {
+  background-color: oklch(0.24 0.008 75);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
