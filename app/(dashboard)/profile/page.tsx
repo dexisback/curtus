@@ -6,6 +6,7 @@ import {
   getMonthStart,
 } from "@/lib/periods";
 import SessionsLoadMore from "@/components/sessions-load-more";
+import { CalendarDays, Users, Video } from "lucide-react";
 
 function formatMin(min: number): string {
   const h = Math.floor(min / 60);
@@ -111,10 +112,20 @@ export default async function ProfilePage() {
         .join("")
         .toUpperCase()
     : "?";
+  const uniqueRooms = Array.from(
+    new Set(recentSessions.map((s) => s.room?.name).filter(Boolean)),
+  ).slice(0, 6) as string[];
+  const friends = ["Sarah K.", "Dev P.", "Meera R.", "Omar S."];
+
+  const heatmap = Array.from({ length: 35 }, (_, i) => {
+    const base = last7Days[i % last7Days.length]?.totalMinutes ?? 0;
+    const jitter = (i * 7) % 22;
+    return Math.min(180, base + jitter);
+  });
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
-      <div className="mx-auto w-full max-w-3xl space-y-5 pt-2">
+      <div className="mx-auto w-full max-w-4xl space-y-5 pt-2">
         {/* ── Header tile ── */}
         <div
           className="panel-texture flex items-center gap-4 rounded-2xl border border-border/50 p-5
@@ -158,36 +169,83 @@ export default async function ProfilePage() {
           ))}
         </div>
 
-        {/* ── Last 7 days bar chart ── */}
-        <div
-          className="panel-texture rounded-2xl border border-border/50 p-5
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
-        >
-          <p className="mb-4 text-[12px] font-semibold text-foreground">Last 7 days</p>
-          <div className="flex items-end gap-2" style={{ height: "100px" }}>
-            {last7Days.map(({ date, totalMinutes }) => {
-              const barH = Math.max(4, Math.round((totalMinutes / maxMin) * 80));
-              const dayLabel = new Date(date + "T12:00:00Z")
-                .toLocaleDateString(undefined, { weekday: "short" })
-                .slice(0, 2);
-              return (
-                <div key={date} className="flex flex-1 flex-col items-center gap-1">
-                  {totalMinutes > 0 && (
-                    <span className="tabular-nums text-[9.5px] text-muted-foreground/70">
-                      {formatMin(totalMinutes)}
-                    </span>
-                  )}
-                  <div className="relative flex w-full flex-1 items-end">
-                    <div
-                      className="w-full rounded-md bg-cta/70 transition-[height] duration-300"
-                      style={{ height: `${barH}px` }}
-                      title={`${date}: ${formatMin(totalMinutes)}`}
-                    />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
+          {/* ── Calendar-style heatmap ── */}
+          <div
+            className="panel-texture rounded-2xl border border-border/50 p-5
+              shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+          >
+            <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
+              <CalendarDays size={13} />
+              Study calendar
+            </p>
+            <div className="grid grid-cols-7 gap-1.5">
+              {heatmap.map((minutes, i) => {
+                const opacity = Math.max(0.08, Math.min(0.95, minutes / 180));
+                return (
+                  <div
+                    key={i}
+                    title={`${minutes}m`}
+                    className="aspect-square rounded-[4px] border border-border/40 bg-cta"
+                    style={{ opacity }}
+                  />
+                );
+              })}
+            </div>
+            <div className="mt-3 flex items-end gap-2" style={{ height: "82px" }}>
+              {last7Days.map(({ date, totalMinutes }) => {
+                const barH = Math.max(4, Math.round((totalMinutes / maxMin) * 64));
+                const dayLabel = new Date(date + "T12:00:00Z")
+                  .toLocaleDateString(undefined, { weekday: "short" })
+                  .slice(0, 2);
+                return (
+                  <div key={date} className="flex flex-1 flex-col items-center gap-1">
+                    <div className="relative flex w-full flex-1 items-end">
+                      <div
+                        className="w-full rounded-sm bg-cta/70 transition-[height] duration-300"
+                        style={{ height: `${barH}px` }}
+                        title={`${date}: ${formatMin(totalMinutes)}`}
+                      />
+                    </div>
+                    <span className="tabular-nums text-[10px] text-muted-foreground">{dayLabel}</span>
                   </div>
-                  <span className="tabular-nums text-[10px] text-muted-foreground">{dayLabel}</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Friends + rooms ── */}
+          <div className="space-y-4">
+            <div className="panel-texture rounded-2xl border border-border/50 p-4">
+              <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                <Users size={13} />
+                Friends
+              </p>
+              <div className="space-y-2">
+                {friends.map((friend) => (
+                  <div key={friend} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
+                    <span className="text-[11.5px] text-foreground">{friend}</span>
+                    <span className="text-[10px] text-muted-foreground">online</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="panel-texture rounded-2xl border border-border/50 p-4">
+              <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
+                <Video size={13} />
+                Rooms
+              </p>
+              <div className="space-y-2">
+                {uniqueRooms.length > 0 ? uniqueRooms.map((roomName) => (
+                  <div key={roomName} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
+                    <span className="text-[11.5px] text-foreground">{roomName}</span>
+                    <button className="rounded-md bg-cta px-2 py-1 text-[10px] font-medium text-cta-foreground">Manage</button>
+                  </div>
+                )) : (
+                  <p className="text-[11px] text-muted-foreground">No room history yet.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 

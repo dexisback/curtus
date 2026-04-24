@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { CheckSquare2 } from "lucide-react";
 
 const HOUR_WIDTH = 96;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM – 11 PM
@@ -18,12 +19,20 @@ function formatHour(h: number) {
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
+type TaskType = "DAILY" | "YEARLY" | "DEADLINE";
+
 const PLACEHOLDER_TASKS = [
-  { label: "Deep Work Block", startHour: 9, startMin: 0, endHour: 11, endMin: 30, color: "oklch(0.58 0.11 45)" },
-  { label: "Lunch Break", startHour: 12, startMin: 30, endHour: 13, endMin: 30, color: "oklch(0.62 0.06 160)" },
-  { label: "Physics Review", startHour: 14, startMin: 0, endHour: 15, endMin: 30, color: "oklch(0.56 0.10 250)" },
-  { label: "Mock Test", startHour: 16, startMin: 0, endHour: 17, endMin: 0, color: "oklch(0.55 0.12 320)" },
+  { id: "t1", title: "Deep Work Block", startHour: 9, startMin: 0, endHour: 11, endMin: 30, type: "DAILY" as TaskType, isCompleted: false },
+  { id: "t2", title: "Lunch Break", startHour: 12, startMin: 30, endHour: 13, endMin: 30, type: "DAILY" as TaskType, isCompleted: true },
+  { id: "t3", title: "Physics Review", startHour: 14, startMin: 0, endHour: 15, endMin: 30, type: "DEADLINE" as TaskType, isCompleted: false },
+  { id: "t4", title: "Mock Test", startHour: 16, startMin: 0, endHour: 17, endMin: 0, type: "YEARLY" as TaskType, isCompleted: false },
 ];
+
+const TYPE_COLOR: Record<TaskType, string> = {
+  DAILY: "oklch(0.56 0.10 250)",
+  DEADLINE: "oklch(0.58 0.11 45)",
+  YEARLY: "oklch(0.55 0.12 320)",
+};
 
 function taskLeftPx(startHour: number, startMin: number) {
   return (startHour - 6) * HOUR_WIDTH + (startMin / 60) * HOUR_WIDTH;
@@ -37,6 +46,7 @@ function taskWidthPx(startHour: number, startMin: number, endHour: number, endMi
 export default function TodoComponent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
+  const [tasks, setTasks] = useState(PLACEHOLDER_TASKS);
 
   const now = new Date();
   const dayName = DAY_NAMES[now.getDay()];
@@ -93,6 +103,12 @@ export default function TodoComponent() {
               {tzLabel}
             </span>
           </div>
+          <div className="mt-2 flex items-center gap-1 text-[9px] text-muted-foreground">
+            <CheckSquare2 size={10} />
+            <span className="tabular-nums">
+              {tasks.filter((t) => t.isCompleted).length}/{tasks.length}
+            </span>
+          </div>
         </div>
 
         {/* Timeline scroll area */}
@@ -134,12 +150,14 @@ export default function TodoComponent() {
 
             {/* Task pills */}
             <div className="absolute inset-0 pointer-events-none">
-              {PLACEHOLDER_TASKS.map((task, i) => {
+              {tasks.map((task, i) => {
                 const left = taskLeftPx(task.startHour, task.startMin);
                 const width = taskWidthPx(task.startHour, task.startMin, task.endHour, task.endMin);
+                const color = TYPE_COLOR[task.type];
+                const isNow = nowHour >= task.startHour + task.startMin / 60 && nowHour <= task.endHour + task.endMin / 60;
                 return (
                   <motion.div
-                    key={i}
+                    key={task.id}
                     className="absolute top-1/2 -translate-y-1/2 pointer-events-auto"
                     style={{
                       left,
@@ -151,19 +169,27 @@ export default function TodoComponent() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06, duration: 0.22, ease: [0, 0, 0.58, 1] }}
                   >
-                    <div
-                      className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-default select-none"
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() =>
+                        setTasks((prev) =>
+                          prev.map((t) => (t.id === task.id ? { ...t, isCompleted: !t.isCompleted } : t)),
+                        )
+                      }
+                      className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-pointer select-none text-left"
                       style={{
-                        background: `${task.color}18`,
-                        borderLeft: `2.5px solid ${task.color}`,
-                        outline: `1px solid ${task.color}22`,
+                        background: task.isCompleted ? "oklch(0.75 0.01 75 / 0.18)" : `${color}18`,
+                        borderLeft: `2.5px solid ${color}`,
+                        outline: `1px solid ${color}22`,
+                        opacity: task.isCompleted ? 0.65 : 1,
                       }}
                     >
                       <span
-                        className="text-[10px] font-medium truncate"
-                        style={{ color: task.color }}
+                        className={"text-[10px] font-medium truncate " + (task.isCompleted ? "line-through" : "")}
+                        style={{ color }}
                       >
-                        {task.label}
+                        {task.title}
                       </span>
                       <span className="text-[9px] tabular-nums text-muted-foreground">
                         {formatHour(task.startHour)}
@@ -172,7 +198,10 @@ export default function TodoComponent() {
                         {formatHour(task.endHour)}
                         {task.endMin ? `:${String(task.endMin).padStart(2, "0")}` : ""}
                       </span>
-                    </div>
+                      <span className="text-[8.5px] text-muted-foreground/80">
+                        {task.type} {isNow && !task.isCompleted ? "• In progress" : task.isCompleted ? "• Done" : "• Upcoming"}
+                      </span>
+                    </motion.button>
                   </motion.div>
                 );
               })}
