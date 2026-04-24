@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { CheckSquare2 } from "lucide-react";
+import { useSound } from "@/components/sound-provider";
 
 const HOUR_WIDTH = 96;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM – 11 PM
@@ -47,6 +48,7 @@ export default function TodoComponent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
   const [tasks, setTasks] = useState(PLACEHOLDER_TASKS);
+  const { play } = useSound();
 
   const now = new Date();
   const dayName = DAY_NAMES[now.getDay()];
@@ -172,11 +174,12 @@ export default function TodoComponent() {
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.96 }}
-                      onClick={() =>
+                      onClick={() => {
                         setTasks((prev) =>
                           prev.map((t) => (t.id === task.id ? { ...t, isCompleted: !t.isCompleted } : t)),
-                        )
-                      }
+                        );
+                        play(task.isCompleted ? "toggleOff" : "toggleOn");
+                      }}
                       className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-pointer select-none text-left"
                       style={{
                         background: task.isCompleted ? "oklch(0.75 0.01 75 / 0.18)" : `${color}18`,

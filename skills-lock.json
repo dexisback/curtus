@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "a818cdc41dcfaa50dd891c5cb5e5705968338de02e7e37949ca56e8c30ad4176"
     },
+    "create-sound": {
+      "source": "raphaelsalaja/audio",
+      "sourceType": "github",
+      "computedHash": "d4e39069625e20e9088359a2bfb676a63e8d151572d196fece1faafc709383e2"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",

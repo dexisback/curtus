@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CalendarDays, CheckSquare, Goal, Scissors } from "lucide-react";
+import { useSound } from "@/components/sound-provider";
 import type { TaskType } from "./page";
 
 type TodoTask = {
@@ -33,6 +34,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
   const [weeklyGoal, setWeeklyGoal] = useState(12);
   const [monthlyGoal, setMonthlyGoal] = useState(42);
   const reduceMotion = useReducedMotion();
+  const { play } = useSound();
 
   const grouped = useMemo(
     () => ({
@@ -48,7 +50,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
   function markWithSlice(id: string) {
     setSlicedId(id);
+    const target = tasks.find((t) => t.id === id);
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)));
+    play(target?.isCompleted ? "toggleOff" : "success");
     if (!reduceMotion) setTimeout(() => setSlicedId(null), 420);
     else setSlicedId(null);
   }
@@ -129,12 +133,32 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
               </p>
               <label className="mb-3 block text-[10.5px] text-muted-foreground">
                 Weekly focus goals
-                <input type="range" min={1} max={30} value={weeklyGoal} onChange={(e) => setWeeklyGoal(Number(e.target.value))} className="mt-1 w-full" />
+                <input
+                  type="range"
+                  min={1}
+                  max={30}
+                  value={weeklyGoal}
+                  onChange={(e) => {
+                    setWeeklyGoal(Number(e.target.value));
+                    play("tap");
+                  }}
+                  className="mt-1 w-full"
+                />
                 <span className="tabular-nums text-[12px] text-foreground">{weeklyGoal} tasks/week</span>
               </label>
               <label className="block text-[10.5px] text-muted-foreground">
                 Monthly focus goals
-                <input type="range" min={5} max={100} value={monthlyGoal} onChange={(e) => setMonthlyGoal(Number(e.target.value))} className="mt-1 w-full" />
+                <input
+                  type="range"
+                  min={5}
+                  max={100}
+                  value={monthlyGoal}
+                  onChange={(e) => {
+                    setMonthlyGoal(Number(e.target.value));
+                    play("tap");
+                  }}
+                  className="mt-1 w-full"
+                />
                 <span className="tabular-nums text-[12px] text-foreground">{monthlyGoal} tasks/month</span>
               </label>
             </div>

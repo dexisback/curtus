@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Focus, Library, Medal, SunMoon, Video } from "lucide-react";
+import { useSound } from "@/components/sound-provider";
 import { useTheme } from "@/components/theme-provider";
 
 type DockItem =
@@ -94,13 +95,16 @@ function DockIcon({
 
 function DockWithTheme({ mouseX }: { mouseX: ReturnType<typeof useMotionValue<number>> }) {
   const router = useRouter();
-  const { toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const { play } = useSound();
 
   const onAction = (item: DockItem) => {
     if (item.kind === "theme") {
+      play(theme === "dark" ? "toggleOff" : "toggleOn");
       toggleTheme();
       return;
     }
+    play("tap");
     router.push(item.href);
   };
 

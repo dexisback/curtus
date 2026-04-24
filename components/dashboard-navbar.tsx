@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import SoundToggle from "@/components/sound-toggle";
 import ThemeToggle from "@/components/theme-toggle";
 import ProfileDropdown from "@/components/profileDropdown";
 
@@ -29,6 +30,8 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
           ].join(","),
         }}
       >
+        <SoundToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
+        <div className="h-4 w-px bg-border/60" aria-hidden />
         <ThemeToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
         <div className="h-4 w-px bg-border/60" aria-hidden />
         <div className="pl-0.5 pr-0.5">

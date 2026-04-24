@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { User, UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
+import { useSound } from "@/components/sound-provider";
 
 type UserLite = { name?: string | null; image?: string | null; email?: string | null };
 
@@ -13,6 +14,7 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { play } = useSound();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -26,6 +28,7 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
 
   async function handleSignOut() {
     setIsOpen(false);
+    play("modalClose");
     await signOut({
       fetchOptions: {
         onSuccess: () => router.replace("/login"),
@@ -45,7 +48,11 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   return (
     <div ref={ref} className="relative z-50">
       <motion.button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          const next = !isOpen;
+          play(next ? "modalOpen" : "modalClose");
+          setIsOpen(next);
+        }}
         whileTap={{ scale: 0.92 }}
         className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center
           hover:bg-accent transition-colors duration-150 cursor-pointer
@@ -86,7 +93,10 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
                   delay: i * 0.03,
                 }}
                 whileTap={{ scale: 0.97 }}
-                onClick={item.onClick}
+                onClick={() => {
+                  play("tap");
+                  item.onClick();
+                }}
                 className="w-full flex items-center gap-2.5 text-left px-2.5 py-[6px] text-xs rounded-lg
                   text-foreground/80 hover:text-foreground hover:bg-accent/70
                   active:bg-accent transition-colors duration-150 cursor-pointer"
