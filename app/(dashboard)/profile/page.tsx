@@ -14,7 +14,6 @@ function formatMin(min: number): string {
   return `${m}m`;
 }
 
-
 export default async function ProfilePage() {
   const session = await requireSession();
   const userId = session.user.id;
@@ -94,75 +93,126 @@ export default async function ProfilePage() {
   const thisMonth = monthAgg._sum.totalMinutes ?? 0;
   const lifetime = user?.lifetimeFocusMinutes ?? 0;
 
+  const STATS = [
+    { label: "Today", value: formatMin(today) },
+    { label: "This Week", value: formatMin(thisWeek) },
+    { label: "This Month", value: formatMin(thisMonth) },
+    { label: "Lifetime", value: formatMin(lifetime) },
+    { label: "Current Streak", value: `${streakRow?.currentStreak ?? 0}d` },
+    { label: "Longest Streak", value: `${streakRow?.longestStreak ?? 0}d` },
+  ];
+
+  const initials = user?.name
+    ? user.name
+        .trim()
+        .split(/\s+/)
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "?";
+
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        {user?.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={user.image} alt="" className="w-14 h-14 rounded-full" />
-        ) : (
-          <div className="w-14 h-14 rounded-full bg-muted" />
-        )}
-        <div>
-          <p className="font-semibold text-lg">{user?.name ?? "Unknown"}</p>
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-        </div>
-      </div>
-
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[
-          { label: "Today", value: formatMin(today) },
-          { label: "This Week", value: formatMin(thisWeek) },
-          { label: "This Month", value: formatMin(thisMonth) },
-          { label: "Lifetime", value: formatMin(lifetime) },
-          { label: "Current Streak", value: `${streakRow?.currentStreak ?? 0}d` },
-          { label: "Longest Streak", value: `${streakRow?.longestStreak ?? 0}d` },
-        ].map(({ label, value }) => (
-          <div key={label} className="rounded border p-3">
-            <p className="text-xs text-muted-foreground mb-1">{label}</p>
-            <p className="text-xl font-semibold tabular-nums">{value}</p>
+    <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
+      <div className="mx-auto w-full max-w-3xl space-y-5 pt-2">
+        {/* ── Header tile ── */}
+        <div
+          className="panel-texture flex items-center gap-4 rounded-2xl border border-border/50 p-5
+            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
+          {user?.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.image}
+              alt=""
+              className="h-14 w-14 shrink-0 rounded-2xl object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
+            />
+          ) : (
+            <div
+              className="flex h-14 w-14 shrink-0 select-none items-center justify-center rounded-2xl text-sm font-semibold text-white
+                [outline:1px_solid_rgba(0,0,0,0.06)]"
+              style={{ background: "oklch(0.62 0.06 75)" }}
+            >
+              {initials}
+            </div>
+          )}
+          <div>
+            <p className="text-base font-semibold tracking-tight text-foreground">
+              {user?.name ?? "Unknown"}
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">{user?.email}</p>
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Last-7-days bar chart (CSS only) */}
-      <div>
-        <p className="text-sm font-medium mb-3">Last 7 days</p>
-        <div className="flex items-end gap-2 h-24">
-          {last7Days.map(({ date, totalMinutes }) => (
-            <div key={date} className="flex flex-col items-center flex-1 gap-1">
-              <div
-                className="w-full rounded-sm bg-primary/70"
-                style={{ height: `${Math.round((totalMinutes / maxMin) * 72)}px` }}
-                title={`${date}: ${formatMin(totalMinutes)}`}
-              />
-              <span className="text-[10px] text-muted-foreground">
-                {new Date(date).toLocaleDateString(undefined, { weekday: "short" }).slice(0, 2)}
-              </span>
+        {/* ── Stat cards ── */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {STATS.map(({ label, value }) => (
+            <div
+              key={label}
+              className="panel-texture flex flex-col gap-1 rounded-xl border border-border/50 p-4
+                shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_12px_rgba(17,24,39,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]"
+            >
+              <p className="text-[10.5px] text-muted-foreground">{label}</p>
+              <p className="text-xl font-semibold tabular-nums text-foreground">{value}</p>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Recent sessions — first page server-rendered, load-more client */}
-      <div>
-        <p className="text-sm font-medium mb-3">Recent sessions</p>
-        <SessionsLoadMore
-          initialItems={recentSessions.map((s) => ({
-            id: s.id,
-            durationMin: s.durationMin,
-            completedAt: s.completedAt.toISOString(),
-            roomCode: s.room?.code ?? null,
-            roomName: s.room?.name ?? null,
-          }))}
-          initialNextCursor={recentSessions.length >= 20 ? (recentSessions[recentSessions.length - 1]?.id ?? null) : null}
-        />
+        {/* ── Last 7 days bar chart ── */}
+        <div
+          className="panel-texture rounded-2xl border border-border/50 p-5
+            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
+          <p className="mb-4 text-[12px] font-semibold text-foreground">Last 7 days</p>
+          <div className="flex items-end gap-2" style={{ height: "100px" }}>
+            {last7Days.map(({ date, totalMinutes }) => {
+              const barH = Math.max(4, Math.round((totalMinutes / maxMin) * 80));
+              const dayLabel = new Date(date + "T12:00:00Z")
+                .toLocaleDateString(undefined, { weekday: "short" })
+                .slice(0, 2);
+              return (
+                <div key={date} className="flex flex-1 flex-col items-center gap-1">
+                  {totalMinutes > 0 && (
+                    <span className="tabular-nums text-[9.5px] text-muted-foreground/70">
+                      {formatMin(totalMinutes)}
+                    </span>
+                  )}
+                  <div className="relative flex w-full flex-1 items-end">
+                    <div
+                      className="w-full rounded-md bg-cta/70 transition-[height] duration-300"
+                      style={{ height: `${barH}px` }}
+                      title={`${date}: ${formatMin(totalMinutes)}`}
+                    />
+                  </div>
+                  <span className="tabular-nums text-[10px] text-muted-foreground">{dayLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Recent sessions ── */}
+        <div
+          className="panel-texture rounded-2xl border border-border/50 p-5
+            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
+          <p className="mb-4 text-[12px] font-semibold text-foreground">Recent sessions</p>
+          <SessionsLoadMore
+            initialItems={recentSessions.map((s) => ({
+              id: s.id,
+              durationMin: s.durationMin,
+              completedAt: s.completedAt.toISOString(),
+              roomCode: s.room?.code ?? null,
+              roomName: s.room?.name ?? null,
+            }))}
+            initialNextCursor={
+              recentSessions.length >= 20
+                ? (recentSessions[recentSessions.length - 1]?.id ?? null)
+                : null
+            }
+          />
+        </div>
       </div>
     </div>
   );
 }
-
-
-//note: change this later on to match tiling based styles ⚠️⚠️⚠️⚠️⚠️
