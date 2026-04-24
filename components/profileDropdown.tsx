@@ -4,13 +4,15 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { User, UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
-import { useSession, signOut } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth-client";
 
-export default function ProfileDropdown() {
+type UserLite = { name?: string | null; image?: string | null; email?: string | null };
+
+/** Session comes from the server layout to avoid `useSession` (nanostores/react) + Turbopack hook issues. */
+export default function ProfileDropdown({ user }: { user: UserLite }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { data: session } = useSession();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -31,7 +33,7 @@ export default function ProfileDropdown() {
     });
   }
 
-  const avatarUrl = session?.user?.image;
+  const avatarUrl = user?.image;
 
   const menuItems = [
     { label: "Profile", icon: UserCircle, onClick: () => {} },

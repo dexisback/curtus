@@ -1,18 +1,22 @@
 import Sidebar from "@/components/sideBar";
 import ProfileDropdown from "@/components/profileDropdown";
 import FloatingDock from "@/components/floatingDock";
+import { getServerSession } from "@/lib/session";
 
-export default function DashboardGroupLayout({
+export default async function DashboardGroupLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession();
+  const user = session?.user ?? { name: null, image: null, email: null };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
       <Sidebar />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex shrink-0 items-center justify-end px-5 pb-1 pt-4">
-          <ProfileDropdown />
+          <ProfileDropdown user={user} />
         </header>
 
         <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
