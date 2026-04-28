@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, Hash, Lock, MessageSquare, Users, Video } from "lucide-react";
+import { ArrowRight, ChevronDown, Hash, Lock, Users, Video } from "lucide-react";
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
 } from "@/features/dashboard/components/room-leaderboard-carousel";
@@ -50,7 +50,7 @@ function RoomCard({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.22, ease: [0, 0, 0.58, 1] }}
-      className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] group relative flex flex-col gap-3 rounded-xl border border-border/50 p-4
+      className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] group relative flex flex-col gap-3 rounded-lg border border-border/50 p-4
         shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_12px_rgba(17,24,39,0.06)]
         transition-shadow duration-200 hover:shadow-[0_1px_2px_rgba(17,24,39,0.06),0_8px_20px_rgba(17,24,39,0.10)]"
     >
@@ -65,7 +65,7 @@ function RoomCard({
         </div>
         {role && (
           <span
-            className="shrink-0 rounded-full border border-border/60 bg-card/80 px-2 py-0.5 text-[9.5px] font-medium text-muted-foreground capitalize"
+            className="shrink-0 rounded-[6px] border border-border/60 bg-card/80 px-2 py-0.5 text-[9.5px] font-medium text-muted-foreground capitalize"
           >
             {role.toLowerCase()}
           </span>
@@ -83,7 +83,7 @@ function RoomCard({
           type="button"
           whileTap={{ scale: 0.96 }}
           onClick={() => router.push(`/room/${code}`)}
-          className="flex items-center gap-1.5 rounded-lg bg-cta px-3 py-1.5 text-[11px] font-medium text-cta-foreground
+          className="flex items-center gap-1.5 rounded-[6px] bg-cta px-3 py-1.5 text-[11px] font-medium text-cta-foreground
             shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
             transition-opacity duration-150"
         >
@@ -100,6 +100,7 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [roomListView, setRoomListView] = useState<"my" | "public">("my");
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -133,27 +134,15 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
         <h1 className="text-[14px] font-semibold tracking-tight text-foreground">Rooms</h1>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(24rem,1.28fr)_minmax(22rem,1.12fr)]">
         <section
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-3
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
+          className="order-2 xl:order-1 min-h-0 overflow-hidden rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]
+            p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
-          {boards.length > 0 ? (
-            <div className="h-full rounded-xl bg-background">
-              <RoomLeaderboardCarousel boards={boards} />
-            </div>
-          ) : (
-            <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">
-              Join or create a room to see live room leaderboards.
-            </div>
-          )}
-        </section>
-
-        <section className="min-h-0 overflow-y-auto">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_1fr]">
+          <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
             <div
-              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4
-                shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
+              className="rounded-lg border border-border/50 bg-background/90 p-4
+                shadow-[0_1px_2px_rgba(17,24,39,0.03)]"
             >
               <p className="mb-3 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
                 <Hash size={12} strokeWidth={1.7} />
@@ -173,7 +162,7 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
                     onChange={(e) => setJoinCode(e.target.value)}
                     maxLength={12}
                     required
-                    className="w-full rounded-lg border border-border/70 bg-background py-2 pl-8 pr-3 text-[12px]
+                    className="w-full rounded-md border border-border/70 bg-background py-2 pl-8 pr-3 text-[12px]
                       text-foreground placeholder:text-muted-foreground/50
                       focus:outline-none focus:ring-2 focus:ring-ring/40 transition-shadow duration-150"
                   />
@@ -182,7 +171,7 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
                   type="submit"
                   whileTap={{ scale: 0.96 }}
                   disabled={busy || !joinCode.trim()}
-                  className="shrink-0 rounded-lg bg-cta px-4 py-2 text-[11.5px] font-medium text-cta-foreground
+                  className="shrink-0 rounded-[6px] bg-cta px-4 py-2 text-[11.5px] font-medium text-cta-foreground
                     shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
                     disabled:opacity-50 disabled:cursor-not-allowed
                     transition-opacity duration-150"
@@ -203,81 +192,122 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
                   </motion.p>
                 )}
               </AnimatePresence>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-border/50 bg-background/80 p-3">
-                  <p className="text-[10px] text-muted-foreground">Live Chat</p>
-                  <p className="mt-1 flex items-center gap-1 text-[11.5px] font-medium text-foreground">
-                    <MessageSquare size={12} />
-                    Room stream active
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border/50 bg-background/80 p-3">
-                  <p className="text-[10px] text-muted-foreground">Video Call</p>
-                  <p className="mt-1 flex items-center gap-1 text-[11.5px] font-medium text-foreground">
-                    <Video size={12} />
-                    Ready to join
-                  </p>
-                </div>
-              </div>
             </div>
 
-            <div className="space-y-4">
-              {myRooms.length > 0 && (
-                <section>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Lock size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
-                    <h2 className="text-[11.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      My Rooms
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {myRooms.map((r, i) => (
-                      <RoomCard
-                        key={r.code}
-                        code={r.code}
-                        name={r.name}
-                        memberCount={r.memberCount}
-                        hostName={r.hostName}
-                        role={r.role}
-                        index={i}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {publicRooms.length > 0 && (
-                <section>
-                  <div className="mb-2 flex items-center gap-2">
-                    <Users size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
-                    <h2 className="text-[11.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Browse Public Rooms
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {publicRooms.slice(0, 4).map((r, i) => (
-                      <RoomCard
-                        key={r.code}
-                        code={r.code}
-                        name={r.name}
-                        memberCount={r.memberCount}
-                        hostName={r.hostName}
-                        index={i + myRooms.length}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {!hasAnyRoom && (
-                <div className="flex min-h-[10rem] flex-col items-center justify-center gap-2 rounded-xl border border-border/50 bg-muted/20">
-                  <Video size={18} strokeWidth={1.4} className="text-muted-foreground/60" />
-                  <p className="text-[12px] text-muted-foreground">No rooms yet.</p>
-                  <p className="text-[11px] text-muted-foreground/70">
-                    Create one from the sidebar or join with a code above.
+            <div
+              className="min-h-0 overflow-y-auto rounded-lg border border-border/50 bg-background p-3
+                [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+                shadow-[0_1px_2px_rgba(17,24,39,0.03)]"
+              style={{ msOverflowStyle: "none" }}
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2 pb-0.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Rooms List
                   </p>
+                  <label className="relative">
+                    <span className="sr-only">Choose room list</span>
+                    <select
+                      value={roomListView}
+                      onChange={(e) => setRoomListView(e.target.value as "my" | "public")}
+                      className="appearance-none rounded-[6px] border border-border/70 bg-background py-1 pl-2.5 pr-7 text-[10.5px] font-medium text-foreground
+                        focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    >
+                      <option value="my">My Rooms</option>
+                      <option value="public">Public Rooms</option>
+                    </select>
+                    <ChevronDown
+                      size={11}
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                  </label>
                 </div>
-              )}
+
+                {roomListView === "my" && myRooms.length > 0 && (
+                  <section>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Lock size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
+                      <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                        My Rooms
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {myRooms.map((r, i) => (
+                        <RoomCard
+                          key={r.code}
+                          code={r.code}
+                          name={r.name}
+                          memberCount={r.memberCount}
+                          hostName={r.hostName}
+                          role={r.role}
+                          index={i}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {roomListView === "public" && publicRooms.length > 0 && (
+                  <section>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Users size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
+                      <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                        Browse Public Rooms
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {publicRooms.slice(0, 4).map((r, i) => (
+                        <RoomCard
+                          key={r.code}
+                          code={r.code}
+                          name={r.name}
+                          memberCount={r.memberCount}
+                          hostName={r.hostName}
+                          index={i + myRooms.length}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {roomListView === "my" && myRooms.length === 0 && hasAnyRoom && (
+                  <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
+                    <p className="text-[12px] text-muted-foreground">No joined rooms yet.</p>
+                    <p className="text-[11px] text-muted-foreground/70">Switch to Public Rooms to explore.</p>
+                  </div>
+                )}
+                {roomListView === "public" && publicRooms.length === 0 && hasAnyRoom && (
+                  <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
+                    <p className="text-[12px] text-muted-foreground">No public rooms available.</p>
+                    <p className="text-[11px] text-muted-foreground/70">Try creating a new room from sidebar.</p>
+                  </div>
+                )}
+                {!hasAnyRoom && (
+                  <div className="flex min-h-[10rem] flex-col items-center justify-center gap-2 rounded-lg border border-border/50 bg-muted/20">
+                    <Video size={18} strokeWidth={1.4} className="text-muted-foreground/60" />
+                    <p className="text-[12px] text-muted-foreground">No rooms yet.</p>
+                    <p className="text-[11px] text-muted-foreground/70">
+                      Create one from the sidebar or join with a code above.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </section>
+
+        <section
+          className="order-1 xl:order-2 min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]
+            xl:h-[88%] xl:self-center
+            p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
+        >
+          {boards.length > 0 ? (
+            <div className="h-full rounded-xl bg-background">
+              <RoomLeaderboardCarousel boards={boards} />
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">
+              Join or create a room to see live room leaderboards.
+            </div>
+          )}
         </section>
       </div>
     </div>
