@@ -137,18 +137,18 @@ export default function RoomClient({
       </div>
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
-        <div className="panel-texture min-h-0 rounded-2xl border border-border/50 p-3">
+        <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-3">
           <div className="h-full rounded-xl bg-background">
             <RoomLeaderboardCarousel boards={[board]} />
           </div>
         </div>
 
         <div className="grid min-h-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="panel-texture min-h-0 rounded-2xl border border-border/50 p-4">
+          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-4">
             <p className="mb-2 text-[11px] font-medium text-muted-foreground">Room Timer</p>
             <Timer roomId={roomId} />
           </div>
-          <div className="panel-texture min-h-0 rounded-2xl border border-border/50 p-4">
+          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-4">
             <p className="mb-2 text-[11px] font-medium text-muted-foreground">Members</p>
             <MemberList
               members={members}
@@ -157,7 +157,7 @@ export default function RoomClient({
               currentUserId={currentUserId}
             />
           </div>
-          <div className="panel-texture min-h-0 rounded-2xl border border-border/50 p-4">
+          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-4">
             <p className="mb-2 text-[11px] font-medium text-muted-foreground">Live Chat</p>
             <Chat
               roomCode={code}

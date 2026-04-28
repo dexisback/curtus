@@ -8,6 +8,7 @@ function pad(n: number): string {
  * Returns the start of the "study day" that contains `date`.
  * A study day resets at 05:00 UTC rather than midnight.
  */
+// TODO: make reset hour user-configurable in settings.
 export function getStudyDayStart(date: Date): Date {
   const shifted = new Date(date.getTime() - STUDY_DAY_RESET_HOUR_UTC * 60 * 60 * 1_000);
   return new Date(

@@ -78,7 +78,7 @@ export default function VideoPlayer() {
     >
       <motion.div
         className="relative flex h-[86%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
-          border border-black/[0.06] panel-texture"
+          border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,

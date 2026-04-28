@@ -40,13 +40,8 @@ type Props = {
   currentUserId: string | null;
 };
 
-function toProfileUser(e: LeaderboardEntry, period: Period): ProfileModalUser {
-  const hours =
-    period === "daily"
-      ? e.totalMinutes / 60
-      : period === "weekly"
-        ? e.totalMinutes / 60
-        : e.totalMinutes / 60;
+function toProfileUser(e: LeaderboardEntry): ProfileModalUser {
+  const hours = e.totalMinutes / 60;
   return {
     id: e.userId,
     name: e.name ?? "Unknown",
@@ -87,9 +82,9 @@ export default function LeaderboardClient({
 
   const openProfile = useCallback(
     (entry: LeaderboardEntry) => {
-      setSelected(toProfileUser(entry, period));
+      setSelected(toProfileUser(entry));
     },
-    [period],
+    [],
   );
 
   const onProfileExited = useCallback(() => {
@@ -117,7 +112,7 @@ export default function LeaderboardClient({
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-2 sm:px-6 sm:pb-6">
         {/* Outer panel */}
         <div
-          className="panel-texture flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50
             shadow-[0_1px_2px_rgba(17,24,39,0.05),0_8px_24px_rgba(17,24,39,0.08),inset_0_1px_0_rgba(255,255,255,0.5)]
             dark:shadow-[0_1px_2px_rgba(0,0,0,0.25),0_12px_32px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]"
           style={{ padding: "16px" }}

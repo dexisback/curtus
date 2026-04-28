@@ -71,7 +71,7 @@ export default function TodoComponent() {
   return (
     <div className="h-full min-h-0 w-full min-w-0 pt-0.5 pb-2.5">
       <motion.div
-        className="w-full h-full panel-texture border border-black/[0.06] flex items-stretch overflow-hidden"
+        className="w-full h-full border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex items-stretch overflow-hidden"
         style={{
           borderRadius: 16,
           boxShadow: [

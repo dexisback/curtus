@@ -4,7 +4,8 @@ import { type Period, getDailyKey, getWeeklyKey, getMonthlyKey, getPeriodTtlSeco
 function lbRedisKey(period: Period, date: Date): string {
   if (period === "daily") return `lb:daily:${getDailyKey(date)}`;
   if (period === "weekly") return `lb:weekly:${getWeeklyKey(date)}`;
-  return `lb:monthly:${getMonthlyKey(date)}`;
+  if (period === "monthly") return `lb:monthly:${getMonthlyKey(date)}`;
+  return `lb:daily:${getDailyKey(date)}`;
 }
 
 /**

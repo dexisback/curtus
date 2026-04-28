@@ -133,7 +133,7 @@ export default function FloatingDock() {
       className="pointer-events-auto"
     >
       <div
-        className="panel-texture flex h-[72px] items-end gap-2 rounded-3xl border border-border/60 px-3 pb-2.5 pt-2
+        className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex h-[72px] items-end gap-2 rounded-3xl border border-border/60 px-3 pb-2.5 pt-2
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_10px_24px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.5)]
           dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_10px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)]"
       >

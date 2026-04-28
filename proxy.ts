@@ -14,11 +14,10 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(getSessionCookie(request.headers));
 
-  // Reverse guard: signed-in users hitting login/signup go straight to dashboard
+  // Keep auth routes always reachable.
+  // A stale/invalid cookie can exist even when the server session is gone,
+  // and forcing /login -> /dashboard here causes redirect loops.
   if (AUTH_ROUTES.has(pathname)) {
-    if (hasSession) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
     return NextResponse.next();
   }
 

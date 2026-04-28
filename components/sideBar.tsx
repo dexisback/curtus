@@ -155,7 +155,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="panel-texture rounded-2xl border border-border/60 p-5
+              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/60 p-5
                 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_16px_40px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
                 dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_20px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
             >

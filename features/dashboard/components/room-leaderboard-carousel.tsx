@@ -121,7 +121,7 @@ export default function RoomLeaderboardCarousel({
                 transition={{ delay: i * 0.03, duration: 0.2, ease: [0, 0, 0.58, 1] }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => onMemberClick?.(member)}
-                className="panel-texture flex min-h-[100px] w-full flex-col items-center justify-center rounded-xl border border-border/50 px-2 py-2
+                className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex min-h-[100px] w-full flex-col items-center justify-center rounded-xl border border-border/50 px-2 py-2
                   transition-[background-color] duration-150 hover:bg-muted/40"
               >
                 {member.image ? (

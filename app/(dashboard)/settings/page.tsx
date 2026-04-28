@@ -65,6 +65,7 @@ function PlaceholderToggle({ defaultOn = false }: { defaultOn?: boolean }) {
   );
 }
 
+
 export default function SettingsPage() {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
@@ -77,7 +78,7 @@ export default function SettingsPage() {
 
         {/* ── Account ── */}
         <div
-          className="panel-texture rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
           <SectionHeader
@@ -118,7 +119,7 @@ export default function SettingsPage() {
 
         {/* ── Appearance ── */}
         <div
-          className="panel-texture rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
           <SectionHeader
@@ -149,7 +150,7 @@ export default function SettingsPage() {
 
         {/* ── Notifications ── */}
         <div
-          className="panel-texture rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
           <SectionHeader

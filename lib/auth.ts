@@ -5,6 +5,12 @@ import { prisma } from "./db";
 import { redis } from "./redis";
 
 const isProd = process.env.NODE_ENV === "production";
+const hasGoogleAuth = Boolean(
+  process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
+);
+const hasGitHubAuth = Boolean(
+  process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET,
+);
 
 const trustedOrigins: string[] = [
   process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
@@ -59,7 +65,7 @@ export const auth = betterAuth({
   },
 
   rateLimit: {
-    enabled: true,
+    enabled: isProd,
     window: 60,
     max: 100,
     storage: redis ? "secondary-storage" : "memory",
@@ -73,20 +79,31 @@ export const auth = betterAuth({
   },
 
   socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },
+    ...(hasGoogleAuth
+      ? {
+          google: {
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+          },
+        }
+      : {}),
+    ...(hasGitHubAuth
+      ? {
+          github: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+          },
+        }
+      : {}),
   },
 
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: ["google", "github"],
+      trustedProviders: [
+        ...(hasGoogleAuth ? (["google"] as const) : []),
+        ...(hasGitHubAuth ? (["github"] as const) : []),
+      ],
     },
   },
 

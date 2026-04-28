@@ -22,7 +22,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
   const listRef = useRef<HTMLUListElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Sync live messages arriving via socket into local state
+  // Sync live messages
   useEffect(() => {
     const socket = connectWithAuth();
     if (!socket) return;

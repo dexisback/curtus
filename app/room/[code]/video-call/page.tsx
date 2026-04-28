@@ -44,7 +44,7 @@ export default async function RoomVideoCallPage({
         </Link>
       </div>
 
-      <div className="panel-texture relative min-h-0 flex-1 rounded-3xl border border-border/50 p-5 shadow-[0_1px_2px_rgba(17,24,39,0.05),0_12px_36px_rgba(17,24,39,0.1)]">
+      <div className="relative min-h-0 flex-1 rounded-3xl border border-border/50 p-5 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] shadow-[0_1px_2px_rgba(17,24,39,0.05),0_12px_36px_rgba(17,24,39,0.1)]">
         <div className="flex h-full w-full items-center justify-center rounded-2xl bg-black">
           <p className="text-[12px] text-white/60">Video stream viewport (UI-first shell)</p>
         </div>

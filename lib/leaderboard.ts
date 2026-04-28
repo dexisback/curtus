@@ -22,7 +22,8 @@ export type LeaderboardEntry = {
 function lbRedisKey(period: Period, date: Date): string {
   if (period === "daily") return `lb:daily:${getDailyKey(date)}`;
   if (period === "weekly") return `lb:weekly:${getWeeklyKey(date)}`;
-  return `lb:monthly:${getMonthlyKey(date)}`;
+  if (period === "monthly") return `lb:monthly:${getMonthlyKey(date)}`;
+  return `lb:daily:${getDailyKey(date)}`;
 }
 
 async function fromDb(period: Period, now: Date, limit: number): Promise<LeaderboardEntry[]> {

@@ -33,6 +33,7 @@ export const GET = withApi(async (request: Request, { params }: Params) => {
   });
 });
 
+
 export const DELETE = withApi(async (_request: Request, { params }: Params) => {
   const session = await requireApiSession();
   const { code } = await params;

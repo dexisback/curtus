@@ -72,7 +72,7 @@ export default function Leaderboard() {
     <>
       <div className="flex h-full min-h-0 w-full min-w-0 items-stretch justify-start pl-0.5 pr-0 pt-1 pb-2">
         <motion.div
-          className="relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.04] panel-texture"
+          className="relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
           style={{
             borderRadius: `${LB_OUTER}px`,
             padding: `${LB_GAP}px`,

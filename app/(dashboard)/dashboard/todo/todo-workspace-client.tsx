@@ -27,9 +27,11 @@ function dateDiff(target: Date) {
   return Math.ceil((end - start) / 86_400_000);
 }
 
+
 export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: TodoTask[] }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [slicedId, setSlicedId] = useState<string | null>(null);
+  const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const [dDay, setDDay] = useState("2026-06-01");
   const [weeklyGoal, setWeeklyGoal] = useState(12);
   const [monthlyGoal, setMonthlyGoal] = useState(42);
@@ -48,11 +50,44 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
   const done = tasks.filter((t) => t.isCompleted).length;
   const dValue = dateDiff(new Date(dDay + "T12:00:00"));
 
-  function markWithSlice(id: string) {
+  async function markWithSlice(id: string) {
+    if (busyTaskId) return;
     setSlicedId(id);
     const target = tasks.find((t) => t.id === id);
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)));
+    if (!target) return;
+    const nextCompleted = !target.isCompleted;
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, isCompleted: nextCompleted } : t)),
+    );
+    setBusyTaskId(id);
     play(target?.isCompleted ? "toggleOff" : "success");
+
+    try {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCompleted: nextCompleted }),
+      });
+      if (!res.ok) {
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, isCompleted: target.isCompleted } : t,
+          ),
+        );
+        play("error");
+      }
+    } catch {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, isCompleted: target.isCompleted } : t,
+        ),
+      );
+      play("error");
+    } finally {
+      setBusyTaskId(null);
+    }
+
     if (!reduceMotion) setTimeout(() => setSlicedId(null), 420);
     else setSlicedId(null);
   }
@@ -71,7 +106,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <div className="panel-texture rounded-2xl border border-border/50 p-4">
+          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
             <p className="mb-3 text-[11px] font-medium text-muted-foreground">Task slicing mode</p>
             <div className="space-y-2">
               {tasks.map((task) => (
@@ -79,7 +114,8 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                   key={task.id}
                   type="button"
                   whileTap={{ scale: 0.96 }}
-                  onClick={() => markWithSlice(task.id)}
+                  onClick={() => void markWithSlice(task.id)}
+                  disabled={busyTaskId === task.id}
                   className="relative flex w-full items-start gap-3 overflow-hidden rounded-xl border border-border/50 bg-background/85 px-3 py-3 text-left"
                 >
                   <span className={"mt-0.5 h-4 w-4 rounded-[4px] border " + (task.isCompleted ? "border-transparent bg-cta/80" : "border-border/70")} />
@@ -109,7 +145,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
           </div>
 
           <div className="space-y-4">
-            <div className="panel-texture rounded-2xl border border-border/50 p-4">
+            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <CalendarDays size={12} />
                 D-Day setup
@@ -126,7 +162,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
               <p className="text-[10.5px] text-muted-foreground">Auto-calculated on app start</p>
             </div>
 
-            <div className="panel-texture rounded-2xl border border-border/50 p-4">
+            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <Goal size={12} />
                 Goal configuration
@@ -167,7 +203,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {(["DEADLINE", "DAILY", "YEARLY"] as TaskType[]).map((type) => (
-            <div key={type} className="panel-texture rounded-xl border border-border/50 p-4">
+            <div key={type} className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-xl border border-border/50 p-4">
               <p className="text-[11px] text-muted-foreground">{TYPE_META[type].label} tasks</p>
               <p className="mt-1 text-[20px] font-semibold tabular-nums">{grouped[type].length}</p>
             </div>

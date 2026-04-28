@@ -13,7 +13,7 @@ import { logger } from "@/lib/logger";
 
 /**
  * POST /api/jobs/rebuild-leaderboards
- * Scheduled by QStash nightly at 04:50 UTC.
+ * Scheduled by QStash nightly at 04:50 UTC.(to be made to be configurable later on)
  *
  * Recomputes each period's leaderboard from DailyStats and atomically
  * replaces the Redis ZSET. Self-healing if ZINCRBY drift accumulates.

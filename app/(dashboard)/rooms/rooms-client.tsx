@@ -49,7 +49,7 @@ function RoomCard({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.22, ease: [0, 0, 0.58, 1] }}
-      className="panel-texture group relative flex flex-col gap-3 rounded-xl border border-border/50 p-4
+      className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] group relative flex flex-col gap-3 rounded-xl border border-border/50 p-4
         shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_12px_rgba(17,24,39,0.06)]
         transition-shadow duration-200 hover:shadow-[0_1px_2px_rgba(17,24,39,0.06),0_8px_20px_rgba(17,24,39,0.10)]"
     >
@@ -148,7 +148,7 @@ export default function RoomsClient({ publicRooms, myRooms }: Props) {
 
       <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
         <section
-          className="panel-texture min-h-0 rounded-2xl border border-border/50 p-3
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] min-h-0 rounded-2xl border border-border/50 p-3
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
           {boards.length > 0 ? (
@@ -165,7 +165,7 @@ export default function RoomsClient({ publicRooms, myRooms }: Props) {
         <section className="min-h-0 overflow-y-auto">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_1fr]">
             <div
-              className="panel-texture rounded-2xl border border-border/50 p-4
+              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4
                 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
             >
               <p className="mb-3 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">

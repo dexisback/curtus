@@ -6,7 +6,7 @@ import { logger } from "@/lib/logger";
 
 /**
  * POST /api/jobs/recompute-streaks
- * Scheduled by QStash nightly.
+ * Scheduled by QStash nightly.k
  *
  * For any user whose lastActiveDate is before yesterday's study-day start,
  * resets currentStreak to 0. Prevents stale streaks showing after inactivity.
