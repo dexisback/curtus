@@ -1,14 +1,12 @@
 export const PANEL_SHADOW = [
-  "0 1px 2px rgba(17,24,39,0.06)",
-  "0 4px 10px rgba(17,24,39,0.05)",
-  "3px 10px 24px rgba(17,24,39,0.07)",
-  "8px 20px 56px rgba(17,24,39,0.13)",
+  "0 1px 2px rgba(17,24,39,0.04)",
+  "0 4px 14px rgba(17,24,39,0.05)",
 ].join(",");
 
-export const OUTER_RADIUS = 28;
-export const GAP = 22;
+export const OUTER_RADIUS = 22;
+export const GAP = 14;
 export const INNER_RADIUS = OUTER_RADIUS - GAP;
-export const SCREW_SIZE = 18;
+export const SCREW_SIZE = 12;
 
 const midArcRadius = OUTER_RADIUS - GAP / 2;
 const corner45Inset = OUTER_RADIUS - midArcRadius / Math.SQRT2;

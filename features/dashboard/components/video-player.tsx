@@ -77,15 +77,19 @@ export default function VideoPlayer() {
         pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
     >
       <motion.div
-        className="relative flex h-[86%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
-          border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
+        className="relative flex h-[100%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
+          border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={{ y: -2, rotate: 0.12, scale: 1.006 }}
-        transition={{ type: "spring", stiffness: 260, damping: 26, mass: 0.75 }}
+        whileHover={{ y: -1, rotate: 0.08, scale: 1.003 }}
+        drag
+        dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
+        dragElastic={0.08}
+        dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
+        transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.65 }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => isPlaying && setShowControls(false)}
       >

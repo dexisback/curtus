@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Flame, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export type RoomTimerMember = {
   id: string;
@@ -75,40 +75,40 @@ export default function RoomLeaderboardCarousel({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3 pb-2 pt-3">
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-2.5 pb-2 pt-2.5">
         <div className="min-w-0">
-          <p className="truncate text-[11.5px] font-semibold text-foreground">{current.roomName}</p>
-          <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Users size={10} strokeWidth={1.7} />
-            <span className="tabular-nums">{current.members.length}</span>
-            <span>members</span>
+          <p className="truncate text-[13px] font-semibold tracking-tight text-foreground [text-wrap:balance]">
+            {current.roomName}
           </p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
             onClick={prev}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-card/70
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
               text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
             aria-label="Previous room"
           >
-            <ChevronLeft size={15} strokeWidth={1.8} />
+            <ChevronLeft size={13} strokeWidth={1.8} />
           </motion.button>
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
             onClick={next}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-card/70
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
               text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
             aria-label="Next room"
           >
-            <ChevronRight size={15} strokeWidth={1.8} />
+            <ChevronRight size={13} strokeWidth={1.8} />
           </motion.button>
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+      <div
+        className="min-h-0 flex-1 overflow-y-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ msOverflowStyle: "none" }}
+      >
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {sortedMembers.map((member, i) => {
             const running = mounted && member.active ? elapsedSeconds(member.startedAtIso, nowMs) : 0;
@@ -119,9 +119,10 @@ export default function RoomLeaderboardCarousel({
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03, duration: 0.2, ease: [0, 0, 0.58, 1] }}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ scale: 0.985 }}
+                whileHover={{ y: -1 }}
                 onClick={() => onMemberClick?.(member)}
-                className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex min-h-[100px] w-full flex-col items-center justify-center rounded-xl border border-border/50 px-2 py-2
+                className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex min-h-[100px] w-full flex-col items-center justify-center rounded-[2px] border border-border/50 px-2 py-2
                   transition-[background-color] duration-150 hover:bg-muted/40"
               >
                 {member.image ? (
@@ -136,12 +137,8 @@ export default function RoomLeaderboardCarousel({
                     {member.initials}
                   </div>
                 )}
-                <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground">{member.name}</p>
-                <p className="tabular-nums text-[11px] font-semibold text-foreground">{formatTimer(running)}</p>
-                <div className="mt-1 flex items-center gap-1 text-[9px] text-muted-foreground">
-                  {member.active ? <Flame size={9} className="text-amber-500" /> : <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />}
-                  <span className="tabular-nums">{member.todayMinutes}m today</span>
-                </div>
+                <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground/90">{member.name}</p>
+                <p className="tabular-nums text-[12px] font-semibold tracking-tight text-foreground">{formatTimer(running)}</p>
               </motion.button>
             );
           })}
