@@ -256,7 +256,8 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────
 
-export default function Sidebar() {
+export default function Sidebar({ userName }: { userName?: string | null }) {
+  const greetingName = userName?.trim() || "there";
   const [isOpen, setIsOpen] = useState(true);
   const [createMounted, setCreateMounted] = useState(false);
   const pathname = usePathname();
@@ -333,7 +334,7 @@ export default function Sidebar() {
                 exit={itemExit}
                 className="mb-4 px-1.5 text-[12px] font-medium text-foreground/60"
               >
-                hi, amaan
+                hi, {greetingName}
               </motion.p>
 
               {/* Nav links */}

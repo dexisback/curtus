@@ -24,6 +24,7 @@ export default async function ProfilePage() {
   const weekStart = getWeekStart(now);
   const monthStart = getMonthStart(now);
   const sevenDaysAgo = new Date(todayStart.getTime() - 6 * 86_400_000);
+  const thirtyFiveDaysAgo = new Date(todayStart.getTime() - 34 * 86_400_000);
 
   const nextDay = new Date(todayStart.getTime() + 86_400_000);
   const nextWeek = new Date(weekStart.getTime() + 7 * 86_400_000);
@@ -38,7 +39,9 @@ export default async function ProfilePage() {
     weekAgg,
     monthAgg,
     last7DaysRows,
+    last35DaysRows,
     recentSessions,
+    relatedRoomMemberships,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -65,6 +68,11 @@ export default async function ProfilePage() {
       orderBy: { date: "asc" },
       select: { date: true, totalMinutes: true },
     }),
+    prisma.dailyStats.findMany({
+      where: { userId, date: { gte: thirtyFiveDaysAgo, lte: todayStart } },
+      orderBy: { date: "asc" },
+      select: { date: true, totalMinutes: true },
+    }),
     prisma.focusSession.findMany({
       where: { userId },
       orderBy: { completedAt: "desc" },
@@ -75,6 +83,19 @@ export default async function ProfilePage() {
         completedAt: true,
         room: { select: { code: true, name: true } },
       },
+    }),
+    prisma.roomMember.findMany({
+      where: { userId },
+      select: {
+        room: {
+          select: {
+            members: {
+              select: { user: { select: { id: true, name: true } } },
+            },
+          },
+        },
+      },
+      take: 8,
     }),
   ]);
 
@@ -115,12 +136,26 @@ export default async function ProfilePage() {
   const uniqueRooms = Array.from(
     new Set(recentSessions.map((s) => s.room?.name).filter(Boolean)),
   ).slice(0, 6) as string[];
-  const friends = ["Sarah K.", "Dev P.", "Meera R.", "Omar S."];
+  const collaboratorCandidates = relatedRoomMemberships.flatMap((membership) =>
+    membership.room.members
+      .map((member) => member.user)
+      .filter((member) => member.id !== userId && member.name),
+  );
+  const collaboratorsMap = new Map<string, string>();
+  for (const collaborator of collaboratorCandidates) {
+    if (!collaboratorsMap.has(collaborator.id)) {
+      collaboratorsMap.set(collaborator.id, collaborator.name as string);
+    }
+  }
+  const collaborators = Array.from(collaboratorsMap.values()).slice(0, 4);
 
+  const last35Map = new Map(
+    last35DaysRows.map((row) => [row.date.toISOString().slice(0, 10), row.totalMinutes]),
+  );
   const heatmap = Array.from({ length: 35 }, (_, i) => {
-    const base = last7Days[i % last7Days.length]?.totalMinutes ?? 0;
-    const jitter = (i * 7) % 22;
-    return Math.min(180, base + jitter);
+    const d = new Date(thirtyFiveDaysAgo.getTime() + i * 86_400_000);
+    const iso = d.toISOString().slice(0, 10);
+    return last35Map.get(iso) ?? 0;
   });
 
   return (
@@ -222,10 +257,12 @@ export default async function ProfilePage() {
                 Friends
               </p>
               <div className="space-y-2">
-                {friends.map((friend) => (
+                {(collaborators.length > 0 ? collaborators : ["No collaborators yet"]).map((friend) => (
                   <div key={friend} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
                     <span className="text-[11.5px] text-foreground">{friend}</span>
-                    <span className="text-[10px] text-muted-foreground">online</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {collaborators.length > 0 ? "recent" : "—"}
+                    </span>
                   </div>
                 ))}
               </div>

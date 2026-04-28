@@ -15,29 +15,6 @@ const LB_SHADOW = [
   "0 4px 14px rgba(17,24,39,0.05)",
 ].join(",");
 
-const ROOM_BOARDS: RoomTimerBoard[] = [
-  {
-    id: "r1",
-    roomName: "Study Squad Alpha",
-    roomCode: "ALPHA1",
-    members: [
-      { id: "1", name: "Amaan H.", initials: "AH", image: null, active: true, startedAtIso: new Date(Date.now() - 82 * 60 * 1000).toISOString(), todayMinutes: 124 },
-      { id: "2", name: "Sarah K.", initials: "SK", image: null, active: true, startedAtIso: new Date(Date.now() - 54 * 60 * 1000).toISOString(), todayMinutes: 101 },
-      { id: "3", name: "Dev P.", initials: "DP", image: null, active: false, startedAtIso: new Date(Date.now() - 21 * 60 * 1000).toISOString(), todayMinutes: 76 },
-      { id: "4", name: "Meera R.", initials: "MR", image: null, active: true, startedAtIso: new Date(Date.now() - 39 * 60 * 1000).toISOString(), todayMinutes: 87 },
-    ],
-  },
-  {
-    id: "r2",
-    roomName: "Deep Work Room",
-    roomCode: "FOCUS9",
-    members: [
-      { id: "5", name: "James T.", initials: "JT", image: null, active: true, startedAtIso: new Date(Date.now() - 64 * 60 * 1000).toISOString(), todayMinutes: 90 },
-      { id: "6", name: "Priya N.", initials: "PN", image: null, active: true, startedAtIso: new Date(Date.now() - 48 * 60 * 1000).toISOString(), todayMinutes: 82 },
-      { id: "7", name: "Omar S.", initials: "OS", image: null, active: false, startedAtIso: new Date(Date.now() - 11 * 60 * 1000).toISOString(), todayMinutes: 51 },
-    ],
-  },
-];
 
 const RANK_COLORS: Record<number, string> = {
   1: "oklch(0.65 0.12 55)",
@@ -57,7 +34,7 @@ function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
   };
 }
 
-export default function Leaderboard() {
+export default function Leaderboard({ boards }: { boards: RoomTimerBoard[] }) {
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
 
   const openProfile = useCallback((u: RoomTimerBoard["members"][number]) => {
@@ -100,7 +77,17 @@ export default function Leaderboard() {
             <div className="mx-2.5 h-px shrink-0 bg-border/50" />
 
             <div className="min-h-0 flex-1 px-1.5 pb-1">
-              <RoomLeaderboardCarousel boards={ROOM_BOARDS} compact onMemberClick={openProfile} />
+              {boards.length > 0 ? (
+                <RoomLeaderboardCarousel
+                  boards={boards}
+                  compact
+                  onMemberClick={openProfile}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
+                  Join a room to view room leaderboard activity.
+                </div>
+              )}
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5 border-t border-border/50 px-3 py-2">

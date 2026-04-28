@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/session";
+import { getStudyDayStart } from "@/lib/periods";
 import RoomsClient from "./rooms-client";
 
 export default async function RoomsPage() {
   const session = await requireSession();
+  const todayStart = getStudyDayStart(new Date());
 
-  const [publicRooms, myMemberships] = await Promise.all([
+  const [publicRooms, myMemberships, boardRooms] = await Promise.all([
     prisma.room.findMany({
       where: { isPublic: true },
       orderBy: { createdAt: "desc" },
@@ -32,7 +34,67 @@ export default async function RoomsPage() {
         },
       },
     }),
+    prisma.room.findMany({
+      where: {
+        OR: [
+          { isPublic: true },
+          { members: { some: { userId: session.user.id } } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      select: {
+        id: true,
+        code: true,
+        name: true,
+        members: {
+          select: {
+            user: { select: { id: true, name: true, image: true } },
+          },
+          orderBy: { joinedAt: "asc" },
+        },
+      },
+    }),
   ]);
+
+  const boardMemberIds = Array.from(
+    new Set(
+      boardRooms.flatMap((room) => room.members.map((member) => member.user.id)),
+    ),
+  );
+  const todayRows = await prisma.dailyStats.findMany({
+    where: {
+      userId: { in: boardMemberIds },
+      date: todayStart,
+    },
+    select: { userId: true, totalMinutes: true },
+  });
+  const todayMinutesByUserId = new Map(
+    todayRows.map((row) => [row.userId, row.totalMinutes]),
+  );
+
+  const boards = boardRooms.map((room) => ({
+    id: room.id,
+    roomName: room.name,
+    roomCode: room.code,
+    members: room.members.map((member) => {
+      const displayName = member.user.name ?? "Unknown";
+      const parts = displayName.trim().split(/\s+/);
+      const initials =
+        parts.length === 1
+          ? parts[0].slice(0, 2).toUpperCase()
+          : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return {
+        id: member.user.id,
+        name: displayName,
+        initials,
+        image: member.user.image,
+        active: false,
+        startedAtIso: new Date().toISOString(),
+        todayMinutes: todayMinutesByUserId.get(member.user.id) ?? 0,
+      };
+    }),
+  }));
 
   return (
     <RoomsClient
@@ -49,6 +111,7 @@ export default async function RoomsPage() {
         memberCount: m.room._count.members,
         hostName: m.room.host.name ?? "Unknown",
       }))}
+      boards={boards}
     />
   );
 }

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "node --env-file=.env prisma/seed.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

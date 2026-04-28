@@ -26,6 +26,7 @@ type MyRoom = {
 type Props = {
   publicRooms: PublicRoom[];
   myRooms: MyRoom[];
+  boards: RoomTimerBoard[];
 };
 
 function RoomCard({
@@ -94,7 +95,7 @@ function RoomCard({
   );
 }
 
-export default function RoomsClient({ publicRooms, myRooms }: Props) {
+export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
   const router = useRouter();
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -123,20 +124,6 @@ export default function RoomsClient({ publicRooms, myRooms }: Props) {
   }
 
   const hasAnyRoom = myRooms.length > 0 || publicRooms.length > 0;
-  const boards: RoomTimerBoard[] = [...myRooms, ...publicRooms].slice(0, 6).map((room, i) => ({
-    id: `${room.code}-${i}`,
-    roomName: room.name,
-    roomCode: room.code,
-    members: Array.from({ length: Math.max(3, Math.min(room.memberCount, 7)) }, (_, j) => ({
-      id: `${room.code}-m-${j}`,
-      name: j === 0 ? "You" : `${room.hostName.split(" ")[0]} ${j}`,
-      initials: j === 0 ? "YU" : `${room.hostName[0] ?? "U"}${j}`,
-      image: null,
-      active: j % 3 !== 0,
-      startedAtIso: new Date(Date.now() - (15 + i * 7 + j * 4) * 60 * 1000).toISOString(),
-      todayMinutes: 25 + i * 9 + j * 6,
-    })),
-  }));
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-6 pt-2 sm:px-6">

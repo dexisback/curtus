@@ -13,7 +13,7 @@ export default async function DashboardGroupLayout({
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar />
+      <Sidebar userName={user.name} />
       <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
         <DashboardNavbar user={user} />
 

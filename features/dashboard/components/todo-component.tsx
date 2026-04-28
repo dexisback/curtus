@@ -21,13 +21,12 @@ function formatHour(h: number) {
 }
 
 type TaskType = "DAILY" | "YEARLY" | "DEADLINE";
-
-const PLACEHOLDER_TASKS = [
-  { id: "t1", title: "Deep Work Block", startHour: 9, startMin: 0, endHour: 11, endMin: 30, type: "DAILY" as TaskType, isCompleted: false },
-  { id: "t2", title: "Lunch Break", startHour: 12, startMin: 30, endHour: 13, endMin: 30, type: "DAILY" as TaskType, isCompleted: true },
-  { id: "t3", title: "Physics Review", startHour: 14, startMin: 0, endHour: 15, endMin: 30, type: "DEADLINE" as TaskType, isCompleted: false },
-  { id: "t4", title: "Mock Test", startHour: 16, startMin: 0, endHour: 17, endMin: 0, type: "YEARLY" as TaskType, isCompleted: false },
-];
+type TaskItem = {
+  id: string;
+  title: string;
+  type: TaskType;
+  isCompleted: boolean;
+};
 
 const TYPE_COLOR: Record<TaskType, string> = {
   DAILY: "oklch(0.56 0.10 250)",
@@ -44,10 +43,11 @@ function taskWidthPx(startHour: number, startMin: number, endHour: number, endMi
   return (durationMins / 60) * HOUR_WIDTH;
 }
 
-export default function TodoComponent() {
+export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
-  const [tasks, setTasks] = useState(PLACEHOLDER_TASKS);
+  const [tasks, setTasks] = useState(initialTasks);
+  const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
   const { play } = useSound();
 
   const now = new Date();
@@ -153,10 +153,16 @@ export default function TodoComponent() {
             {/* Task pills */}
             <div className="absolute inset-0 pointer-events-none">
               {tasks.map((task, i) => {
-                const left = taskLeftPx(task.startHour, task.startMin);
-                const width = taskWidthPx(task.startHour, task.startMin, task.endHour, task.endMin);
+                const startHour = 8 + (i % 10);
+                const startMin = i % 2 === 0 ? 0 : 30;
+                const endHour = Math.min(23, startHour + 1);
+                const endMin = startMin;
+                const left = taskLeftPx(startHour, startMin);
+                const width = taskWidthPx(startHour, startMin, endHour, endMin);
                 const color = TYPE_COLOR[task.type];
-                const isNow = nowHour >= task.startHour + task.startMin / 60 && nowHour <= task.endHour + task.endMin / 60;
+                const isNow =
+                  nowHour >= startHour + startMin / 60 &&
+                  nowHour <= endHour + endMin / 60;
                 return (
                   <motion.div
                     key={task.id}
@@ -174,11 +180,45 @@ export default function TodoComponent() {
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.96 }}
-                      onClick={() => {
+                      disabled={busyTaskId === task.id}
+                      onClick={async () => {
+                        if (busyTaskId) return;
+                        const nextCompleted = !task.isCompleted;
+                        setBusyTaskId(task.id);
                         setTasks((prev) =>
-                          prev.map((t) => (t.id === task.id ? { ...t, isCompleted: !t.isCompleted } : t)),
+                          prev.map((t) =>
+                            t.id === task.id ? { ...t, isCompleted: nextCompleted } : t,
+                          ),
                         );
                         play(task.isCompleted ? "toggleOff" : "toggleOn");
+                        try {
+                          const res = await fetch(`/api/tasks/${task.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ isCompleted: nextCompleted }),
+                          });
+                          if (!res.ok) {
+                            setTasks((prev) =>
+                              prev.map((t) =>
+                                t.id === task.id
+                                  ? { ...t, isCompleted: task.isCompleted }
+                                  : t,
+                              ),
+                            );
+                            play("error");
+                          }
+                        } catch {
+                          setTasks((prev) =>
+                            prev.map((t) =>
+                              t.id === task.id
+                                ? { ...t, isCompleted: task.isCompleted }
+                                : t,
+                            ),
+                          );
+                          play("error");
+                        } finally {
+                          setBusyTaskId(null);
+                        }
                       }}
                       className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-pointer select-none text-left"
                       style={{
@@ -195,11 +235,11 @@ export default function TodoComponent() {
                         {task.title}
                       </span>
                       <span className="text-[9px] tabular-nums text-muted-foreground">
-                        {formatHour(task.startHour)}
-                        {task.startMin ? `:${String(task.startMin).padStart(2, "0")}` : ""}
+                        {formatHour(startHour)}
+                        {startMin ? `:${String(startMin).padStart(2, "0")}` : ""}
                         {" – "}
-                        {formatHour(task.endHour)}
-                        {task.endMin ? `:${String(task.endMin).padStart(2, "0")}` : ""}
+                        {formatHour(endHour)}
+                        {endMin ? `:${String(endMin).padStart(2, "0")}` : ""}
                       </span>
                       <span className="text-[8.5px] text-muted-foreground/80">
                         {task.type} {isNow && !task.isCompleted ? "• In progress" : task.isCompleted ? "• Done" : "• Upcoming"}
