@@ -19,6 +19,10 @@ export type LeaderboardEntry = {
   totalMinutes: number;
 };
 
+type LeaderboardFilter = {
+  userIds?: string[];
+};
+
 function lbRedisKey(period: Period, date: Date): string {
   if (period === "daily") return `lb:daily:${getDailyKey(date)}`;
   if (period === "weekly") return `lb:weekly:${getWeeklyKey(date)}`;
@@ -26,12 +30,22 @@ function lbRedisKey(period: Period, date: Date): string {
   return `lb:daily:${getDailyKey(date)}`;
 }
 
-async function fromDb(period: Period, now: Date, limit: number): Promise<LeaderboardEntry[]> {
+async function fromDb(
+  period: Period,
+  now: Date,
+  limit: number,
+  filter?: LeaderboardFilter,
+): Promise<LeaderboardEntry[]> {
   const { start, end } = getPeriodWindow(period, now);
+  const userIds = filter?.userIds;
+  if (userIds && userIds.length === 0) return [];
 
   const rows = await prisma.dailyStats.groupBy({
     by: ["userId"],
-    where: { date: { gte: start, lt: end } },
+    where: {
+      date: { gte: start, lt: end },
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
     _sum: { totalMinutes: true },
     orderBy: { _sum: { totalMinutes: "desc" } },
     take: limit,
@@ -69,8 +83,16 @@ async function seedCache(
  * Returns the top N entries for the given period.
  * Reads from the Redis ZSET if populated; falls back to DB and seeds the cache.
  */
-export async function getTopN(period: Period, limit = 50): Promise<LeaderboardEntry[]> {
+export async function getTopN(
+  period: Period,
+  limit = 50,
+  filter?: LeaderboardFilter,
+): Promise<LeaderboardEntry[]> {
   const now = new Date();
+  const userIds = filter?.userIds;
+  if (userIds) {
+    return fromDb(period, now, limit, { userIds });
+  }
   const key = lbRedisKey(period, now);
 
   if (redis) {
@@ -118,11 +140,14 @@ export async function getTopN(period: Period, limit = 50): Promise<LeaderboardEn
 export async function getUserRankAndScore(
   period: Period,
   userId: string,
+  filter?: LeaderboardFilter,
 ): Promise<{ rank: number; totalMinutes: number } | null> {
   const now = new Date();
+  const userIds = filter?.userIds;
+  if (userIds && !userIds.includes(userId)) return null;
   const key = lbRedisKey(period, now);
 
-  if (redis) {
+  if (redis && !userIds) {
     const [score, revRank] = await Promise.all([
       redis.zscore(key, userId),
       redis.zrevrank(key, userId),
@@ -135,7 +160,11 @@ export async function getUserRankAndScore(
   // DB fallback: get user's total and count those ahead
   const { start, end } = getPeriodWindow(period, now);
   const myAgg = await prisma.dailyStats.aggregate({
-    where: { userId, date: { gte: start, lt: end } },
+    where: {
+      userId,
+      date: { gte: start, lt: end },
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
     _sum: { totalMinutes: true },
   });
   const totalMinutes = myAgg._sum.totalMinutes ?? 0;
@@ -144,7 +173,11 @@ export async function getUserRankAndScore(
   // Count distinct users with a strictly higher total
   const aboveRows = await prisma.dailyStats.groupBy({
     by: ["userId"],
-    where: { date: { gte: start, lt: end }, NOT: { userId } },
+    where: {
+      date: { gte: start, lt: end },
+      NOT: { userId },
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
     _sum: { totalMinutes: true },
     having: { totalMinutes: { _sum: { gt: totalMinutes } } },
   });

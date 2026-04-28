@@ -2,7 +2,7 @@
 
 import { useCallback, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Trophy } from "lucide-react";
+import { ChevronDown, Trophy } from "lucide-react";
 import type { LeaderboardEntry, Period } from "@/lib/leaderboard";
 import ProfileModal, {
   type ProfileModalUser,
@@ -38,6 +38,9 @@ type Props = {
   initialEntries: LeaderboardEntry[];
   initialMe: { rank: number; totalMinutes: number } | null;
   currentUserId: string | null;
+  currentUserName: string | null;
+  currentUserImage: string | null;
+  rooms: { id: string; name: string }[];
 };
 
 function toProfileUser(e: LeaderboardEntry): ProfileModalUser {
@@ -56,8 +59,13 @@ export default function LeaderboardClient({
   initialEntries,
   initialMe,
   currentUserId,
+  currentUserName,
+  currentUserImage,
+  rooms,
 }: Props) {
+  const [scope, setScope] = useState<"global" | "room">("global");
   const [period, setPeriod] = useState<Period>("daily");
+  const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? "");
   const [entries, setEntries] = useState<LeaderboardEntry[]>(initialEntries);
   const [me, setMe] = useState<{ rank: number; totalMinutes: number } | null>(
     initialMe,
@@ -65,11 +73,14 @@ export default function LeaderboardClient({
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
 
-  async function switchPeriod(next: Period) {
-    if (next === period) return;
-    setPeriod(next);
+  function loadLeaderboard(nextPeriod: Period, nextScope: "global" | "room", nextRoomId: string) {
     startTransition(async () => {
-      const res = await fetch(`/api/leaderboard?period=${next}`);
+      const query = new URLSearchParams({
+        period: nextPeriod,
+        scope: nextScope,
+      });
+      if (nextScope === "room" && nextRoomId) query.set("roomId", nextRoomId);
+      const res = await fetch(`/api/leaderboard?${query.toString()}`);
       if (!res.ok) return;
       const data = (await res.json()) as {
         entries: LeaderboardEntry[];
@@ -78,6 +89,24 @@ export default function LeaderboardClient({
       setEntries(data.entries);
       setMe(data.me);
     });
+  }
+
+  function switchPeriod(next: Period) {
+    if (next === period) return;
+    setPeriod(next);
+    loadLeaderboard(next, scope, roomId);
+  }
+
+  function switchScope(nextScope: "global" | "room") {
+    if (nextScope === scope) return;
+    if (nextScope === "room" && !roomId) return;
+    setScope(nextScope);
+    loadLeaderboard(period, nextScope, roomId);
+  }
+
+  function switchRoom(nextRoomId: string) {
+    setRoomId(nextRoomId);
+    if (scope === "room") loadLeaderboard(period, "room", nextRoomId);
   }
 
   const openProfile = useCallback(
@@ -123,40 +152,130 @@ export default function LeaderboardClient({
           >
             {/* Header */}
             <div className="flex shrink-0 flex-col gap-3 border-b border-border/50 px-4 pb-3 pt-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <Trophy size={14} strokeWidth={1.6} className="text-muted-foreground opacity-70" />
                 <h1 className="text-[13px] font-semibold tracking-tight text-foreground">
                   Leaderboard
                 </h1>
               </div>
 
-              {/* Period pills */}
-              <div className="flex gap-1.5">
-                {PERIODS.map(({ value, label }) => (
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center rounded-full border border-border/70 bg-muted/35 p-0.5">
                   <motion.button
-                    key={value}
                     type="button"
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => switchPeriod(value)}
+                    onClick={() => switchScope("global")}
                     disabled={isPending}
                     className={
                       "rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 " +
-                      (period === value
+                      (scope === "global"
                         ? "bg-foreground text-background shadow-[0_1px_3px_rgba(17,24,39,0.15)]"
                         : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground")
                     }
                   >
-                    {label}
+                    Global
                   </motion.button>
-                ))}
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => switchScope("room")}
+                    disabled={isPending || rooms.length === 0}
+                    className={
+                      "rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 " +
+                      (scope === "room"
+                        ? "bg-foreground text-background shadow-[0_1px_3px_rgba(17,24,39,0.15)]"
+                        : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground")
+                    }
+                  >
+                    Room
+                  </motion.button>
+                </div>
+
+                <label className="relative">
+                  <span className="sr-only">Select period</span>
+                  <select
+                    value={period}
+                    onChange={(e) => switchPeriod(e.target.value as Period)}
+                    disabled={isPending}
+                    className="appearance-none rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
+                      focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  >
+                    {PERIODS.map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={12}
+                    className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
+                </label>
+
+                {scope === "room" && rooms.length > 0 && (
+                  <label className="relative">
+                    <span className="sr-only">Select room</span>
+                    <select
+                      value={roomId}
+                      onChange={(e) => switchRoom(e.target.value)}
+                      disabled={isPending}
+                      className="max-w-[14rem] appearance-none truncate rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
+                        focus:outline-none focus:ring-2 focus:ring-ring/40"
+                    >
+                      {rooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={12}
+                      className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                  </label>
+                )}
+
+                {scope === "room" && rooms.length === 0 && (
+                  <span className="text-[11px] text-muted-foreground">
+                    Join a room to view room leaderboard.
+                  </span>
+                )}
               </div>
             </div>
+
+            {scope === "global" && (
+              <div className="shrink-0 border-b border-border/50 px-4 py-2.5">
+                <div className="flex items-center gap-2 rounded-lg bg-accent/60 px-3 py-2">
+                  <span className="shrink-0 tabular-nums text-[12px] font-semibold text-foreground">
+                    #{me?.rank ?? "—"}
+                  </span>
+                  {currentUserImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={currentUserImage}
+                      alt=""
+                      className="h-6 w-6 shrink-0 rounded-full object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
+                    />
+                  ) : (
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[9.5px] font-semibold text-foreground">
+                      {getInitials(currentUserName)}
+                    </div>
+                  )}
+                  <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
+                    {currentUserName ?? "You"}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[11px] text-muted-foreground">
+                    {formatMin(me?.totalMinutes ?? 0)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Rows */}
             <div className="relative min-h-0 flex-1 overflow-y-auto">
               <AnimatePresence mode="wait">
                 <motion.ol
-                  key={period}
+                  key={`${scope}:${roomId}:${period}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, transition: { duration: 0.1 } }}
@@ -165,7 +284,7 @@ export default function LeaderboardClient({
                 >
                   {entries.length === 0 && !isPending && (
                     <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
-                      No data yet for this period.
+                      No data yet for this selection.
                     </li>
                   )}
                   {entries.map((entry, i) => {
@@ -250,7 +369,7 @@ export default function LeaderboardClient({
             </div>
 
             {/* Sticky "You" row when outside top list */}
-            {meEntry && (
+            {scope === "room" && meEntry && (
               <div className="shrink-0 border-t border-border/50 px-2 py-2">
                 <div className="mb-1 px-3">
                   <span className="text-[10px] text-muted-foreground">Your rank</span>
