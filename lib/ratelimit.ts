@@ -35,6 +35,7 @@ export const limiters = {
   statsRead:      make("1 m",  60),   // per userId
   tasksWrite:     make("1 m",  30),   // per userId
   profileWrite:   make("1 m",  10),   // per userId
+  settingsWrite:  make("1 m",  30),   // per userId
   membersRead:    make("1 m",  60),   // per userId
   sessionsRead:   make("1 m",  60),   // per userId
   messagesRead:   make("1 m",  60),   // per userId

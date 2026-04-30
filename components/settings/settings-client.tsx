@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import ThemeToggle from "@/components/theme-toggle";
 import { Bell, Pencil, Settings, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { SerializedUserSettings } from "@/lib/user-settings";
 
 function SectionHeader({
   icon: Icon,
@@ -80,10 +81,12 @@ export default function SettingsClient({
   initialName,
   initialEmail,
   initialImage,
+  initialSettings,
 }: {
   initialName: string;
   initialEmail: string;
   initialImage: string | null;
+  initialSettings: SerializedUserSettings;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -95,27 +98,32 @@ export default function SettingsClient({
   const [pickedFileName, setPickedFileName] = useState("");
   const [editingAccount, setEditingAccount] = useState(false);
 
-  const [compactSidebar, setCompactSidebar] = useState(false);
-  const [leaderboardUpdates, setLeaderboardUpdates] = useState(false);
-  const [sessionReminders, setSessionReminders] = useState(true);
-  const [friendActivity, setFriendActivity] = useState(false);
-  const [roomInvites, setRoomInvites] = useState(true);
+  const [compactSidebar, setCompactSidebar] = useState(initialSettings.compactSidebar);
+  const [leaderboardUpdates, setLeaderboardUpdates] = useState(initialSettings.leaderboardUpdates);
+  const [sessionReminders, setSessionReminders] = useState(initialSettings.sessionReminders);
+  const [friendActivity, setFriendActivity] = useState(initialSettings.friendActivity);
+  const [roomInvites, setRoomInvites] = useState(initialSettings.roomInvites);
   const [showMotionMessage, setShowMotionMessage] = useState(false);
 
   useEffect(() => {
     try {
-      setCompactSidebar(localStorage.getItem("swm:compact-sidebar") === "1");
-      setLeaderboardUpdates(localStorage.getItem("swm:leaderboard-updates") === "1");
-      setSessionReminders(localStorage.getItem("swm:session-reminders") !== "0");
-      setFriendActivity(localStorage.getItem("swm:friend-activity") === "1");
-      setRoomInvites(localStorage.getItem("swm:room-invites") !== "0");
+      localStorage.setItem("swm:compact-sidebar", initialSettings.compactSidebar ? "1" : "0");
+      localStorage.setItem("swm:leaderboard-updates", initialSettings.leaderboardUpdates ? "1" : "0");
+      localStorage.setItem("swm:session-reminders", initialSettings.sessionReminders ? "1" : "0");
+      localStorage.setItem("swm:friend-activity", initialSettings.friendActivity ? "1" : "0");
+      localStorage.setItem("swm:room-invites", initialSettings.roomInvites ? "1" : "0");
     } catch {}
-  }, []);
+  }, [initialSettings]);
 
-  function persistFlag(key: string, next: boolean) {
+  function persistFlag(key: string, settingKey: keyof SerializedUserSettings, next: boolean) {
     try {
       localStorage.setItem(key, next ? "1" : "0");
     } catch {}
+    void fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [settingKey]: next }),
+    }).catch(() => {});
   }
 
   async function onAvatarPicked(file: File | null) {
@@ -324,7 +332,7 @@ export default function SettingsClient({
                   checked={compactSidebar}
                   onChange={(next) => {
                     setCompactSidebar(next);
-                    persistFlag("swm:compact-sidebar", next);
+                    persistFlag("swm:compact-sidebar", "compactSidebar", next);
                     window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
                   }}
                 />
@@ -364,7 +372,7 @@ export default function SettingsClient({
               description="Get reminded to start your daily session"
               control={<Toggle checked={sessionReminders} onChange={(next) => {
                 setSessionReminders(next);
-                persistFlag("swm:session-reminders", next);
+                persistFlag("swm:session-reminders", "sessionReminders", next);
               }} />}
             />
             <SettingRow
@@ -372,7 +380,7 @@ export default function SettingsClient({
               description="When friends start or finish a session"
               control={<Toggle checked={friendActivity} onChange={(next) => {
                 setFriendActivity(next);
-                persistFlag("swm:friend-activity", next);
+                persistFlag("swm:friend-activity", "friendActivity", next);
               }} />}
             />
             <SettingRow
@@ -380,7 +388,7 @@ export default function SettingsClient({
               description="Pings when you're invited to a room"
               control={<Toggle checked={roomInvites} onChange={(next) => {
                 setRoomInvites(next);
-                persistFlag("swm:room-invites", next);
+                persistFlag("swm:room-invites", "roomInvites", next);
               }} />}
             />
             <SettingRow
@@ -388,7 +396,7 @@ export default function SettingsClient({
               description="Weekly digest of your rank changes"
               control={<Toggle checked={leaderboardUpdates} onChange={(next) => {
                 setLeaderboardUpdates(next);
-                persistFlag("swm:leaderboard-updates", next);
+                persistFlag("swm:leaderboard-updates", "leaderboardUpdates", next);
               }} />}
             />
           </div>
@@ -397,4 +405,3 @@ export default function SettingsClient({
     </div>
   );
 }
-

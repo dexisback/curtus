@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -144,9 +145,33 @@ function readInitialEnabled() {
   return true;
 }
 
+function persistSoundEnabled(value: boolean) {
+  void fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ soundEnabled: value }),
+  }).catch(() => {});
+}
+
 export function SoundProvider({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabledState] = useState<boolean>(() => readInitialEnabled());
   const ctxRef = useRef<AudioContext | null>(null);
+
+  useEffect(() => {
+    void fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((settings: { soundEnabled?: boolean } | null) => {
+        if (typeof settings?.soundEnabled === "boolean") {
+          setEnabledState(settings.soundEnabled);
+          try {
+            localStorage.setItem(STORAGE_KEY, settings.soundEnabled ? "1" : "0");
+          } catch {
+            // ignore
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const setEnabled = useCallback((value: boolean) => {
     setEnabledState(value);
@@ -155,6 +180,7 @@ export function SoundProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
+    persistSoundEnabled(value);
   }, []);
 
   const toggleEnabled = useCallback(() => {

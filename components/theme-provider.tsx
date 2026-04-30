@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -44,26 +45,45 @@ function applyDom(theme: Theme) {
   }
 }
 
+function persistTheme(theme: Theme) {
+  void fetch("/api/settings", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ theme }),
+  }).catch(() => {});
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>(() => readInitialTheme());
+  const initialThemeRef = useRef(theme);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const t = readInitialTheme();
-    setTheme(t);
-    applyDom(t);
-    setMounted(true);
+    applyDom(initialThemeRef.current);
+    queueMicrotask(() => setMounted(true));
+
+    void fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((settings: { theme?: Theme } | null) => {
+        if (settings?.theme === "light" || settings?.theme === "dark") {
+          setTheme(settings.theme);
+          applyDom(settings.theme);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const setAndPersist = useCallback((t: Theme) => {
     setTheme(t);
     applyDom(t);
+    persistTheme(t);
   }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
       const next = prev === "dark" ? "light" : "dark";
       applyDom(next);
+      persistTheme(next);
       return next;
     });
   }, []);
