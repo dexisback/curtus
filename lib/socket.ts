@@ -5,6 +5,7 @@ type ServerToClientEvents = {
     roomId: string;
     memberIds: string[];
     studyingUserIds: string[];
+    videoEnabledUserIds: string[];
     todayMinutes: Record<string, number>;
   }) => void;
   "chat:message": (payload: {
@@ -32,6 +33,7 @@ type ClientToServerEvents = {
   "room:join": (payload: { roomId: string }) => void;
   "room:leave": (payload: { roomId: string }) => void;
   "chat:send": (payload: { roomId: string; content: string }) => void;
+  "room:video-state": (payload: { roomId: string; enabled: boolean }) => void;
   "session:started": (payload: { roomId?: string | null }) => void;
   "session:stopped": () => void;
   "ping:send": (payload: { toUserId: string }) => void;

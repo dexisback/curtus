@@ -50,6 +50,7 @@ export default function RoomClient({
   const router = useRouter();
   const [members] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
+  const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
   const [leaving, setLeaving] = useState(false);
   const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(null);
@@ -64,10 +65,12 @@ export default function RoomClient({
       roomId: string;
       memberIds: string[];
       studyingUserIds: string[];
+      videoEnabledUserIds: string[];
       todayMinutes: Record<string, number>;
     }) => {
       if (payload.roomId !== roomId) return;
       setStudyingUserIds(payload.studyingUserIds);
+      setVideoEnabledUserIds(payload.videoEnabledUserIds);
       setTodayMinutes(payload.todayMinutes);
     };
 
@@ -113,7 +116,7 @@ export default function RoomClient({
   };
 
   const focusHasVideo = focusedMember
-    ? studyingUserIds.includes(focusedMember.id)
+    ? videoEnabledUserIds.includes(focusedMember.id)
     : false;
 
   return (
@@ -189,7 +192,25 @@ export default function RoomClient({
                   <div className="pointer-events-none absolute bottom-3 left-0 right-0 flex justify-center">
                     <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3 py-2 text-[11px] text-white/80 backdrop-blur-md">
                       <span className="rounded-full bg-white/10 px-2 py-1">Mic</span>
-                      <span className="rounded-full bg-white/10 px-2 py-1">Cam</span>
+                      <button
+                        type="button"
+                        className="rounded-full bg-white/10 px-2 py-1 transition-colors hover:bg-white/20"
+                        onClick={() => {
+                          const isMe = focusedMember.id === currentUserId;
+                          if (!isMe) return;
+                          const nextEnabled = !videoEnabledUserIds.includes(currentUserId);
+                          const socket = connectWithAuth();
+                          socket?.emit("room:video-state", { roomId, enabled: nextEnabled });
+                        }}
+                      >
+                        {focusedMember.id === currentUserId
+                          ? videoEnabledUserIds.includes(currentUserId)
+                            ? "Cam on"
+                            : "Cam off"
+                          : focusHasVideo
+                            ? "Cam on"
+                            : "Cam off"}
+                      </button>
                       <span className="rounded-full bg-white/10 px-2 py-1">Share</span>
                     </div>
                   </div>

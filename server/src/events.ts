@@ -29,6 +29,11 @@ const pingEventSchema = z.object({
   toUserId: z.string().min(1),
 });
 
+const roomVideoStateSchema = z.object({
+  roomId: z.string().min(1),
+  enabled: z.boolean(),
+});
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type LiveSession = {
@@ -40,6 +45,7 @@ export type PresencePayload = {
   roomId: string;
   memberIds: string[];
   studyingUserIds: string[];
+  videoEnabledUserIds: string[];
   todayMinutes: Record<string, number>;
 };
 
@@ -53,6 +59,7 @@ export type ClientToServerEvents = {
   "room:join": (payload: z.infer<typeof roomEventSchema>) => void;
   "room:leave": (payload: z.infer<typeof roomEventSchema>) => void;
   "chat:send": (payload: z.infer<typeof chatEventSchema>) => void;
+  "room:video-state": (payload: z.infer<typeof roomVideoStateSchema>) => void;
   "session:started": (payload: z.infer<typeof sessionStartedSchema>) => void;
   "session:stopped": () => void;
   "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
@@ -109,6 +116,10 @@ function getRoomMembersKey(roomId: string) {
   return `room:${roomId}:members`;
 }
 
+function getRoomVideoEnabledKey(roomId: string) {
+  return `room:${roomId}:videoEnabled`;
+}
+
 function getTodayMinutesKey(userId: string) {
   return `user:${userId}:todayMinutes`;
 }
@@ -162,7 +173,7 @@ async function publishPresence(io: StudyServer, roomId: string) {
   const memberIds = await redis.smembers<string[]>(getRoomMembersKey(roomId));
   const uniqueMemberIds = Array.from(new Set(memberIds)).sort();
 
-  const [minutePairs, studyingUserIds] = await Promise.all([
+  const [minutePairs, studyingUserIds, videoEnabledIds] = await Promise.all([
     Promise.all(
       uniqueMemberIds.map(async (id) => [
         id,
@@ -170,12 +181,16 @@ async function publishPresence(io: StudyServer, roomId: string) {
       ]),
     ),
     getStudyingUserIds(uniqueMemberIds),
+    redis.smembers<string[]>(getRoomVideoEnabledKey(roomId)),
   ]);
+  const enabledSet = new Set(videoEnabledIds);
+  const videoEnabledUserIds = uniqueMemberIds.filter((id) => enabledSet.has(id));
 
   io.to(roomId).emit("presence", {
     roomId,
     memberIds: uniqueMemberIds,
     studyingUserIds,
+    videoEnabledUserIds,
     todayMinutes: Object.fromEntries(minutePairs),
   });
 }
@@ -191,6 +206,7 @@ async function maybeRemovePresenceMember(
   );
   if (!userStillPresent) {
     await redis.srem(getRoomMembersKey(roomId), socket.data.userId);
+    await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
   }
   await publishPresence(io, roomId);
 }
@@ -333,6 +349,27 @@ export function registerSocketEvents(io: StudyServer) {
       socket.leave(parsed.data.roomId);
       removeJoinedRoom(socket, parsed.data.roomId);
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
+    });
+
+    // room:video-state
+    socket.on("room:video-state", async (payload) => {
+      const parsed = roomVideoStateSchema.safeParse(payload);
+      if (!parsed.success) {
+        socket.emit("room:error", toRoomError("Invalid room video state payload."));
+        return;
+      }
+      if (!socket.data.joinedRoomIds.includes(parsed.data.roomId)) {
+        socket.emit("room:error", toRoomError("Join room before updating video state."));
+        return;
+      }
+
+      const key = getRoomVideoEnabledKey(parsed.data.roomId);
+      if (parsed.data.enabled) {
+        await redis.sadd(key, socket.data.userId);
+      } else {
+        await redis.srem(key, socket.data.userId);
+      }
+      await publishPresence(io, parsed.data.roomId);
     });
 
     // chat:send
