@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 
@@ -10,7 +10,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     "An account with this email already exists. Sign in with your original provider.",
 };
 
-export default function LoginPage() {
+function LoginPageContent() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/dashboard";
   const errorKey = searchParams.get("error") ?? "";
@@ -25,11 +25,22 @@ export default function LoginPage() {
     setAuthError(null);
     setPendingProvider(provider);
     try {
-      await signIn.social({
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL ?? "";
+      const callbackURL = `${origin}${next.startsWith("/") ? next : `/${next}`}`;
+      const errorCallbackURL = `${origin}/login?error=oauth&next=${encodeURIComponent(next)}`;
+
+      const result = await signIn.social({
         provider,
-        callbackURL: next,
-        errorCallbackURL: `/login?error=oauth&next=${encodeURIComponent(next)}`,
+        callbackURL,
+        errorCallbackURL,
       });
+      const redirectUrl =
+        (result as { data?: { url?: string } } | null)?.data?.url ??
+        (result as { url?: string } | null)?.url;
+      if (redirectUrl && typeof window !== "undefined") {
+        window.location.assign(redirectUrl);
+      }
     } catch {
       setAuthError("OAuth sign-in failed. Please try again.");
       setPendingProvider(null);
@@ -93,5 +104,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

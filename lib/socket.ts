@@ -100,7 +100,7 @@ let socketSingleton: StudySocket | null = null;
 
 function getSocketUrl() {
   const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-  if (!socketUrl) throw new Error("Missing NEXT_PUBLIC_SOCKET_URL for socket client.");
+  if (!socketUrl) return null;
   return socketUrl;
 }
 
@@ -112,9 +112,17 @@ function getCookieAuth() {
 
 export function getSocket() {
   if (typeof window === "undefined") return null;
+  const socketUrl = getSocketUrl();
+  if (!socketUrl) {
+    // Keep the app usable even when realtime env vars are missing.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("NEXT_PUBLIC_SOCKET_URL is not set. Realtime features are disabled.");
+    }
+    return null;
+  }
 
   if (!socketSingleton) {
-    socketSingleton = io(getSocketUrl(), {
+    socketSingleton = io(socketUrl, {
       autoConnect: false,
       withCredentials: true,
       auth: getCookieAuth(),
