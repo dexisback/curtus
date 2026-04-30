@@ -78,8 +78,31 @@ model User {
   tasks         Task[]
   pingSent      Ping[]         @relation("PingSender")
   pingReceived  Ping[]         @relation("PingReceiver")
+  settings      UserSettings?
 
   @@map("users")
+}
+
+model UserSettings {
+  userId             String   @id
+  theme              Theme    @default(LIGHT)
+  soundEnabled       Boolean  @default(true)
+  compactSidebar     Boolean  @default(false)
+  sessionReminders   Boolean  @default(true)
+  friendActivity     Boolean  @default(false)
+  roomInvites        Boolean  @default(true)
+  leaderboardUpdates Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+enum Theme {
+  LIGHT
+  DARK
 }
 
 model Room {
@@ -160,6 +183,7 @@ model Streak {
 model Message {
   id        String   @id @default(cuid())
   content   String
+  clientNonce String?
   createdAt DateTime @default(now())
 
   userId String
@@ -168,6 +192,7 @@ model Message {
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, createdAt])
+  @@unique([roomId, userId, clientNonce])
   @@map("messages")
 }
 
