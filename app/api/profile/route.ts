@@ -10,9 +10,10 @@ const patchSchema = z.object({
   bio: z.string().trim().max(280).optional(),
   image: z
     .string()
-    .url()
-    .max(500)
-    .refine((u) => u.startsWith("https://"), { message: "Image URL must be https." })
+    .max(1_500_000)
+    .refine((u) => u.startsWith("https://") || u.startsWith("data:image/"), {
+      message: "Image must be an https URL or uploaded image data.",
+    })
     .optional(),
 });
 

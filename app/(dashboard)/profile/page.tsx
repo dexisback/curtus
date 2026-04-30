@@ -6,7 +6,9 @@ import {
   getMonthStart,
 } from "@/lib/periods";
 import SessionsLoadMore from "@/components/sessions-load-more";
-import { CalendarDays, Users, Video } from "lucide-react";
+import { CalendarDays, Video } from "lucide-react";
+import FriendsPanel, { type FriendItem } from "@/components/profile/friends-panel";
+import ProfileHeaderEditor from "@/components/profile/profile-header-editor";
 
 function formatMin(min: number): string {
   const h = Math.floor(min / 60);
@@ -42,6 +44,7 @@ export default async function ProfilePage() {
     last35DaysRows,
     recentSessions,
     relatedRoomMemberships,
+    pingRows,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
@@ -97,6 +100,20 @@ export default async function ProfilePage() {
       },
       take: 8,
     }),
+    prisma.ping.findMany({
+      where: {
+        OR: [{ fromUserId: userId }, { toUserId: userId }],
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        createdAt: true,
+        fromUserId: true,
+        toUserId: true,
+        fromUser: { select: { id: true, name: true, image: true, email: true } },
+        toUser: { select: { id: true, name: true, image: true, email: true } },
+      },
+    }),
   ]);
 
   // Build a 7-slot strip with zero-fill for missing days
@@ -124,15 +141,6 @@ export default async function ProfilePage() {
     { label: "Longest Streak", value: `${streakRow?.longestStreak ?? 0}d` },
   ];
 
-  const initials = user?.name
-    ? user.name
-        .trim()
-        .split(/\s+/)
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-    : "?";
   const uniqueRooms = Array.from(
     new Set(recentSessions.map((s) => s.room?.name).filter(Boolean)),
   ).slice(0, 6) as string[];
@@ -148,6 +156,19 @@ export default async function ProfilePage() {
     }
   }
   const collaborators = Array.from(collaboratorsMap.values()).slice(0, 4);
+  const friendsMap = new Map<string, FriendItem>();
+  for (const row of pingRows) {
+    const other = row.fromUserId === userId ? row.toUser : row.fromUser;
+    if (!other || friendsMap.has(other.id)) continue;
+    friendsMap.set(other.id, {
+      id: other.id,
+      name: other.name ?? "Unknown",
+      email: other.email ?? "",
+      image: other.image ?? null,
+      connectedAt: row.createdAt.toISOString(),
+    });
+  }
+  const initialFriends = Array.from(friendsMap.values()).slice(0, 8);
 
   const last35Map = new Map(
     last35DaysRows.map((row) => [row.date.toISOString().slice(0, 10), row.totalMinutes]),
@@ -160,48 +181,29 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
-      <div className="mx-auto w-full max-w-4xl space-y-5 pt-2">
+      <div className="mx-auto w-full max-w-5xl space-y-5 pt-2">
         {/* ── Header tile ── */}
+        <ProfileHeaderEditor
+          initialName={user?.name ?? "Unknown"}
+          initialEmail={user?.email ?? ""}
+          initialImage={user?.image ?? null}
+          joinedLabel={new Date(user?.createdAt ?? now).toLocaleDateString()}
+        />
+
+        {/* ── User stats (single surface) ── */}
         <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex items-center gap-4 rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
-          {user?.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.image}
-              alt=""
-              className="h-14 w-14 shrink-0 rounded-2xl object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
-            />
-          ) : (
-            <div
-              className="flex h-14 w-14 shrink-0 select-none items-center justify-center rounded-2xl text-sm font-semibold text-white
-                [outline:1px_solid_rgba(0,0,0,0.06)]"
-              style={{ background: "oklch(0.62 0.06 75)" }}
-            >
-              {initials}
-            </div>
-          )}
-          <div>
-            <p className="text-base font-semibold tracking-tight text-foreground">
-              {user?.name ?? "Unknown"}
-            </p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">{user?.email}</p>
+          <p className="mb-4 text-[12px] font-semibold tracking-tight text-foreground">User stats</p>
+          <div className="grid grid-cols-1 divide-y divide-border/40 rounded-xl border border-border/50 bg-background/75 sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-3">
+            {STATS.map(({ label, value }) => (
+              <div key={label} className="px-4 py-3">
+                <p className="text-[10.5px] text-muted-foreground">{label}</p>
+                <p className="mt-0.5 text-[22px] font-semibold tabular-nums tracking-tight text-foreground">{value}</p>
+              </div>
+            ))}
           </div>
-        </div>
-
-        {/* ── Stat cards ── */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {STATS.map(({ label, value }) => (
-            <div
-              key={label}
-              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex flex-col gap-1 rounded-xl border border-border/50 p-4
-                shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_12px_rgba(17,24,39,0.06),inset_0_1px_0_rgba(255,255,255,0.5)]"
-            >
-              <p className="text-[10.5px] text-muted-foreground">{label}</p>
-              <p className="text-xl font-semibold tabular-nums text-foreground">{value}</p>
-            </div>
-          ))}
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
@@ -251,22 +253,7 @@ export default async function ProfilePage() {
 
           {/* ── Friends + rooms ── */}
           <div className="space-y-4">
-            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
-              <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
-                <Users size={13} />
-                Friends
-              </p>
-              <div className="space-y-2">
-                {(collaborators.length > 0 ? collaborators : ["No collaborators yet"]).map((friend) => (
-                  <div key={friend} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
-                    <span className="text-[11.5px] text-foreground">{friend}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {collaborators.length > 0 ? "recent" : "—"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <FriendsPanel initialFriends={initialFriends} fallbackNames={collaborators} />
             <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
                 <Video size={13} />
@@ -276,7 +263,7 @@ export default async function ProfilePage() {
                 {uniqueRooms.length > 0 ? uniqueRooms.map((roomName) => (
                   <div key={roomName} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
                     <span className="text-[11.5px] text-foreground">{roomName}</span>
-                    <button className="rounded-md bg-cta px-2 py-1 text-[10px] font-medium text-cta-foreground">Manage</button>
+                    <button className="rounded-[6px] bg-cta px-2 py-1 text-[10px] font-medium text-cta-foreground">Manage</button>
                   </div>
                 )) : (
                   <p className="text-[11px] text-muted-foreground">No room history yet.</p>
