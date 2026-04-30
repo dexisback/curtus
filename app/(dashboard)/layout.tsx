@@ -26,9 +26,10 @@ export default async function DashboardGroupLayout({
 
         <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
 
-        {/* Hit zone: bottom strip reveals dock on hover (pointer-events re-enabled on zone). */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center">
-          <div className="group/dock-peek pointer-events-auto flex h-28 w-full max-w-3xl items-end justify-center px-3 pb-3 sm:px-4 sm:pb-4">
+        {/* Keep dock discoverable without blocking the todo timeline interactions. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex justify-center pb-3 sm:pb-4">
+          <div className="group/dock-peek relative flex flex-col items-center">
+            <div className="pointer-events-auto h-3 w-40" aria-hidden="true" />
             <div
               className="origin-bottom pointer-events-none translate-y-3 opacity-0
                 transition-[transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.2,0,0,0.1)]

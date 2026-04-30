@@ -47,7 +47,7 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
   const [tasks, setTasks] = useState(initialTasks);
-  const [busyTaskId, setBusyTaskId] = useState<string | null>(null);
+  const opSeqRef = useRef<Map<string, number>>(new Map());
   const { play } = useSound();
 
   const now = new Date();
@@ -81,6 +81,10 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
           ].join(","),
         }}
         whileHover={{ y: -1 }}
+        drag
+        dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
+        dragElastic={0.08}
+        dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
         transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.6 }}
       >
         {/* Left anchor — date + timezone */}
@@ -180,17 +184,25 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.96 }}
-                      disabled={busyTaskId === task.id}
                       onClick={async () => {
-                        if (busyTaskId) return;
-                        const nextCompleted = !task.isCompleted;
-                        setBusyTaskId(task.id);
+                        let previousCompleted = false;
+                        let nextCompleted = false;
                         setTasks((prev) =>
                           prev.map((t) =>
-                            t.id === task.id ? { ...t, isCompleted: nextCompleted } : t,
+                            t.id === task.id
+                              ? (() => {
+                                  previousCompleted = t.isCompleted;
+                                  nextCompleted = !t.isCompleted;
+                                  return { ...t, isCompleted: nextCompleted };
+                                })()
+                              : t,
                           ),
                         );
-                        play(task.isCompleted ? "toggleOff" : "toggleOn");
+                        play(previousCompleted ? "toggleOff" : "toggleOn");
+
+                        const nextSeq = (opSeqRef.current.get(task.id) ?? 0) + 1;
+                        opSeqRef.current.set(task.id, nextSeq);
+
                         try {
                           const res = await fetch(`/api/tasks/${task.id}`, {
                             method: "PATCH",
@@ -198,26 +210,26 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                             body: JSON.stringify({ isCompleted: nextCompleted }),
                           });
                           if (!res.ok) {
+                            if (opSeqRef.current.get(task.id) !== nextSeq) return;
                             setTasks((prev) =>
                               prev.map((t) =>
                                 t.id === task.id
-                                  ? { ...t, isCompleted: task.isCompleted }
+                                  ? { ...t, isCompleted: previousCompleted }
                                   : t,
                               ),
                             );
                             play("error");
                           }
                         } catch {
+                          if (opSeqRef.current.get(task.id) !== nextSeq) return;
                           setTasks((prev) =>
                             prev.map((t) =>
                               t.id === task.id
-                                ? { ...t, isCompleted: task.isCompleted }
+                                ? { ...t, isCompleted: previousCompleted }
                                 : t,
                             ),
                           );
                           play("error");
-                        } finally {
-                          setBusyTaskId(null);
                         }
                       }}
                       className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-pointer select-none text-left"
