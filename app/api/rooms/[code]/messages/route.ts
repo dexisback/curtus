@@ -58,6 +58,7 @@ export const GET = withApi(async (request: Request, { params }: Params) => {
     take: limit + 1,
     select: {
       id: true, content: true, createdAt: true, userId: true,
+      clientNonce: true,
       user: { select: { name: true } },
     },
   });
@@ -69,6 +70,7 @@ export const GET = withApi(async (request: Request, { params }: Params) => {
   return NextResponse.json({
     items: page.map((m) => ({
       id: m.id, content: m.content, createdAt: m.createdAt.toISOString(),
+      clientNonce: m.clientNonce,
       userId: m.userId, userName: m.user.name ?? "Unknown",
     })),
     nextCursor,

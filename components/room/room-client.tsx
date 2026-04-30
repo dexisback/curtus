@@ -1,17 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { connectWithAuth } from "@/lib/socket";
 import Chat from "./chat";
-import VideoPlayer from "@/features/dashboard/components/video-player";
+import { useRoomVideo } from "./use-room-video";
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
   type RoomTimerMember,
 } from "@/features/dashboard/components/room-leaderboard-carousel";
 import { ArrowLeft, X } from "lucide-react";
+
+function VideoSurface({
+  stream,
+  muted = false,
+}: {
+  stream: MediaStream | null;
+  muted?: boolean;
+}) {
+  const ref = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (ref.current) ref.current.srcObject = stream;
+  }, [stream]);
+
+  if (!stream) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-[12px] text-white/70">
+        Connecting video...
+      </div>
+    );
+  }
+
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      playsInline
+      muted={muted}
+      className="h-full w-full rounded-[8px] bg-neutral-950 object-cover"
+    />
+  );
+}
 
 export type Member = {
   id: string;
@@ -23,6 +55,7 @@ export type Member = {
 export type ChatMessage = {
   id: string;
   content: string;
+  clientNonce?: string | null;
   userId: string;
   userName: string;
   createdAt: string;
@@ -54,6 +87,15 @@ export default function RoomClient({
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
   const [leaving, setLeaving] = useState(false);
   const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(null);
+  const [renderBaseMs] = useState(() => Date.now());
+  const {
+    localStream,
+    remoteStreams,
+    starting: videoStarting,
+    error: videoError,
+    start: startVideo,
+    stop: stopVideo,
+  } = useRoomVideo({ roomId, currentUserId, videoEnabledUserIds });
 
   useEffect(() => {
     const socket = connectWithAuth();
@@ -76,6 +118,7 @@ export default function RoomClient({
 
     const onKicked = (payload: { roomId: string }) => {
       if (payload.roomId !== roomId) return;
+      stopVideo();
       router.push("/rooms");
     };
 
@@ -84,13 +127,15 @@ export default function RoomClient({
 
     return () => {
       socket.emit("room:leave", { roomId });
+      stopVideo();
       socket.off("presence", onPresence);
       socket.off("room:kicked", onKicked);
     };
-  }, [roomId, router]);
+  }, [roomId, router, stopVideo]);
 
   async function handleLeave() {
     setLeaving(true);
+    stopVideo();
     await fetch(`/api/rooms/${code}`, { method: "DELETE" });
     router.push("/rooms");
   }
@@ -110,7 +155,7 @@ export default function RoomClient({
         .join("")
         .toUpperCase(),
       active: studyingUserIds.includes(m.id),
-      startedAtIso: new Date(Date.now() - ((todayMinutes[m.id] ?? 10) % 120) * 60 * 1000).toISOString(),
+      startedAtIso: new Date(renderBaseMs - ((todayMinutes[m.id] ?? 10) % 120) * 60 * 1000).toISOString(),
       todayMinutes: todayMinutes[m.id] ?? 0,
     })),
   };
@@ -167,7 +212,11 @@ export default function RoomClient({
                   <div className="flex min-h-0 flex-1 items-center justify-center">
                     {focusHasVideo ? (
                       <div className="h-full w-full bg-neutral-950 p-2">
-                        <VideoPlayer />
+                        {focusedMember.id === currentUserId ? (
+                          <VideoSurface stream={localStream} muted />
+                        ) : (
+                          <VideoSurface stream={remoteStreams[focusedMember.id] ?? null} />
+                        )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3 text-center">
@@ -184,7 +233,9 @@ export default function RoomClient({
                           </div>
                         )}
                         <p className="text-[12px] text-white/80">
-                          {focusedMember.name} has video off. Showing profile.
+                          {videoError && focusedMember.id === currentUserId
+                            ? videoError
+                            : `${focusedMember.name} has video off. Showing profile.`}
                         </p>
                       </div>
                     )}
@@ -198,13 +249,17 @@ export default function RoomClient({
                         onClick={() => {
                           const isMe = focusedMember.id === currentUserId;
                           if (!isMe) return;
-                          const nextEnabled = !videoEnabledUserIds.includes(currentUserId);
-                          const socket = connectWithAuth();
-                          socket?.emit("room:video-state", { roomId, enabled: nextEnabled });
+                          if (videoEnabledUserIds.includes(currentUserId)) {
+                            stopVideo();
+                          } else {
+                            void startVideo();
+                          }
                         }}
                       >
                         {focusedMember.id === currentUserId
-                          ? videoEnabledUserIds.includes(currentUserId)
+                          ? videoStarting
+                            ? "Starting"
+                            : videoEnabledUserIds.includes(currentUserId)
                             ? "Cam on"
                             : "Cam off"
                           : focusHasVideo

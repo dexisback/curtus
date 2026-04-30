@@ -9,6 +9,7 @@ import { logger } from "./logger.js";
 import { socketLimiters, socketAllow } from "./ratelimit.js";
 
 const DAY_RESET_HOUR_UTC = 5;
+const MAX_ACTIVE_VIDEO_USERS = 4;
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ const roomEventSchema = z.object({
 const chatEventSchema = z.object({
   roomId: z.string().min(1),
   content: z.string().trim().min(1).max(1_000),
+  clientNonce: z.string().trim().min(8).max(80),
 });
 
 const sessionStartedSchema = z.object({
@@ -32,6 +34,27 @@ const pingEventSchema = z.object({
 const roomVideoStateSchema = z.object({
   roomId: z.string().min(1),
   enabled: z.boolean(),
+});
+
+const mediaTargetSchema = z.object({
+  roomId: z.string().min(1),
+  toUserId: z.string().min(1),
+});
+
+const mediaDescriptionSchema = mediaTargetSchema.extend({
+  description: z.object({
+    type: z.enum(["offer", "answer", "pranswer", "rollback"]),
+    sdp: z.string().optional(),
+  }).passthrough(),
+});
+
+const mediaIceCandidateSchema = mediaTargetSchema.extend({
+  candidate: z.object({
+    candidate: z.string(),
+    sdpMid: z.string().nullable().optional(),
+    sdpMLineIndex: z.number().nullable().optional(),
+    usernameFragment: z.string().nullable().optional(),
+  }).passthrough(),
 });
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -58,8 +81,19 @@ export type SocketData = {
 export type ClientToServerEvents = {
   "room:join": (payload: z.infer<typeof roomEventSchema>) => void;
   "room:leave": (payload: z.infer<typeof roomEventSchema>) => void;
-  "chat:send": (payload: z.infer<typeof chatEventSchema>) => void;
-  "room:video-state": (payload: z.infer<typeof roomVideoStateSchema>) => void;
+  "chat:send": (payload: z.infer<typeof chatEventSchema>, ack?: ChatAck) => void;
+  "room:video-state": (
+    payload: z.infer<typeof roomVideoStateSchema>,
+    ack?: (response: { ok: boolean; error?: string }) => void,
+  ) => void;
+  "media:join": (
+    payload: z.infer<typeof roomEventSchema>,
+    ack?: (response: { ok: boolean; peers?: string[]; error?: string }) => void,
+  ) => void;
+  "media:leave": (payload: z.infer<typeof roomEventSchema>) => void;
+  "media:offer": (payload: z.infer<typeof mediaDescriptionSchema>) => void;
+  "media:answer": (payload: z.infer<typeof mediaDescriptionSchema>) => void;
+  "media:ice-candidate": (payload: z.infer<typeof mediaIceCandidateSchema>) => void;
   "session:started": (payload: z.infer<typeof sessionStartedSchema>) => void;
   "session:stopped": () => void;
   "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
@@ -71,6 +105,7 @@ export type ServerToClientEvents = {
     id: string;
     roomId: string;
     content: string;
+    clientNonce: string | null;
     userId: string;
     userName: string;
     createdAt: string;
@@ -89,6 +124,25 @@ export type ServerToClientEvents = {
   }) => void;
   "room:kicked": (payload: {
     roomId: string;
+  }) => void;
+  "media:offer": (payload: {
+    roomId: string;
+    fromUserId: string;
+    description: z.infer<typeof mediaDescriptionSchema>["description"];
+  }) => void;
+  "media:answer": (payload: {
+    roomId: string;
+    fromUserId: string;
+    description: z.infer<typeof mediaDescriptionSchema>["description"];
+  }) => void;
+  "media:ice-candidate": (payload: {
+    roomId: string;
+    fromUserId: string;
+    candidate: z.infer<typeof mediaIceCandidateSchema>["candidate"];
+  }) => void;
+  "media:peer-left": (payload: {
+    roomId: string;
+    userId: string;
   }) => void;
 };
 
@@ -207,6 +261,7 @@ async function maybeRemovePresenceMember(
   if (!userStillPresent) {
     await redis.srem(getRoomMembersKey(roomId), socket.data.userId);
     await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
+    socket.to(roomId).emit("media:peer-left", { roomId, userId: socket.data.userId });
   }
   await publishPresence(io, roomId);
 }
@@ -265,6 +320,20 @@ function toRoomError(message: string) {
   return { message };
 }
 
+type ChatAck = (response: {
+  ok: boolean;
+  message?: {
+    id: string;
+    roomId: string;
+    content: string;
+    clientNonce: string | null;
+    userId: string;
+    userName: string;
+    createdAt: string;
+  };
+  error?: string;
+}) => void;
+
 /**
  * Checks Redis for a pending kick signal. If found, evicts the socket from the
  * room and emits `room:kicked`. Returns true if the user was kicked.
@@ -294,6 +363,19 @@ function addJoinedRoom(socket: StudySocket, roomId: string) {
 
 function removeJoinedRoom(socket: StudySocket, roomId: string) {
   socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter((id) => id !== roomId);
+}
+
+function isJoined(socket: StudySocket, roomId: string) {
+  return socket.data.joinedRoomIds.includes(roomId);
+}
+
+async function validateMediaTarget(socket: StudySocket, roomId: string, toUserId: string) {
+  if (!isJoined(socket, roomId)) return false;
+  const [fromEnabled, toEnabled] = await Promise.all([
+    redis.sismember(getRoomVideoEnabledKey(roomId), socket.data.userId),
+    redis.sismember(getRoomVideoEnabledKey(roomId), toUserId),
+  ]);
+  return Boolean(fromEnabled && toEnabled);
 }
 
 // ─── Event registration ──────────────────────────────────────────────────────
@@ -352,64 +434,162 @@ export function registerSocketEvents(io: StudyServer) {
     });
 
     // room:video-state
-    socket.on("room:video-state", async (payload) => {
+    socket.on("room:video-state", async (payload, ack?: (response: { ok: boolean; error?: string }) => void) => {
       const parsed = roomVideoStateSchema.safeParse(payload);
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid room video state payload."));
+        ack?.({ ok: false, error: "invalid_payload" });
         return;
       }
-      if (!socket.data.joinedRoomIds.includes(parsed.data.roomId)) {
+      if (!isJoined(socket, parsed.data.roomId)) {
         socket.emit("room:error", toRoomError("Join room before updating video state."));
+        ack?.({ ok: false, error: "not_in_room" });
         return;
       }
 
       const key = getRoomVideoEnabledKey(parsed.data.roomId);
       if (parsed.data.enabled) {
+        const alreadyEnabled = await redis.sismember(key, socket.data.userId);
+        const activeCount = await redis.scard(key);
+        if (!alreadyEnabled && activeCount >= MAX_ACTIVE_VIDEO_USERS) {
+          socket.emit("room:error", toRoomError("Room video is full."));
+          ack?.({ ok: false, error: "video_room_full" });
+          return;
+        }
         await redis.sadd(key, socket.data.userId);
       } else {
         await redis.srem(key, socket.data.userId);
+        socket.to(parsed.data.roomId).emit("media:peer-left", {
+          roomId: parsed.data.roomId,
+          userId: socket.data.userId,
+        });
       }
+      await publishPresence(io, parsed.data.roomId);
+      ack?.({ ok: true });
+    });
+
+    socket.on("media:join", async (payload, ack) => {
+      const parsed = roomEventSchema.safeParse(payload);
+      if (!parsed.success || !isJoined(socket, parsed.data.roomId)) {
+        ack?.({ ok: false, error: "not_in_room" });
+        return;
+      }
+
+      const key = getRoomVideoEnabledKey(parsed.data.roomId);
+      const enabled = await redis.sismember(key, socket.data.userId);
+      if (!enabled) {
+        ack?.({ ok: false, error: "video_not_enabled" });
+        return;
+      }
+
+      const peers = (await redis.smembers<string[]>(key))
+        .filter((userId) => userId !== socket.data.userId)
+        .sort();
+      ack?.({ ok: true, peers });
+    });
+
+    socket.on("media:leave", async (payload) => {
+      const parsed = roomEventSchema.safeParse(payload);
+      if (!parsed.success) return;
+      if (!isJoined(socket, parsed.data.roomId)) return;
+      await redis.srem(getRoomVideoEnabledKey(parsed.data.roomId), socket.data.userId);
+      socket.to(parsed.data.roomId).emit("media:peer-left", {
+        roomId: parsed.data.roomId,
+        userId: socket.data.userId,
+      });
       await publishPresence(io, parsed.data.roomId);
     });
 
+    socket.on("media:offer", async (payload) => {
+      const parsed = mediaDescriptionSchema.safeParse(payload);
+      if (!parsed.success) return;
+      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      io.to(`user:${parsed.data.toUserId}`).emit("media:offer", {
+        roomId: parsed.data.roomId,
+        fromUserId: socket.data.userId,
+        description: parsed.data.description,
+      });
+    });
+
+    socket.on("media:answer", async (payload) => {
+      const parsed = mediaDescriptionSchema.safeParse(payload);
+      if (!parsed.success) return;
+      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      io.to(`user:${parsed.data.toUserId}`).emit("media:answer", {
+        roomId: parsed.data.roomId,
+        fromUserId: socket.data.userId,
+        description: parsed.data.description,
+      });
+    });
+
+    socket.on("media:ice-candidate", async (payload) => {
+      const parsed = mediaIceCandidateSchema.safeParse(payload);
+      if (!parsed.success) return;
+      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      io.to(`user:${parsed.data.toUserId}`).emit("media:ice-candidate", {
+        roomId: parsed.data.roomId,
+        fromUserId: socket.data.userId,
+        candidate: parsed.data.candidate,
+      });
+    });
+
     // chat:send
-    socket.on("chat:send", async (payload) => {
+    socket.on("chat:send", async (payload, ack?: ChatAck) => {
       const parsed = chatEventSchema.safeParse(payload);
       if (!parsed.success) {
         socket.emit("room:error", toRoomError("Invalid chat payload."));
+        ack?.({ ok: false, error: "invalid_payload" });
         return;
       }
 
       if (!socket.data.joinedRoomIds.includes(parsed.data.roomId)) {
         socket.emit("room:error", toRoomError("Join room before sending chat."));
+        ack?.({ ok: false, error: "not_in_room" });
         return;
       }
 
       if (!await socketAllow(socketLimiters.chatSend, `chat:send:${socket.data.userId}`)) {
         socket.emit("room:error", { message: "rate_limited" });
+        ack?.({ ok: false, error: "rate_limited" });
         return;
       }
 
       // Enforce any pending kick before allowing the message through
       const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
-      if (wasKicked) return;
+      if (wasKicked) {
+        ack?.({ ok: false, error: "kicked" });
+        return;
+      }
 
-      const message = await prisma.message.create({
-        data: {
+      const message = await prisma.message.upsert({
+        where: {
+          roomId_userId_clientNonce: {
+            roomId: parsed.data.roomId,
+            userId: socket.data.userId,
+            clientNonce: parsed.data.clientNonce,
+          },
+        },
+        update: {},
+        create: {
           content: parsed.data.content,
+          clientNonce: parsed.data.clientNonce,
           roomId: parsed.data.roomId,
           userId: socket.data.userId,
         },
       });
 
-      io.to(parsed.data.roomId).emit("chat:message", {
+      const chatPayload = {
         id: message.id,
         roomId: message.roomId,
         content: message.content,
+        clientNonce: message.clientNonce,
         userId: message.userId,
         userName: socket.data.userName,
         createdAt: message.createdAt.toISOString(),
-      });
+      };
+
+      ack?.({ ok: true, message: chatPayload });
+      io.to(parsed.data.roomId).emit("chat:message", chatPayload);
     });
 
     // session:started — mark user as studying in Redis

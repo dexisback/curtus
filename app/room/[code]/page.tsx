@@ -33,6 +33,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
         select: {
           id: true,
           content: true,
+          clientNonce: true,
           createdAt: true,
           userId: true,
           user: { select: { name: true } },
@@ -77,6 +78,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
       initialMessages={room.messages.map((msg) => ({
         id: msg.id,
         content: msg.content,
+        clientNonce: msg.clientNonce,
         userId: msg.userId,
         userName: msg.user.name ?? "Unknown",
         createdAt: msg.createdAt.toISOString(),

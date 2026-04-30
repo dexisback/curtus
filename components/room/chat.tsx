@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { connectWithAuth } from "@/lib/socket";
 import type { ChatMessage } from "./room-client";
 
@@ -12,7 +12,14 @@ type Props = {
 };
 
 export default function Chat({ roomCode, roomId, messages: initialMessages, currentUserId }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  type ChatItem = ChatMessage & {
+    status?: "sending" | "sent" | "failed";
+    error?: string;
+  };
+
+  const [messages, setMessages] = useState<ChatItem[]>(
+    initialMessages.map((message) => ({ ...message, status: "sent" })),
+  );
   const [input, setInput] = useState("");
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [olderCursor, setOlderCursor] = useState<string | null>(
@@ -21,6 +28,79 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
   const [hasOlder, setHasOlder] = useState(initialMessages.length >= 50);
   const listRef = useRef<HTMLUListElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pendingRef = useRef<Map<string, { roomId: string; content: string; attempts: number }>>(new Map());
+
+  const mergeMessage = useCallback((message: ChatMessage, status: ChatItem["status"] = "sent") => {
+    setMessages((prev) => {
+      const existingIndex = prev.findIndex((item) =>
+        item.id === message.id ||
+        (message.clientNonce && item.clientNonce === message.clientNonce)
+      );
+      if (existingIndex === -1) return [...prev, { ...message, status }];
+      const next = [...prev];
+      next[existingIndex] = { ...next[existingIndex], ...message, status, error: undefined };
+      return next;
+    });
+  }, []);
+
+  const markFailed = useCallback((clientNonce: string, error = "Failed to send") => {
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.clientNonce === clientNonce
+          ? { ...message, status: "failed", error }
+          : message,
+      ),
+    );
+  }, []);
+
+  const sendPending = useCallback((clientNonce: string) => {
+    const pending = pendingRef.current.get(clientNonce);
+    const socket = connectWithAuth();
+    if (!pending || !socket) {
+      markFailed(clientNonce);
+      return;
+    }
+
+    pending.attempts += 1;
+    setMessages((prev) =>
+      prev.map((message) =>
+        message.clientNonce === clientNonce
+          ? { ...message, status: "sending", error: undefined }
+          : message,
+      ),
+    );
+
+    const timeout = window.setTimeout(() => {
+      if (pending.attempts < 3 && socket.connected) {
+        sendPending(clientNonce);
+        return;
+      }
+      markFailed(clientNonce, "Failed to send");
+    }, 8_000);
+
+    socket.emit(
+      "chat:send",
+      { roomId: pending.roomId, content: pending.content, clientNonce },
+      (response: {
+        ok: boolean;
+        message?: ChatMessage;
+        error?: string;
+      }) => {
+        window.clearTimeout(timeout);
+        if (!response.ok || !response.message) {
+          if (pending.attempts < 3 && socket.connected) {
+            window.setTimeout(() => sendPending(clientNonce), 900 * pending.attempts);
+            return;
+          }
+          markFailed(clientNonce, response.error ?? "Failed to send");
+          return;
+        }
+
+        pendingRef.current.delete(clientNonce);
+        mergeMessage(response.message, "sent");
+      },
+    );
+  }, [markFailed, mergeMessage]);
 
   // Sync live messages
   useEffect(() => {
@@ -29,12 +109,21 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
 
     const onChatMessage = (payload: ChatMessage & { roomId?: string }) => {
       if (payload.roomId && payload.roomId !== roomId) return;
-      setMessages((prev) => [...prev, payload]);
+      if (payload.clientNonce) pendingRef.current.delete(payload.clientNonce);
+      mergeMessage(payload, "sent");
+    };
+
+    const retryPending = () => {
+      for (const nonce of pendingRef.current.keys()) sendPending(nonce);
     };
 
     socket.on("chat:message", onChatMessage);
-    return () => { socket.off("chat:message", onChatMessage); };
-  }, [roomId]);
+    socket.on("connect", retryPending);
+    return () => {
+      socket.off("chat:message", onChatMessage);
+      socket.off("connect", retryPending);
+    };
+  }, [mergeMessage, roomId, sendPending]);
 
   // Scroll to bottom on new messages only if already near bottom
   useEffect(() => {
@@ -55,7 +144,10 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
         nextCursor: string | null;
       };
 
-      setMessages((prev) => [...data.items.reverse(), ...prev]);
+      setMessages((prev) => [
+        ...data.items.reverse().map((message) => ({ ...message, status: "sent" as const })),
+        ...prev,
+      ]);
       setOlderCursor(data.nextCursor);
       setHasOlder(data.nextCursor !== null);
     } finally {
@@ -71,8 +163,23 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     const socket = connectWithAuth();
     if (!socket) return;
 
-    socket.emit("chat:send", { roomId, content });
+    const clientNonce = crypto.randomUUID();
+    const now = new Date().toISOString();
+    pendingRef.current.set(clientNonce, { roomId, content, attempts: 0 });
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `local:${clientNonce}`,
+        content,
+        clientNonce,
+        userId: currentUserId,
+        userName: "You",
+        createdAt: now,
+        status: "sending",
+      },
+    ]);
     setInput("");
+    sendPending(clientNonce);
   }
 
   return (
@@ -99,6 +206,17 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
               {msg.userId === currentUserId ? "You" : msg.userName}
             </p>
             <p className="text-[11.5px] text-foreground">{msg.content}</p>
+            {msg.userId === currentUserId && msg.status && msg.status !== "sent" && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (msg.clientNonce && msg.status === "failed") sendPending(msg.clientNonce);
+                }}
+                className="mt-0.5 text-[10px] text-muted-foreground"
+              >
+                {msg.status === "sending" ? "Sending..." : `Failed. ${msg.clientNonce ? "Retry" : ""}`}
+              </button>
+            )}
           </li>
         ))}
         <div ref={bottomRef} />

@@ -12,6 +12,7 @@ type ServerToClientEvents = {
     id: string;
     roomId: string;
     content: string;
+    clientNonce: string | null;
     userId: string;
     userName: string;
     createdAt: string;
@@ -27,13 +28,67 @@ type ServerToClientEvents = {
   }) => void;
   "room:error": (payload: { message: string }) => void;
   "room:kicked": (payload: { roomId: string }) => void;
+  "media:offer": (payload: {
+    roomId: string;
+    fromUserId: string;
+    description: RTCSessionDescriptionInit;
+  }) => void;
+  "media:answer": (payload: {
+    roomId: string;
+    fromUserId: string;
+    description: RTCSessionDescriptionInit;
+  }) => void;
+  "media:ice-candidate": (payload: {
+    roomId: string;
+    fromUserId: string;
+    candidate: RTCIceCandidateInit;
+  }) => void;
+  "media:peer-left": (payload: { roomId: string; userId: string }) => void;
 };
 
 type ClientToServerEvents = {
   "room:join": (payload: { roomId: string }) => void;
   "room:leave": (payload: { roomId: string }) => void;
-  "chat:send": (payload: { roomId: string; content: string }) => void;
-  "room:video-state": (payload: { roomId: string; enabled: boolean }) => void;
+  "chat:send": (
+    payload: { roomId: string; content: string; clientNonce: string },
+    ack?: (response: {
+      ok: boolean;
+      message?: {
+        id: string;
+        roomId: string;
+        content: string;
+        clientNonce: string | null;
+        userId: string;
+        userName: string;
+        createdAt: string;
+      };
+      error?: string;
+    }) => void,
+  ) => void;
+  "room:video-state": (
+    payload: { roomId: string; enabled: boolean },
+    ack?: (response: { ok: boolean; error?: string }) => void,
+  ) => void;
+  "media:join": (
+    payload: { roomId: string },
+    ack?: (response: { ok: boolean; peers?: string[]; error?: string }) => void,
+  ) => void;
+  "media:leave": (payload: { roomId: string }) => void;
+  "media:offer": (payload: {
+    roomId: string;
+    toUserId: string;
+    description: RTCSessionDescriptionInit;
+  }) => void;
+  "media:answer": (payload: {
+    roomId: string;
+    toUserId: string;
+    description: RTCSessionDescriptionInit;
+  }) => void;
+  "media:ice-candidate": (payload: {
+    roomId: string;
+    toUserId: string;
+    candidate: RTCIceCandidateInit;
+  }) => void;
   "session:started": (payload: { roomId?: string | null }) => void;
   "session:stopped": () => void;
   "ping:send": (payload: { toUserId: string }) => void;
