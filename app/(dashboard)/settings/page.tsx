@@ -1,7 +1,6 @@
 import { requireSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import SettingsClient from "@/components/settings/settings-client";
-import { getOrCreateUserSettings } from "@/lib/user-settings";
 
 export default async function SettingsPage() {
   const session = await requireSession();
@@ -9,14 +8,21 @@ export default async function SettingsPage() {
     where: { id: session.user.id },
     select: { name: true, email: true, image: true },
   });
-  const settings = await getOrCreateUserSettings(prisma, session.user.id);
 
   return (
     <SettingsClient
       initialName={user?.name ?? ""}
       initialEmail={user?.email ?? ""}
       initialImage={user?.image ?? null}
-      initialSettings={settings}
+      initialSettings={{
+        theme: "light",
+        soundEnabled: true,
+        compactSidebar: false,
+        sessionReminders: true,
+        friendActivity: false,
+        roomInvites: true,
+        leaderboardUpdates: false,
+      }}
     />
   );
 }

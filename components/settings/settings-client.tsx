@@ -5,7 +5,16 @@ import { AnimatePresence, motion } from "motion/react";
 import ThemeToggle from "@/components/theme-toggle";
 import { Bell, Pencil, Settings, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import type { SerializedUserSettings } from "@/lib/user-settings";
+
+type SettingsShape = {
+  theme: "light" | "dark";
+  soundEnabled: boolean;
+  compactSidebar: boolean;
+  sessionReminders: boolean;
+  friendActivity: boolean;
+  roomInvites: boolean;
+  leaderboardUpdates: boolean;
+};
 
 function SectionHeader({
   icon: Icon,
@@ -86,7 +95,7 @@ export default function SettingsClient({
   initialName: string;
   initialEmail: string;
   initialImage: string | null;
-  initialSettings: SerializedUserSettings;
+  initialSettings: SettingsShape;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -115,15 +124,10 @@ export default function SettingsClient({
     } catch {}
   }, [initialSettings]);
 
-  function persistFlag(key: string, settingKey: keyof SerializedUserSettings, next: boolean) {
+  function persistFlag(key: string, _settingKey: keyof SettingsShape, next: boolean) {
     try {
       localStorage.setItem(key, next ? "1" : "0");
     } catch {}
-    void fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [settingKey]: next }),
-    }).catch(() => {});
   }
 
   async function onAvatarPicked(file: File | null) {

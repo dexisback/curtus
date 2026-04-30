@@ -46,11 +46,11 @@ function applyDom(theme: Theme) {
 }
 
 function persistTheme(theme: Theme) {
-  void fetch("/api/settings", {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ theme }),
-  }).catch(() => {});
+  try {
+    localStorage.setItem(STORAGE, theme);
+  } catch {
+    // ignore
+  }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
@@ -61,16 +61,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyDom(initialThemeRef.current);
     queueMicrotask(() => setMounted(true));
-
-    void fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((settings: { theme?: Theme } | null) => {
-        if (settings?.theme === "light" || settings?.theme === "dark") {
-          setTheme(settings.theme);
-          applyDom(settings.theme);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   const setAndPersist = useCallback((t: Theme) => {
