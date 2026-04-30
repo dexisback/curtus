@@ -76,36 +76,49 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
   }
 
   return (
-    <div>
+    <div className="flex h-full min-h-0 flex-col">
       {hasOlder && (
         <button
           type="button"
           onClick={loadOlderMessages}
           disabled={loadingOlder}
-          className="text-xs text-muted-foreground w-full py-1"
+          className="mb-1 w-full rounded-[8px] border border-border/50 bg-background/70 py-1 text-[10.5px] text-muted-foreground transition-colors hover:bg-accent/40"
         >
           {loadingOlder ? "Loading…" : "Load older messages"}
         </button>
       )}
 
-      <ul ref={listRef} style={{ maxHeight: 300, overflowY: "auto" }}>
+      <ul
+        ref={listRef}
+        className="min-h-0 flex-1 space-y-1.5 overflow-y-auto rounded-[10px] border border-border/50 bg-background/70 p-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ msOverflowStyle: "none" }}
+      >
         {messages.map((msg) => (
-          <li key={msg.id}>
-            <strong>{msg.userId === currentUserId ? "You" : msg.userName}</strong>: {msg.content}
+          <li key={msg.id} className="rounded-[8px] border border-border/40 bg-background px-2 py-1.5">
+            <p className="truncate text-[10px] font-medium text-muted-foreground">
+              {msg.userId === currentUserId ? "You" : msg.userName}
+            </p>
+            <p className="text-[11.5px] text-foreground">{msg.content}</p>
           </li>
         ))}
         <div ref={bottomRef} />
       </ul>
 
-      <form onSubmit={handleSend}>
+      <form onSubmit={handleSend} className="mt-2 flex items-center gap-2">
         <input
           type="text"
           placeholder="Say something..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           maxLength={1000}
+          className="h-9 min-w-0 flex-1 rounded-[8px] border border-border/60 bg-background px-3 text-[12px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-ring/35"
         />
-        <button type="submit">Send</button>
+        <button
+          type="submit"
+          className="h-9 rounded-[8px] border border-border/60 bg-card/90 px-3 text-[11.5px] font-medium text-foreground transition-colors hover:bg-accent/60"
+        >
+          Send
+        </button>
       </form>
     </div>
   );
