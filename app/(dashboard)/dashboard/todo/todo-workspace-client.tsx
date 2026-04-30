@@ -58,6 +58,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
   const [modalTime, setModalTime] = useState("09:00");
   const [modalBusy, setModalBusy] = useState(false);
   const [dDay, setDDay] = useState("2026-06-01");
+  const [dDayName, setDDayName] = useState("D-Day milestone");
   const [weeklyGoal, setWeeklyGoal] = useState(12);
   const [monthlyGoal, setMonthlyGoal] = useState(42);
   const reduceMotion = useReducedMotion();
@@ -230,7 +231,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
-      <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-3xl flex-col space-y-6 pt-2">
+      <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-5xl flex-col space-y-6 pt-2">
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2">
             <CheckSquare size={14} strokeWidth={1.6} className="text-muted-foreground opacity-70" />
@@ -241,7 +242,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
           </span>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="flex min-h-0 flex-1 flex-col gap-4">
           <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-[11px] font-medium text-muted-foreground">Task slicing mode</p>
@@ -260,27 +261,27 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
             </div>
 
             {tasks.length === 0 ? (
-              <div className="flex min-h-[16rem] items-center justify-center px-6 text-center">
+              <div className="flex min-h-[18rem] items-center justify-center px-6 text-center">
                 <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
                   "Scientists agree: writing it down beats overthinking it."
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {tasks.map((task) => (
                   <motion.div
                     key={task.id}
-                    className="relative flex min-h-[5.2rem] items-start gap-2 rounded-xl border border-border/50 bg-background/85 px-2.5 py-2.5"
+                    className="relative flex min-h-[6rem] items-start gap-2 rounded-xl border border-border/50 bg-background/85 px-3 py-3"
                   >
                     <motion.button
                       type="button"
                       whileTap={{ scale: 0.96 }}
                       onClick={() => void markWithSlice(task.id)}
-                      className="relative flex min-w-0 flex-1 items-start gap-3 overflow-hidden rounded-lg px-2.5 py-2.5 text-left"
+                      className="relative flex min-w-0 flex-1 items-start gap-3 overflow-hidden rounded-lg px-3 py-3 text-left"
                     >
                       <span className={"mt-0.5 h-4 w-4 rounded-[4px] border " + (task.isCompleted ? "border-transparent bg-cta/80" : "border-border/70")} />
                       <div className="min-w-0 flex-1">
-                        <p className={"text-[12.5px] font-medium " + (task.isCompleted ? "line-through text-muted-foreground" : "text-foreground")}>
+                        <p className={"text-[13.5px] font-medium " + (task.isCompleted ? "line-through text-muted-foreground" : "text-foreground")}>
                           {task.title}
                         </p>
                         <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[9.5px]" style={{ color: TYPE_META[task.type].color, background: TYPE_META[task.type].bg }}>
@@ -338,22 +339,36 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
             )}
           </div>
 
-          <div className="flex min-h-0 flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <CalendarDays size={12} />
                 D-Day setup
               </p>
-              <input
-                type="date"
-                value={dDay}
-                onChange={(e) => setDDay(e.target.value)}
-                className="w-full rounded-lg border border-border/70 bg-background px-3 py-2 text-[12px]"
-              />
-              <p className="mt-3 text-[18px] font-semibold tabular-nums text-foreground">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">Date</span>
+                  <input
+                    type="date"
+                    value={dDay}
+                    onChange={(e) => setDDay(e.target.value)}
+                    className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[13px] font-medium text-foreground"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">Name</span>
+                  <input
+                    type="text"
+                    value={dDayName}
+                    onChange={(e) => setDDayName(e.target.value)}
+                    placeholder="Name your D-Day"
+                    className="w-full rounded-md border border-border/70 bg-background px-3 py-2 text-[13px] font-medium text-foreground"
+                  />
+                </label>
+              </div>
+              <p className="mt-2 text-[11px] font-medium text-muted-foreground tabular-nums">
                 D{dValue >= 0 ? `-${dValue}` : `+${Math.abs(dValue)}`}
               </p>
-              <p className="text-[10.5px] text-muted-foreground">Auto-calculated on app start</p>
             </div>
 
             <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
