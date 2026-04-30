@@ -7,6 +7,7 @@ import { limiters, enforce } from "@/lib/ratelimit";
 
 const patchSchema = z.object({
   name: z.string().trim().min(1).max(60).optional(),
+  email: z.string().trim().email().max(320).optional(),
   bio: z.string().trim().max(280).optional(),
   image: z
     .string()
@@ -24,21 +25,34 @@ export const PATCH = withApi(async (request: Request) => {
   const body = await parseRequestJson(request, patchSchema);
   if (!body.success) return body.response;
 
-  const { name, bio, image } = body.data;
+  const { name, email, bio, image } = body.data;
 
-  if (name === undefined && bio === undefined && image === undefined) {
+  if (name === undefined && email === undefined && bio === undefined && image === undefined) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
-  const updated = await prisma.user.update({
-    where: { id: session.user.id },
-    data: {
-      ...(name !== undefined ? { name } : {}),
-      ...(bio !== undefined ? { bio } : {}),
-      ...(image !== undefined ? { image } : {}),
-    },
-    select: { id: true, name: true, bio: true, image: true, email: true },
-  });
+  try {
+    const updated = await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(name !== undefined ? { name } : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(bio !== undefined ? { bio } : {}),
+        ...(image !== undefined ? { image } : {}),
+      },
+      select: { id: true, name: true, bio: true, image: true, email: true },
+    });
 
-  return NextResponse.json(updated);
+    return NextResponse.json(updated);
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
+      return NextResponse.json({ error: "That email is already in use." }, { status: 409 });
+    }
+    throw error;
+  }
 });
