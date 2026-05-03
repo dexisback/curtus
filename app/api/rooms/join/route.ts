@@ -31,3 +31,5 @@ export const POST = withApi(async (request: Request) => {
 
   return NextResponse.json({ code: room.code }, { headers: rlHeaders });
 });
+
+// — POST: join a room by code (membership row).

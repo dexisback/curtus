@@ -66,3 +66,5 @@ export const DELETE = withApi(async (_request: Request, { params }: Params) => {
   await prisma.task.delete({ where: { id } });
   return NextResponse.json({ deleted: true });
 });
+
+// — GET/PATCH/DELETE: single todo by id.

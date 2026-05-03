@@ -20,3 +20,5 @@ export default function SocketPrewarm() {
 
   return null;
 }
+
+// — Eager socket connect on dashboard mount (optional UX).

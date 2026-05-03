@@ -17,3 +17,5 @@ export async function GET() {
   const token = signSocketAuthToken(session.user.id, secret);
   return NextResponse.json({ token }, { headers: { "cache-control": "no-store" } });
 }
+
+// — GET: short-lived signed token for Socket.IO auth.

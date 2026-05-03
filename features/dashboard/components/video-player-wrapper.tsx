@@ -14,3 +14,5 @@ export default function VideoPlayerWrapper() {
     </div>
   );
 }
+
+// — Loads video source and wraps VideoPlayer.

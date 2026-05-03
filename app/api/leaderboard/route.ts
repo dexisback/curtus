@@ -67,3 +67,5 @@ export const GET = withApi(async (request: Request) => {
 
   return NextResponse.json({ period, scope, roomId: roomId ?? null, entries, me }, { headers: rlHeaders });
 });
+
+// — GET: global leaderboard for a period; optional room filter.

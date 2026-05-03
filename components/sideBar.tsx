@@ -15,20 +15,23 @@ import {
   UserCircle,
   Video,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
 
-const NAV_ITEMS = [
+type NavItem = { label: string; href: string; icon: LucideIcon };
+
+const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
   { label: "Rooms", href: "/rooms", icon: Video },
   { label: "Todo", href: "/dashboard/todo", icon: CheckSquare },
   { label: "Profile", href: "/profile", icon: UserCircle },
   { label: "Settings", href: "/settings", icon: Settings },
-] as const;
+];
 
-const EASE_OUT = [0, 0, 0.58, 1] as const;
-const EASE_IN = [0.42, 0, 1, 1] as const;
+const EASE_OUT: readonly [number, number, number, number] = [0, 0, 0.58, 1];
+const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
 
 const containerVariants = {
   hidden: {},
@@ -51,8 +54,6 @@ const itemExit = {
   filter: "blur(3px)",
   transition: { duration: 0.15, ease: EASE_IN },
 };
-
-// ─── Create Room modal ─────────────────────────────────────────────────────
 
 function CreateRoomModal({ onExited }: { onExited: () => void }) {
   const router = useRouter();
@@ -254,10 +255,9 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
   );
 }
 
-// ─── Sidebar ───────────────────────────────────────────────────────────────
-
 export default function Sidebar({ userName }: { userName?: string | null }) {
-  const greetingName = userName?.trim() || "there";
+  const trimmed = userName?.trim();
+  const greetingName = trimmed ? trimmed : "there";
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window === "undefined") return true;
     try {
@@ -374,7 +374,6 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
               variants={containerVariants}
               className="flex flex-1 flex-col overflow-hidden px-2.5 pb-4"
             >
-              {/* Greeting */}
               <motion.p
                 variants={itemVariants}
                 exit={itemExit}
@@ -383,7 +382,6 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 hi, {greetingName}
               </motion.p>
 
-              {/* Nav links */}
               <div className="flex flex-1 flex-col gap-0.5">
                 {NAV_ITEMS.map((item) => {
                   const active = isActive(item.href);
@@ -417,7 +415,6 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 })}
               </div>
 
-              {/* Create button */}
               <motion.button
                 type="button"
                 variants={itemVariants}
@@ -446,3 +443,6 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
     </>
   );
 }
+
+// — sideBar.tsx: Collapsible nav, greeting, create-room modal (portal). Syncs compact sidebar with /api/settings and localStorage.
+

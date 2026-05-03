@@ -59,3 +59,5 @@ export const DELETE = withApi(async (_request: Request, { params }: Params) => {
 
   return NextResponse.json({ left: true });
 });
+
+// — GET: room by code; PATCH: room settings for hosts.

@@ -147,3 +147,5 @@ export default function RoomLeaderboardCarousel({
     </div>
   );
 }
+
+// — Rotating mini leaderboards for rooms on the dashboard.

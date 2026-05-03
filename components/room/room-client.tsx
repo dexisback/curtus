@@ -307,3 +307,5 @@ export default function RoomClient({
     </div>
   );
 }
+
+// — Room shell: timer, socket wiring, chat, children slots.

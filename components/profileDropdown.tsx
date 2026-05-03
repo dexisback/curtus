@@ -111,3 +111,5 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
     </div>
   );
 }
+
+// — Header dropdown: profile link, sign out.

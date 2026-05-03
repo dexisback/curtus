@@ -81,3 +81,5 @@ export const GET = withApi(async (request: Request) => {
     nextCursor,
   });
 });
+
+// — GET: paginated focus sessions for the user.

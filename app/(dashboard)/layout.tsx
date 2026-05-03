@@ -45,3 +45,5 @@ export default async function DashboardGroupLayout({
     </div>
   );
 }
+
+// — Dashboard shell: sidebar, navbar, providers.

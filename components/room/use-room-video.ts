@@ -254,3 +254,5 @@ export function useRoomVideo({
     stop,
   };
 }
+
+// — Hook: RTCPeerConnection, socket signaling, local stream.

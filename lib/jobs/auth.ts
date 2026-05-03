@@ -16,10 +16,6 @@ function getReceiver(): Receiver {
   return receiver;
 }
 
-/**
- * Verifies a QStash signed request. Returns true if valid.
- * Throws an error (with message) if the signature is missing or invalid.
- */
 export async function verifyQStash(req: Request): Promise<void> {
   const signature = req.headers.get("upstash-signature");
   if (!signature) {
@@ -36,3 +32,6 @@ export async function verifyQStash(req: Request): Promise<void> {
     throw new Error("Invalid QStash signature");
   }
 }
+
+// — jobs/auth.ts: Lazy QStash Receiver; verifyQStash validates signed job HTTP callbacks.
+

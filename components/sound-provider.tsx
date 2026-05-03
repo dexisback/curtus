@@ -248,3 +248,5 @@ export function useSound() {
   if (!ctx) throw new Error("useSound must be used inside SoundProvider");
   return ctx;
 }
+
+// — @web-kits/audio context: play UI sounds, reduced-motion guard.

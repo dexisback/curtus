@@ -35,3 +35,5 @@ export default async function LeaderboardPage() {
     />
   );
 }
+
+// — Leaderboard server page: loads top entries + user rank.

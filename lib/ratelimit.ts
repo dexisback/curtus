@@ -1,10 +1,6 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { redis } from "./redis";
 
-/**
- * No-op limiter returned when Redis is unavailable (local dev without creds).
- * Always returns success so all routes keep working.
- */
 const noop: Pick<Ratelimit, "limit"> = {
   limit: async () => ({
     success: true,
@@ -24,28 +20,21 @@ function make(window: Parameters<typeof Ratelimit.slidingWindow>[1], max: number
   });
 }
 
-// ─── Named limiters ───────────────────────────────────────────────────────────
-
 export const limiters = {
-  roomsCreate:    make("1 h",  10),   // per userId
-  roomsJoin:      make("1 m",  30),   // per userId
-  roomsList:      make("1 m",  60),   // per ip
-  roomsRead:      make("1 m", 120),   // per ip
-  leaderboardRead:make("1 m", 120),   // per ip
-  statsRead:      make("1 m",  60),   // per userId
-  tasksWrite:     make("1 m",  30),   // per userId
-  profileWrite:   make("1 m",  10),   // per userId
-  settingsWrite:  make("1 m",  30),   // per userId
-  membersRead:    make("1 m",  60),   // per userId
-  sessionsRead:   make("1 m",  60),   // per userId
-  messagesRead:   make("1 m",  60),   // per userId
+  roomsCreate: make("1 h", 10),
+  roomsJoin: make("1 m", 30),
+  roomsList: make("1 m", 60),
+  roomsRead: make("1 m", 120),
+  leaderboardRead: make("1 m", 120),
+  statsRead: make("1 m", 60),
+  tasksWrite: make("1 m", 30),
+  profileWrite: make("1 m", 10),
+  settingsWrite: make("1 m", 30),
+  membersRead: make("1 m", 60),
+  sessionsRead: make("1 m", 60),
+  messagesRead: make("1 m", 60),
 };
 
-/**
- * Checks a limiter and returns the response headers.
- * Throws ApiRateLimitError (imported dynamically to avoid circular deps)
- * so callers can re-throw or handle.
- */
 export async function enforce(
   limiter: Pick<Ratelimit, "limit">,
   key: string,
@@ -62,3 +51,6 @@ export async function enforce(
   }
   return headers;
 }
+
+// — ratelimit.ts: Upstash sliding-window limiters per route concern; noop when Redis absent; enforce throws ApiRateLimitError.
+

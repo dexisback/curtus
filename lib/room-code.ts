@@ -8,3 +8,6 @@ export function generateRoomCode(length = 6): string {
   }
   return code;
 }
+
+// — room-code.ts: Random room codes from an unambiguous character set.
+

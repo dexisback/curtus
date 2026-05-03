@@ -63,3 +63,5 @@ export function Screw({
     </div>
   );
 }
+
+// — Shared panel/card primitives for dashboard styling.

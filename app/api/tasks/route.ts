@@ -87,3 +87,5 @@ export const POST = withApi(async (request: Request) => {
 
   return NextResponse.json(task, { status: 201 });
 });
+
+// — GET: todos; POST: create todo.

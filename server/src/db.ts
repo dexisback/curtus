@@ -26,3 +26,6 @@ export const prisma =
 if (process.env.NODE_ENV !== "production") {
   globalThis.studyWithMeSocketPrisma = prisma;
 }
+
+// — db.ts: Prisma + Neon for the socket server process (dev singleton on global).
+

@@ -56,3 +56,5 @@ export const PATCH = withApi(async (request: Request) => {
     throw error;
   }
 });
+
+// — GET/PATCH: current user profile (name, bio, image).

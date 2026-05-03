@@ -76,3 +76,5 @@ export const GET = withApi(async (request: Request, { params }: Params) => {
     nextCursor,
   });
 });
+
+// — GET: paginated chat; POST: persist message (REST fallback).

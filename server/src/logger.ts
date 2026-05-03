@@ -36,3 +36,6 @@ export const logger = {
     };
   },
 };
+
+// — logger.ts: JSON line logging for the socket server (child loggers for socket/user context).
+

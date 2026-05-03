@@ -5,3 +5,5 @@ export default function Home() {
     </div>
   );
 }
+
+// — Marketing/landing or redirect entry.

@@ -10,3 +10,5 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     </ThemeProvider>
   );
 }
+
+// — Client providers (theme, sound, etc.) for the app tree.

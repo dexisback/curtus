@@ -36,3 +36,5 @@ export default function SoundToggle({ className }: { className?: string }) {
     </motion.button>
   );
 }
+
+// — Mute/unmute UI sounds; persists via settings.

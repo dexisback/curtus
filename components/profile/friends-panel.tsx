@@ -106,3 +106,4 @@ export default function FriendsPanel({
   );
 }
 
+// — Add/list friends; calls /api/friends.

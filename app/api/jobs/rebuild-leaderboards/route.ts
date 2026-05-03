@@ -90,3 +90,5 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, rebuilt });
 }
+
+// — QStash job: rebuild Redis leaderboard ZSETs from DB.

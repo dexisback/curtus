@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { Ban, MoreVertical, UserMinus, UserPlus, X } from "lucide-react";
 
-const easeOut = [0, 0, 0.58, 1] as const;
-const easeIn = [0.42, 0, 1, 1] as const;
+const EASE_OUT: readonly [number, number, number, number] = [0, 0, 0.58, 1];
+const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
 
 export type ProfileModalUser = {
   id: string;
@@ -134,7 +134,7 @@ export default function ProfileModal({
           className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.2, ease: easeIn } }}
+          exit={{ opacity: 0, transition: { duration: 0.2, ease: EASE_IN } }}
           onClick={onBackdrop}
         >
           <div
@@ -156,7 +156,7 @@ export default function ProfileModal({
             className="relative z-10 w-full max-w-md"
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.25, ease: easeOut }}
+            transition={{ duration: 0.25, ease: EASE_OUT }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -326,3 +326,6 @@ function MenuItemRow({
     </motion.button>
   );
 }
+
+// — profile-modal.tsx: Portal modal for a leaderboard user — activity shell, friend/block/kick actions when allowed.
+

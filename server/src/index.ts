@@ -23,8 +23,6 @@ if (!appOrigin) {
   throw new Error("Missing BETTER_AUTH_URL for socket server CORS.");
 }
 
-// ─── HTTP server ─────────────────────────────────────────────────────────────
-
 const httpServer = createServer(async (request, response) => {
   if (request.url === "/health") {
     try {
@@ -57,8 +55,6 @@ const httpServer = createServer(async (request, response) => {
   response.end("Not found");
 });
 
-// ─── Socket.IO server ─────────────────────────────────────────────────────────
-
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
@@ -69,14 +65,11 @@ const io = new Server<
     origin: appOrigin,
     credentials: true,
   },
-  // Engine.IO tuning
   pingTimeout: 25_000,
   pingInterval: 20_000,
   connectTimeout: 10_000,
   maxHttpBufferSize: 32_000,
 });
-
-// ─── Auth middleware ──────────────────────────────────────────────────────────
 
 function extractSessionToken(rawCookieHeader: string | undefined) {
   if (!rawCookieHeader) return null;
@@ -162,8 +155,6 @@ io.use(async (socket, next) => {
 
 registerSocketEvents(io);
 
-// ─── Graceful shutdown ────────────────────────────────────────────────────────
-
 let shuttingDown = false;
 
 async function shutdown(signal: string) {
@@ -171,13 +162,10 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   logger.info("Shutdown signal received", { signal });
 
-  // Stop accepting new connections
   httpServer.close();
 
-  // Notify connected clients
   io.emit("room:error", { message: "server_shutdown" });
 
-  // Give in-flight handlers 10s to complete
   await new Promise<void>((resolve) => {
     const timeout = setTimeout(() => {
       logger.warn("Forced shutdown after timeout");
@@ -197,8 +185,9 @@ async function shutdown(signal: string) {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-// ─── Start ────────────────────────────────────────────────────────────────────
-
 httpServer.listen(port, () => {
   logger.info("StudyWithMe socket server listening", { port });
 });
+
+// — index.ts: Standalone Socket.IO + /health. Cookie or signed socket token → registerSocketEvents; graceful shutdown.
+

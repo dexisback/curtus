@@ -40,3 +40,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+// — Root layout: fonts, theme, providers, metadata.

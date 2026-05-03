@@ -41,3 +41,5 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
     </header>
   );
 }
+
+// — Top bar for dashboard: title slot, theme, sound, profile menu.

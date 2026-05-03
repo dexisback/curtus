@@ -64,3 +64,6 @@ export async function getOrCreateUserSettings(
 
   return serializeUserSettings(settings);
 }
+
+// — user-settings.ts: Prisma user_settings ↔ client JSON shape; defaults and upsert helper.
+

@@ -8,3 +8,5 @@ export default function Loading() {
     </div>
   );
 }
+
+// — Dashboard route loading skeleton.

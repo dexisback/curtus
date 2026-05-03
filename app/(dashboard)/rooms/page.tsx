@@ -115,3 +115,5 @@ export default async function RoomsPage() {
     />
   );
 }
+
+// — Rooms index: server fetch + RoomsClient.

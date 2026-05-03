@@ -102,7 +102,6 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     );
   }, [markFailed, mergeMessage]);
 
-  // Sync live messages
   useEffect(() => {
     const socket = connectWithAuth();
     if (!socket) return;
@@ -125,7 +124,6 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     };
   }, [mergeMessage, roomId, sendPending]);
 
-  // Scroll to bottom on new messages only if already near bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
@@ -145,7 +143,7 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
       };
 
       setMessages((prev) => [
-        ...data.items.reverse().map((message) => ({ ...message, status: "sent" as const })),
+        ...data.items.reverse().map((message): ChatItem => ({ ...message, status: "sent" })),
         ...prev,
       ]);
       setOlderCursor(data.nextCursor);
@@ -241,3 +239,6 @@ export default function Chat({ roomCode, roomId, messages: initialMessages, curr
     </div>
   );
 }
+
+// — chat.tsx: Room chat UI — load older via REST, send/receive via socket with retries and optimistic rows.
+

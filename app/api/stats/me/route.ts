@@ -105,3 +105,5 @@ export const GET = withApi(async () => {
     })),
   });
 });
+
+// — GET: aggregates (focus minutes, streak) for dashboard.

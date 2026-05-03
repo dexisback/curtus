@@ -67,3 +67,5 @@ export const PATCH = withApi(async (request: Request) => {
 
   return NextResponse.json(serializeUserSettings(updated), { headers });
 });
+
+// — GET/PATCH: user settings JSON (theme, sounds, flags).

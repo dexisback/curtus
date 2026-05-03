@@ -35,3 +35,5 @@ export const GET = withApi(async (_request: Request, { params }: Params) => {
     })),
   });
 });
+
+// — GET: room members; POST: invite (if permitted).

@@ -100,9 +100,7 @@ let socketSingleton: StudySocket | null = null;
 let socketTokenCache: { token: string; expiresAtMs: number } | null = null;
 
 function getSocketUrl() {
-  const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
-  if (!socketUrl) return null;
-  return socketUrl;
+  return process.env.NEXT_PUBLIC_SOCKET_URL ?? null;
 }
 
 function getCookieAuth() {
@@ -127,7 +125,6 @@ async function getSocketToken() {
     if (!data.token) return null;
     socketTokenCache = {
       token: data.token,
-      // server issues 10m TTL; refresh earlier.
       expiresAtMs: now + 8 * 60 * 1000,
     };
     return data.token;
@@ -140,7 +137,6 @@ export function getSocket() {
   if (typeof window === "undefined") return null;
   const socketUrl = getSocketUrl();
   if (!socketUrl) {
-    // Keep the app usable even when realtime env vars are missing.
     if (process.env.NODE_ENV !== "production") {
       console.warn("NEXT_PUBLIC_SOCKET_URL is not set. Realtime features are disabled.");
     }
@@ -172,3 +168,6 @@ export function connectWithAuth() {
 export function disconnectSocket() {
   socketSingleton?.disconnect();
 }
+
+// — socket.ts: Browser Socket.IO client singleton, token fetch/cache, cookie + signed auth for realtime.
+

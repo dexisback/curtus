@@ -26,3 +26,5 @@ export default async function SettingsPage() {
     />
   );
 }
+
+// — Settings page wrapper around SettingsClient.

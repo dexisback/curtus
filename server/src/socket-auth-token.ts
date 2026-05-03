@@ -20,3 +20,6 @@ export function verifySocketAuthToken(token: string, secret: string): string | n
     return null;
   }
 }
+
+// — socket-auth-token.ts: Verify HMAC socket token (shared secret with Next app).
+

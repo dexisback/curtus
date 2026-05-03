@@ -93,3 +93,4 @@ export const POST = withApi(async (request: Request) => {
   });
 });
 
+// — GET: friend list; POST: request by email. Session required.

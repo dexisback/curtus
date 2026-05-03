@@ -34,3 +34,5 @@ export async function POST(req: Request) {
   logger.info("Recomputed streaks", { reset: count });
   return NextResponse.json({ ok: true, reset: count });
 }
+
+// — QStash job: recompute streak rows from focus history.

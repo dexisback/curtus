@@ -415,3 +415,5 @@ export default function LeaderboardClient({
     </>
   );
 }
+
+// — Leaderboard UI: period tabs, room filter, profile modal.

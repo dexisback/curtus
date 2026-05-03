@@ -298,3 +298,5 @@ export default async function ProfilePage() {
     </div>
   );
 }
+
+// — Profile page: header editor, friends, stats.

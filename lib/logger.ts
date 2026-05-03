@@ -27,7 +27,6 @@ export const logger = {
   warn: (message: string, meta?: LogMeta) => emit("warn", message, meta),
   error: (message: string, meta?: LogMeta) => emit("error", message, meta),
 
-  /** Returns a child logger with bound meta fields (e.g. requestId, route). */
   child(bound: LogMeta) {
     return {
       debug: (message: string, meta?: LogMeta) => emit("debug", message, { ...bound, ...meta }),
@@ -37,3 +36,6 @@ export const logger = {
     };
   },
 };
+
+// — logger.ts: JSON lines to stdout/stderr; child() binds request/route meta for API logs.
+

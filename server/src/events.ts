@@ -11,8 +11,6 @@ import { socketLimiters, socketAllow } from "./ratelimit.js";
 const DAY_RESET_HOUR_UTC = 5;
 const MAX_ACTIVE_VIDEO_USERS = 4;
 
-// ─── Schemas ────────────────────────────────────────────────────────────────
-
 const roomEventSchema = z.object({
   roomId: z.string().min(1),
 });
@@ -57,10 +55,8 @@ const mediaIceCandidateSchema = mediaTargetSchema.extend({
   }).passthrough(),
 });
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 type LiveSession = {
-  startedAt: string; // ISO string
+  startedAt: string;
   roomId: string | null;
 };
 
@@ -160,8 +156,6 @@ type StudyServer = Server<
   SocketData
 >;
 
-// ─── Redis key helpers ───────────────────────────────────────────────────────
-
 function getKickKey(userId: string, roomId: string) {
   return `kick:${userId}:${roomId}`;
 }
@@ -181,8 +175,6 @@ function getTodayMinutesKey(userId: string) {
 function getLiveSessionKey(userId: string) {
   return `user:${userId}:liveSession`;
 }
-
-// ─── Time helpers ────────────────────────────────────────────────────────────
 
 function getSecondsUntilNextFiveAm(now = new Date()) {
   const nextReset = new Date(now);
@@ -213,8 +205,6 @@ async function syncKeyExpiry(userId: string, roomId?: string) {
     roomId ? redis.expire(getRoomMembersKey(roomId), ttl) : Promise.resolve(1),
   ]);
 }
-
-// ─── Presence helpers ────────────────────────────────────────────────────────
 
 async function getStudyingUserIds(memberIds: string[]): Promise<string[]> {
   if (!memberIds.length) return [];
@@ -266,8 +256,6 @@ async function maybeRemovePresenceMember(
   await publishPresence(io, roomId);
 }
 
-// ─── Timer helpers ───────────────────────────────────────────────────────────
-
 async function finalizeSession(
   io: StudyServer,
   socket: StudySocket,
@@ -310,7 +298,6 @@ async function finalizeSession(
     roomId,
   });
 
-  // Refresh presence for all joined rooms + the session's room
   const roomsToRefresh = new Set(socket.data.joinedRoomIds);
   if (roomId) roomsToRefresh.add(roomId);
   await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
@@ -334,10 +321,6 @@ type ChatAck = (response: {
   error?: string;
 }) => void;
 
-/**
- * Checks Redis for a pending kick signal. If found, evicts the socket from the
- * room and emits `room:kicked`. Returns true if the user was kicked.
- */
 async function checkAndEvictIfKicked(
   io: StudyServer,
   socket: StudySocket,
@@ -378,12 +361,9 @@ async function validateMediaTarget(socket: StudySocket, roomId: string, toUserId
   return Boolean(fromEnabled && toEnabled);
 }
 
-// ─── Event registration ──────────────────────────────────────────────────────
-
 export function registerSocketEvents(io: StudyServer) {
   io.on("connection", (socket) => {
 
-    // room:join — validate RoomMember row exists before letting in
     socket.on("room:join", async (payload) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) {
@@ -420,7 +400,6 @@ export function registerSocketEvents(io: StudyServer) {
       await publishPresence(io, parsed.data.roomId);
     });
 
-    // room:leave
     socket.on("room:leave", async (payload) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) {
@@ -433,7 +412,6 @@ export function registerSocketEvents(io: StudyServer) {
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
     });
 
-    // room:video-state
     socket.on("room:video-state", async (payload, ack?: (response: { ok: boolean; error?: string }) => void) => {
       const parsed = roomVideoStateSchema.safeParse(payload);
       if (!parsed.success) {
@@ -533,7 +511,6 @@ export function registerSocketEvents(io: StudyServer) {
       });
     });
 
-    // chat:send
     socket.on("chat:send", async (payload, ack?: ChatAck) => {
       const parsed = chatEventSchema.safeParse(payload);
       if (!parsed.success) {
@@ -592,7 +569,6 @@ export function registerSocketEvents(io: StudyServer) {
       io.to(parsed.data.roomId).emit("chat:message", chatPayload);
     });
 
-    // session:started — mark user as studying in Redis
     socket.on("session:started", async (payload) => {
       const parsed = sessionStartedSchema.safeParse(payload);
       if (!parsed.success) {
@@ -647,14 +623,12 @@ export function registerSocketEvents(io: StudyServer) {
       await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
     });
 
-    // session:stopped — atomic GETDEL ensures only one path (stopped vs disconnect) finalizes
     socket.on("session:stopped", async () => {
       const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
       if (!liveSession) return; // Nothing to finalize (or disconnect already claimed it)
       await finalizeSession(io, socket, liveSession);
     });
 
-    // ping:send
     socket.on("ping:send", async (payload) => {
       const parsed = pingEventSchema.safeParse(payload);
       if (!parsed.success) {
@@ -677,7 +651,6 @@ export function registerSocketEvents(io: StudyServer) {
       });
     });
 
-    // disconnect — atomic GETDEL ensures only one of (stopped, disconnect) finalizes
     socket.on("disconnect", async () => {
       const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
       if (liveSession) {
@@ -712,7 +685,6 @@ export function registerSocketEvents(io: StudyServer) {
           await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
           await bumpStreak(socket.data.userId, completedAt);
         } catch {
-          // Best-effort on disconnect - don't crash the server
         }
       }
 
@@ -724,3 +696,6 @@ export function registerSocketEvents(io: StudyServer) {
     });
   });
 }
+
+// — events.ts: Socket.IO handlers — rooms, chat, WebRTC signaling, focus sessions, presence in Redis, rate limits.
+

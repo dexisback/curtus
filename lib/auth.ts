@@ -29,6 +29,28 @@ if (isProd) {
   trustedOrigins.push("https://*.vercel.app");
 }
 
+function betterAuthSecondaryStorage(r: NonNullable<typeof redis>) {
+  return {
+    secondaryStorage: {
+      get: async (key: string) => {
+        const val = await r.get<string>(key);
+        return val ?? null;
+      },
+      set: async (key: string, value: string, ttl?: number) => {
+        if (ttl) await r.set(key, value, { ex: ttl });
+        else await r.set(key, value);
+      },
+      delete: async (key: string) => {
+        await r.del(key);
+      },
+    },
+  };
+}
+
+const trustedProviders: ("google" | "github")[] = [];
+if (hasGoogleAuth) trustedProviders.push("google");
+if (hasGitHubAuth) trustedProviders.push("github");
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -39,30 +61,9 @@ export const auth = betterAuth({
 
   trustedOrigins,
 
-  ...(redis
-    ? ((_r) => ({
-        secondaryStorage: {
-          get: async (key: string) => {
-            const val = await _r.get<string>(key);
-            return val ?? null;
-          },
-          set: async (key: string, value: string, ttl?: number) => {
-            if (ttl) {
-              await _r.set(key, value, { ex: ttl });
-            } else {
-              await _r.set(key, value);
-            }
-          },
-          delete: async (key: string) => {
-            await _r.del(key);
-          },
-        },
-      }))(redis)
-    : {}),
+  ...(redis ? betterAuthSecondaryStorage(redis) : {}),
 
   verification: {
-    // Keep OAuth verification state in DB as fallback even when secondary
-    // storage is enabled, which prevents intermittent state_mismatch on callback.
     storeInDatabase: true,
   },
 
@@ -111,10 +112,7 @@ export const auth = betterAuth({
   account: {
     accountLinking: {
       enabled: true,
-      trustedProviders: [
-        ...(hasGoogleAuth ? (["google"] as const) : []),
-        ...(hasGitHubAuth ? (["github"] as const) : []),
-      ],
+      trustedProviders,
     },
   },
 
@@ -146,3 +144,5 @@ export const auth = betterAuth({
 
   plugins: [nextCookies()],
 });
+
+// — auth.ts: Better Auth server config (Prisma, Redis cache, OAuth, sessions, rate limits). Builds providers and origins from env.

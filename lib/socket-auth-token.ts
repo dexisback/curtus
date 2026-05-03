@@ -36,3 +36,6 @@ export function verifySocketAuthToken(token: string, secret: string): string | n
     return null;
   }
 }
+
+// — socket-auth-token.ts: HMAC-signed short-lived payload for Socket.IO auth; sign + verify on the server.
+

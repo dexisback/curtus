@@ -110,3 +110,5 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
+// — Dashboard home server page; passes session into client widgets.

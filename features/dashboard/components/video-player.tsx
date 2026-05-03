@@ -204,3 +204,4 @@ export default function VideoPlayer() {
   );
 }
 
+// — HTML video element wrapper with controls styling.

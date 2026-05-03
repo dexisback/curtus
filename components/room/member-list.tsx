@@ -47,3 +47,5 @@ export default function MemberList({
     </ul>
   );
 }
+
+// — Room roster with roles and kick where allowed.

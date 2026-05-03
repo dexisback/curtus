@@ -114,3 +114,5 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
+// — Login page (email + OAuth via Better Auth client).

@@ -6,8 +6,6 @@ export async function getServerSession() {
   try {
     return await auth.api.getSession({ headers: await headers() });
   } catch {
-    // Better Auth can intermittently throw APIError during provider/session fetch.
-    // Treat it as unauthenticated instead of crashing the whole route tree.
     return null;
   }
 }
@@ -17,3 +15,5 @@ export async function requireSession() {
   if (!session) redirect("/login");
   return session;
 }
+
+// — session.ts: Server-side session helpers. getServerSession swallows auth errors; requireSession redirects to /login.

@@ -14,14 +14,10 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(getSessionCookie(request.headers));
 
-  // Keep auth routes always reachable.
-  // A stale/invalid cookie can exist even when the server session is gone,
-  // and forcing /login -> /dashboard here causes redirect loops.
   if (AUTH_ROUTES.has(pathname)) {
     return NextResponse.next();
   }
 
-  // Forward guard: protected routes require a session cookie
   if (!hasSession) {
     return NextResponse.redirect(buildLoginRedirect(request));
   }
@@ -41,3 +37,6 @@ export const config = {
     "/room/:path*",
   ],
 };
+
+// — proxy.ts: Edge middleware — session cookie gate for dashboard/rooms/etc.; /login and /signup always pass through.
+

@@ -1,10 +1,6 @@
 import { prisma } from "./db.js";
 import { getStudyDayStart } from "./periods.js";
 
-/**
- * Upserts the Streak row for a user after a session is finalized.
- * Call with the completedAt timestamp of the just-finished session.
- */
 export async function bumpStreak(userId: string, completedAt: Date): Promise<void> {
   const today = getStudyDayStart(completedAt);
   const yesterday = new Date(today.getTime() - 86_400_000);
@@ -25,7 +21,6 @@ export async function bumpStreak(userId: string, completedAt: Date): Promise<voi
     ? getStudyDayStart(existing.lastActiveDate).getTime()
     : null;
 
-  // Already counted for today — no-op
   if (last !== null && last === today.getTime()) return;
 
   let newCurrent: number;
@@ -42,3 +37,6 @@ export async function bumpStreak(userId: string, completedAt: Date): Promise<voi
     data: { currentStreak: newCurrent, longestStreak: newLongest, lastActiveDate: today },
   });
 }
+
+// — streak.ts: Updates user streak rows after a session (continue vs reset vs same-day no-op).
+

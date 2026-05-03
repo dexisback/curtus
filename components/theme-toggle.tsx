@@ -6,16 +6,13 @@ import { Moon, Sun } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
 import { useTheme } from "@/components/theme-provider";
 
-const easeIn = [0.42, 0, 1, 1] as const;
+const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
 
 type Props = {
   className?: string;
   "aria-label"?: string;
 };
 
-/**
- * Toggles `dark` on `<html>`. Sun/Moon cross-fade per make-interfaces-feel-better.
- */
 export default function ThemeToggle({ className, "aria-label": ariaLabel }: Props) {
   const { theme, toggleTheme, mounted } = useTheme();
   const { play } = useSound();
@@ -87,7 +84,7 @@ export default function ThemeToggle({ className, "aria-label": ariaLabel }: Prop
               opacity: 0,
               scale: 0.25,
               filter: "blur(4px)",
-              transition: { duration: 0.16, ease: easeIn },
+              transition: { duration: 0.16, ease: EASE_IN },
             }}
             transition={{ type: "spring", duration: 0.3, bounce: 0 }}
           >
@@ -103,7 +100,7 @@ export default function ThemeToggle({ className, "aria-label": ariaLabel }: Prop
               opacity: 0,
               scale: 0.25,
               filter: "blur(4px)",
-              transition: { duration: 0.16, ease: easeIn },
+              transition: { duration: 0.16, ease: EASE_IN },
             }}
             transition={{ type: "spring", duration: 0.3, bounce: 0 }}
           >
@@ -114,3 +111,6 @@ export default function ThemeToggle({ className, "aria-label": ariaLabel }: Prop
     </motion.button>
   );
 }
+
+// — theme-toggle.tsx: Light/dark toggle via theme provider; respects reduced motion (simple button vs motion).
+

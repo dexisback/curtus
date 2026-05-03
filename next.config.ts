@@ -19,8 +19,6 @@ const allowedDevOrigins = Array.from(
 );
 
 const nextConfig: NextConfig = {
-  // Avoid Turbopack chunk-load failures for better-auth in dev (e.g. ChunkLoadError on
-  // pages that import `auth` via getSession / requireSession). Load the package with Node instead.
   serverExternalPackages: ["better-auth"],
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 
@@ -30,3 +28,6 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+// — next.config.ts: Next.js config — better-auth as server external, optional allowedDevOrigins, /home → /dashboard.
+

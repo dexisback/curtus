@@ -95,3 +95,5 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, reconciled });
 }
+
+// — QStash job: reconcile orphaned or stale live sessions in Redis.

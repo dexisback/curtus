@@ -239,3 +239,4 @@ export default function ProfileHeaderEditor({
   );
 }
 
+// — Edit name, bio, avatar; PATCH /api/profile.

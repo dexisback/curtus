@@ -142,3 +142,5 @@ export default function FloatingDock() {
     </motion.div>
   );
 }
+
+// — Floating action dock (navigation shortcuts).

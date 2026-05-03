@@ -282,3 +282,5 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
     </div>
   );
 }
+
+// — Dashboard todo summary / quick list widget.

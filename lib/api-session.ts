@@ -4,8 +4,6 @@ import { ZodError } from "zod";
 import { auth } from "./auth";
 import { logger } from "./logger";
 
-// ─── Errors ──────────────────────────────────────────────────────────────────
-
 export class ApiAuthError extends Error {
   constructor(message = "Unauthorized") {
     super(message);
@@ -20,8 +18,6 @@ export class ApiRateLimitError extends Error {
   }
 }
 
-// ─── Session helper ───────────────────────────────────────────────────────────
-
 export async function requireApiSession() {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -29,16 +25,10 @@ export async function requireApiSession() {
     return session;
   } catch (error) {
     if (error instanceof ApiAuthError) throw error;
-    // Better Auth can intermittently throw non-Error objects (e.g. ErrorEvent)
-    // during provider/session resolution in dev/tunneled flows.
-    // Treat this as unauthenticated for API guards instead of returning 500.
     throw new ApiAuthError();
   }
 }
 
-// ─── Consistent JSON envelope ─────────────────────────────────────────────────
-
-// Generic ctx so withApi works for routes with and without dynamic params.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withApi<Ctx = any>(
   handler: (req: Request, ctx: Ctx) => Promise<NextResponse>,
@@ -84,3 +74,6 @@ export function withApi<Ctx = any>(
     }
   };
 }
+
+// — api-session.ts: API auth (requireApiSession), error types, and withApi wrapper (request id, JSON errors).
+

@@ -11,3 +11,5 @@ export default async function AuthLayout({
 
   return <main className="min-h-screen">{children}</main>;
 }
+
+// — Auth segment layout (minimal shell around login/signup).

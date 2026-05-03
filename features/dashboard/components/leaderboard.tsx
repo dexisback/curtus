@@ -93,3 +93,5 @@ export default function Leaderboard({ boards }: { boards: RoomTimerBoard[] }) {
     </>
   );
 }
+
+// — Dashboard leaderboard strip / card list.

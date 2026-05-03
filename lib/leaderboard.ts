@@ -24,10 +24,14 @@ type LeaderboardFilter = {
 };
 
 function lbRedisKey(period: Period, date: Date): string {
-  if (period === "daily") return `lb:daily:${getDailyKey(date)}`;
-  if (period === "weekly") return `lb:weekly:${getWeeklyKey(date)}`;
-  if (period === "monthly") return `lb:monthly:${getMonthlyKey(date)}`;
-  return `lb:daily:${getDailyKey(date)}`;
+  switch (period) {
+    case "daily":
+      return `lb:daily:${getDailyKey(date)}`;
+    case "weekly":
+      return `lb:weekly:${getWeeklyKey(date)}`;
+    case "monthly":
+      return `lb:monthly:${getMonthlyKey(date)}`;
+  }
 }
 
 async function fromDb(
@@ -79,10 +83,6 @@ async function seedCache(
   await redis.expire(key, ttl);
 }
 
-/**
- * Returns the top N entries for the given period.
- * Reads from the Redis ZSET if populated; falls back to DB and seeds the cache.
- */
 export async function getTopN(
   period: Period,
   limit = 50,
@@ -98,7 +98,6 @@ export async function getTopN(
   if (redis) {
     const count = await redis.zcard(key);
     if (count > 0) {
-      // ZRANGE 0 limit-1 REV WITHSCORES → flat [member, score, ...] array
       const raw = (await redis.zrange(key, 0, limit - 1, {
         rev: true,
         withScores: true,
@@ -125,18 +124,12 @@ export async function getTopN(
     }
   }
 
-  // DB fallback — also seeds the cache
   const entries = await fromDb(period, now, limit);
   const ttl = getPeriodTtlSeconds(period, now);
   await seedCache(key, entries, ttl);
   return entries;
 }
 
-/**
- * Returns the calling user's rank and total for the period.
- * Uses Redis ZREVRANK if available, otherwise falls back to a DB count.
- * Returns null if the user has no minutes recorded for the period.
- */
 export async function getUserRankAndScore(
   period: Period,
   userId: string,
@@ -157,7 +150,6 @@ export async function getUserRankAndScore(
     }
   }
 
-  // DB fallback: get user's total and count those ahead
   const { start, end } = getPeriodWindow(period, now);
   const myAgg = await prisma.dailyStats.aggregate({
     where: {
@@ -170,7 +162,6 @@ export async function getUserRankAndScore(
   const totalMinutes = myAgg._sum.totalMinutes ?? 0;
   if (!totalMinutes) return null;
 
-  // Count distinct users with a strictly higher total
   const aboveRows = await prisma.dailyStats.groupBy({
     by: ["userId"],
     where: {
@@ -185,23 +176,22 @@ export async function getUserRankAndScore(
   return { rank: aboveRows.length + 1, totalMinutes };
 }
 
-/**
- * Atomically increments the three period ZSET keys after a session is logged.
- * No-op when Redis is not configured.
- */
 export async function bumpLeaderboards(
   userId: string,
   durationMin: number,
   completedAt: Date,
 ): Promise<void> {
-  if (!redis) return;
+  const client = redis;
+  if (!client) return;
   const periods: Period[] = ["daily", "weekly", "monthly"];
   await Promise.all(
     periods.map(async (period) => {
       const key = lbRedisKey(period, completedAt);
       const ttl = getPeriodTtlSeconds(period, completedAt);
-      await redis!.zincrby(key, durationMin, userId);
-      await redis!.expire(key, ttl);
+      await client.zincrby(key, durationMin, userId);
+      await client.expire(key, ttl);
     }),
   );
 }
+
+// — leaderboard.ts: Period leaderboards via Redis ZSET with DB fallback/seed. getTopN / rank / bumpLeaderboards after sessions.

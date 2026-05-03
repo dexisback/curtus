@@ -86,3 +86,5 @@ export default async function RoomPage({ params }: RoomPageProps) {
     />
   );
 }
+
+// — Room page: study timer, presence, chat, member list.

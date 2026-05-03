@@ -405,3 +405,5 @@ export default function SettingsClient({
     </div>
   );
 }
+
+// — Settings form: profile fields + toggles; PATCH /api/settings.

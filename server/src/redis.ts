@@ -13,3 +13,6 @@ export const redis = new Redis({
   url: redisUrl,
   token: redisToken,
 });
+
+// — redis.ts: Required Upstash client for the socket server (health + realtime helpers).
+

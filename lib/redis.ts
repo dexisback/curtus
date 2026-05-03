@@ -11,3 +11,6 @@ if (!url || !token) {
 }
 
 export const redis = url && token ? new Redis({ url, token }) : null;
+
+// — redis.ts: Optional Upstash client; null when env missing (in-memory fallbacks elsewhere).
+

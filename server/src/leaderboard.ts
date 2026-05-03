@@ -2,16 +2,16 @@ import { redis } from "./redis.js";
 import { type Period, getDailyKey, getWeeklyKey, getMonthlyKey, getPeriodTtlSeconds } from "./periods.js";
 
 function lbRedisKey(period: Period, date: Date): string {
-  if (period === "daily") return `lb:daily:${getDailyKey(date)}`;
-  if (period === "weekly") return `lb:weekly:${getWeeklyKey(date)}`;
-  if (period === "monthly") return `lb:monthly:${getMonthlyKey(date)}`;
-  return `lb:daily:${getDailyKey(date)}`;
+  switch (period) {
+    case "daily":
+      return `lb:daily:${getDailyKey(date)}`;
+    case "weekly":
+      return `lb:weekly:${getWeeklyKey(date)}`;
+    case "monthly":
+      return `lb:monthly:${getMonthlyKey(date)}`;
+  }
 }
 
-/**
- * Atomically increments the three period ZSET keys after a session is logged.
- * Uses the server's non-nullable Redis client.
- */
 export async function bumpLeaderboards(
   userId: string,
   durationMin: number,
@@ -27,3 +27,5 @@ export async function bumpLeaderboards(
     }),
   );
 }
+
+// — leaderboard.ts: Increments daily/weekly/monthly Redis leaderboard ZSETs when a focus session ends.

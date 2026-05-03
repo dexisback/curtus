@@ -92,3 +92,5 @@ export default function SessionsLoadMore({ initialItems, initialNextCursor }: Pr
     </div>
   );
 }
+
+// — Infinite scroll / button to page /api/sessions.

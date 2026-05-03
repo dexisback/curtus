@@ -107,3 +107,5 @@ export const PATCH = withApi(async (request: Request, { params }: Params) => {
 
   return NextResponse.json(updated);
 });
+
+// — PATCH: role change; DELETE: remove member (host rules).

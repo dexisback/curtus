@@ -33,3 +33,5 @@ export const GET = withApi(async () => {
     { headers: rlHeaders },
   );
 });
+
+// — GET: rooms the current user belongs to.

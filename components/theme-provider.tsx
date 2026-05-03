@@ -110,3 +110,5 @@ export function useTheme() {
   }
   return ctx;
 }
+
+// — Reads theme from settings/localStorage; toggles document class.

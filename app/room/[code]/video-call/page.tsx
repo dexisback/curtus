@@ -75,3 +75,5 @@ export default async function RoomVideoCallPage({
     </div>
   );
 }
+
+// — WebRTC video call view for a room.

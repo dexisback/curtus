@@ -80,3 +80,5 @@ export const GET = withApi(async (request: Request) => {
     { headers: rlHeaders },
   );
 });
+
+// — GET: list rooms; POST: create room.

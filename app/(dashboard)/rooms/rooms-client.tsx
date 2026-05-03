@@ -313,3 +313,5 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
     </div>
   );
 }
+
+// — My/public rooms, join-by-code, navigation to room.
