@@ -119,6 +119,8 @@ model Room {
   focusSessions FocusSession[]
   messages      Message[]
 
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@index([hostId])
   @@map("rooms")
 }
 
@@ -132,6 +134,7 @@ model RoomMember {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@id([userId, roomId])
+  @@index([userId, joinedAt(sort: Desc)])
   @@map("room_members")
 }
 
