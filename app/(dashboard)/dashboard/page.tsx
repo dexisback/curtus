@@ -51,17 +51,16 @@ export default async function DashboardPage() {
       ),
     ),
   );
-  const crossTodayRows = memberIds.length
-    ? await prisma.dailyStats.findMany({
-        where: {
-          userId: { in: memberIds },
-          date: todayStart,
-        },
-        select: { userId: true, totalMinutes: true },
-      })
-    : [];
+  const crossTodayRows =
+    memberIds.length > 0
+      ? await prisma.dailyStats.groupBy({
+          by: ["userId"],
+          where: { userId: { in: memberIds }, date: todayStart },
+          _sum: { totalMinutes: true },
+        })
+      : [];
   const todayMinutesByUserId = new Map(
-    crossTodayRows.map((row) => [row.userId, row.totalMinutes]),
+    crossTodayRows.map((row) => [row.userId, row._sum.totalMinutes ?? 0]),
   );
   const boards = membershipRooms.map(({ room }) => ({
     id: room.id,

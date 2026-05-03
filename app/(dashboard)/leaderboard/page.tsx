@@ -1,26 +1,31 @@
-import { getTopN, getUserRankAndScore } from "@/lib/leaderboard";
+import {
+  getGlobalDailyLeaderboardTop100Cached,
+  getUserRankAndScore,
+  rankFromLeaderboardEntries,
+} from "@/lib/leaderboard";
 import { getServerSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import LeaderboardClient from "./leaderboard-client";
 
 export default async function LeaderboardPage() {
-  const [initialEntries, session] = await Promise.all([
-    getTopN("daily", 100),
+  const [session, initialEntries] = await Promise.all([
     getServerSession(),
+    getGlobalDailyLeaderboardTop100Cached(),
   ]);
 
   let initialMe: { rank: number; totalMinutes: number } | null = null;
   let rooms: { id: string; name: string }[] = [];
   if (session) {
-    const [me, memberships] = await Promise.all([
-      getUserRankAndScore("daily", session.user.id),
+    const fromList = rankFromLeaderboardEntries(initialEntries, session.user.id);
+    const [meFallback, memberships] = await Promise.all([
+      fromList ? Promise.resolve(null) : getUserRankAndScore("daily", session.user.id),
       prisma.roomMember.findMany({
         where: { userId: session.user.id },
         orderBy: { joinedAt: "desc" },
         select: { room: { select: { id: true, name: true } } },
       }),
     ]);
-    initialMe = me;
+    initialMe = fromList ?? meFallback;
     rooms = memberships.map((m) => m.room);
   }
 

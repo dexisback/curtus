@@ -16,7 +16,7 @@ export default async function RoomsPage() {
       select: {
         code: true,
         name: true,
-        host: { select: { id: true, name: true } },
+        host: { select: { name: true } },
         _count: { select: { members: true } },
       },
     }),
@@ -29,7 +29,7 @@ export default async function RoomsPage() {
           select: {
             code: true,
             name: true,
-            host: { select: { id: true, name: true } },
+            host: { select: { name: true } },
             _count: { select: { members: true } },
           },
         },
@@ -64,15 +64,16 @@ export default async function RoomsPage() {
       boardRooms.flatMap((room) => room.members.map((member) => member.user.id)),
     ),
   );
-  const todayRows = await prisma.dailyStats.findMany({
-    where: {
-      userId: { in: boardMemberIds },
-      date: todayStart,
-    },
-    select: { userId: true, totalMinutes: true },
-  });
+  const todayRows =
+    boardMemberIds.length > 0
+      ? await prisma.dailyStats.groupBy({
+          by: ["userId"],
+          where: { userId: { in: boardMemberIds }, date: todayStart },
+          _sum: { totalMinutes: true },
+        })
+      : [];
   const todayMinutesByUserId = new Map(
-    todayRows.map((row) => [row.userId, row.totalMinutes]),
+    todayRows.map((row) => [row.userId, row._sum.totalMinutes ?? 0]),
   );
 
   const boards = boardRooms.map((room) => ({

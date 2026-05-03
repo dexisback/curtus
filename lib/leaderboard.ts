@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { redis } from "@/lib/redis";
 import {
@@ -18,6 +19,17 @@ export type LeaderboardEntry = {
   image: string | null;
   totalMinutes: number;
 };
+
+/** When `entries` is the ordered top-N list, avoids a separate DB rank query for users on the list. */
+export function rankFromLeaderboardEntries(
+  entries: LeaderboardEntry[],
+  userId: string,
+): { rank: number; totalMinutes: number } | null {
+  const idx = entries.findIndex((e) => e.userId === userId);
+  if (idx === -1) return null;
+  const row = entries[idx]!;
+  return { rank: idx + 1, totalMinutes: row.totalMinutes };
+}
 
 type LeaderboardFilter = {
   userIds?: string[];
@@ -79,8 +91,10 @@ async function seedCache(
 ): Promise<void> {
   if (!redis || !entries.length) return;
   const [first, ...rest] = entries.map((e) => ({ score: e.totalMinutes, member: e.userId }));
-  await redis.zadd(key, first, ...rest);
-  await redis.expire(key, ttl);
+  const pipe = redis.pipeline();
+  pipe.zadd(key, first, ...rest);
+  pipe.expire(key, ttl);
+  await pipe.exec();
 }
 
 export async function getTopN(
@@ -96,13 +110,12 @@ export async function getTopN(
   const key = lbRedisKey(period, now);
 
   if (redis) {
-    const count = await redis.zcard(key);
-    if (count > 0) {
-      const raw = (await redis.zrange(key, 0, limit - 1, {
-        rev: true,
-        withScores: true,
-      })) as unknown[];
+    const raw = (await redis.zrange(key, 0, limit - 1, {
+      rev: true,
+      withScores: true,
+    })) as unknown[];
 
+    if (raw.length > 0) {
       const pairs: { userId: string; score: number }[] = [];
       for (let i = 0; i < raw.length; i += 2) {
         pairs.push({ userId: raw[i] as string, score: Number(raw[i + 1]) });
@@ -174,6 +187,18 @@ export async function getUserRankAndScore(
   });
 
   return { rank: aboveRows.length + 1, totalMinutes };
+}
+
+async function loadGlobalDailyTop100ForPage(): Promise<LeaderboardEntry[]> {
+  return getTopN("daily", 100);
+}
+
+/** Cross-request cache for the SSR leaderboard table (study-day key; short TTL). */
+export function getGlobalDailyLeaderboardTop100Cached(): Promise<LeaderboardEntry[]> {
+  const studyDay = getDailyKey(new Date());
+  return unstable_cache(loadGlobalDailyTop100ForPage, ["lb-global-daily-top100", studyDay], {
+    revalidate: 30,
+  })();
 }
 
 export async function bumpLeaderboards(

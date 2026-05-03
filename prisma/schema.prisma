@@ -165,6 +165,7 @@ model DailyStats {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+  @@index([date, userId])
   @@unique([userId, date])
   @@map("daily_stats")
 }
