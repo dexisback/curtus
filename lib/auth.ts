@@ -20,6 +20,11 @@ if (process.env.NEXT_PUBLIC_APP_URL) {
   trustedOrigins.push(process.env.NEXT_PUBLIC_APP_URL);
 }
 
+if (!isProd) {
+  trustedOrigins.push("http://localhost:3000");
+  trustedOrigins.push("http://127.0.0.1:3000");
+}
+
 if (isProd) {
   trustedOrigins.push("https://*.vercel.app");
 }
@@ -54,6 +59,12 @@ export const auth = betterAuth({
         },
       }))(redis)
     : {}),
+
+  verification: {
+    // Keep OAuth verification state in DB as fallback even when secondary
+    // storage is enabled, which prevents intermittent state_mismatch on callback.
+    storeInDatabase: true,
+  },
 
   session: {
     expiresIn: 60 * 60 * 24 * 30,

@@ -2,8 +2,8 @@
   "name": "studywithme-socket-server",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "dev": "DOTENV_CONFIG_PATH=../.env tsx watch src/index.ts",
+    "start": "DOTENV_CONFIG_PATH=../.env tsx src/index.ts",
     "build": "npm run prisma:generate && npm run typecheck",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate --schema ../prisma/schema.prisma"

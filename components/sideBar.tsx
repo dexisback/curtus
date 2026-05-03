@@ -258,17 +258,30 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
 
 export default function Sidebar({ userName }: { userName?: string | null }) {
   const greetingName = userName?.trim() || "there";
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return localStorage.getItem("swm:compact-sidebar") !== "1";
+    } catch {
+      return true;
+    }
+  });
   const [createMounted, setCreateMounted] = useState(false);
   const pathname = usePathname();
   const { play } = useSound();
 
   useEffect(() => {
-    try {
-      setIsOpen(localStorage.getItem("swm:compact-sidebar") !== "1");
-    } catch {
-      setIsOpen(true);
-    }
+    void fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((settings: { compactSidebar?: boolean } | null) => {
+        if (typeof settings?.compactSidebar === "boolean") {
+          setIsOpen(!settings.compactSidebar);
+          try {
+            localStorage.setItem("swm:compact-sidebar", settings.compactSidebar ? "1" : "0");
+          } catch {}
+        }
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -311,6 +324,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
               try {
                 localStorage.setItem("swm:compact-sidebar", next ? "0" : "1");
                 window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
+                void fetch("/api/settings", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ compactSidebar: !next }),
+                }).catch(() => {});
               } catch {}
               return next;
             });
