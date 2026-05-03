@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from "@/lib/dashboard-room";
 import { requireSession } from "@/lib/session";
 import { getStudyDayStart } from "@/lib/periods";
 import RoomsClient from "./rooms-client";
@@ -48,6 +49,7 @@ export default async function RoomsPage() {
         code: true,
         name: true,
         members: {
+          take: ROOM_BOARD_MEMBER_PREVIEW_LIMIT,
           select: {
             user: { select: { id: true, name: true, image: true } },
           },

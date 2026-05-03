@@ -1,8 +1,8 @@
 import Sidebar from "@/components/sideBar";
 import DashboardNavbar from "@/components/dashboard-navbar";
 import FloatingDock from "@/components/floatingDock";
+import { getCachedDashboardShellUser } from "@/lib/rsc-cache";
 import { getServerSession } from "@/lib/session";
-import { prisma } from "@/lib/db";
 
 export default async function DashboardGroupLayout({
   children,
@@ -10,12 +10,7 @@ export default async function DashboardGroupLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession();
-  const dbUser = session
-    ? await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { name: true, image: true, email: true },
-      })
-    : null;
+  const dbUser = session ? await getCachedDashboardShellUser(session.user.id) : null;
   const user = dbUser ?? session?.user ?? { name: null, image: null, email: null };
 
   return (

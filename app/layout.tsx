@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import SocketPrewarm from "@/components/socket-prewarm";
-import { prisma } from "@/lib/db";
+import { getCachedUserSettings } from "@/lib/rsc-cache";
 import { getServerSession } from "@/lib/session";
-import { getOrCreateUserSettings } from "@/lib/user-settings";
 import Providers from "./providers";
 
 import "./globals.css";
@@ -30,9 +29,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getServerSession();
-  const initialUserSettings = session
-    ? await getOrCreateUserSettings(prisma, session.user.id)
-    : null;
+  const initialUserSettings = session ? await getCachedUserSettings(session.user.id) : null;
 
   return (
     <html lang="en" suppressHydrationWarning>

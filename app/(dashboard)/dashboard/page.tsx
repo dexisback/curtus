@@ -1,5 +1,6 @@
 import { requireSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from "@/lib/dashboard-room";
 import { getStudyDayStart } from "@/lib/periods";
 import VideoPlayerWrapper from "@/features/dashboard/components/video-player-wrapper";
 import Leaderboard from "@/features/dashboard/components/leaderboard";
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
             code: true,
             name: true,
             members: {
+              take: ROOM_BOARD_MEMBER_PREVIEW_LIMIT,
               select: {
                 user: { select: { id: true, name: true, image: true } },
               },

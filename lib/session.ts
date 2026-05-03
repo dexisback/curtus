@@ -1,14 +1,15 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 
-export async function getServerSession() {
+export const getServerSession = cache(async () => {
   try {
     return await auth.api.getSession({ headers: await headers() });
   } catch {
     return null;
   }
-}
+});
 
 export async function requireSession() {
   const session = await getServerSession();
@@ -16,4 +17,4 @@ export async function requireSession() {
   return session;
 }
 
-// — session.ts: Server-side session helpers. getServerSession swallows auth errors; requireSession redirects to /login.
+// — getServerSession is React.cache’d (deduped per RSC request). requireSession redirects to /login.
