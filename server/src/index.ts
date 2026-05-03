@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import { prisma } from "./db.js";
 import { redis } from "./redis.js";
 import { logger } from "./logger.js";
+import { verifySocketAuthToken } from "./socket-auth-token.js";
 import {
   registerSocketEvents,
   type SocketData,
@@ -103,27 +104,56 @@ io.use(async (socket, next) => {
         : socket.handshake.headers.cookie;
 
     const sessionToken = extractSessionToken(authCookieHeader);
-    if (!sessionToken) {
-      next(new Error("Missing Better Auth session cookie."));
-      return;
+    let userId: string | null = null;
+    let userName: string | null = null;
+
+    if (sessionToken) {
+      const session = await prisma.session.findUnique({
+        where: { token: sessionToken },
+        include: { user: true },
+      });
+      if (session && session.expiresAt > new Date()) {
+        userId = session.userId;
+        userName = session.user.name ?? session.user.email;
+      }
     }
 
-    const session = await prisma.session.findUnique({
-      where: { token: sessionToken },
-      include: { user: true },
-    });
+    if (!userId) {
+      const socketToken =
+        typeof socket.handshake.auth.socketToken === "string"
+          ? socket.handshake.auth.socketToken
+          : null;
+      const secret = process.env.BETTER_AUTH_SECRET;
+      if (!socketToken || !secret) {
+        next(new Error("Missing socket authentication."));
+        return;
+      }
 
-    if (!session || session.expiresAt <= new Date()) {
-      next(new Error("Better Auth session invalid or expired."));
-      return;
+      const verifiedUserId = verifySocketAuthToken(socketToken, secret);
+      if (!verifiedUserId) {
+        next(new Error("Invalid socket authentication token."));
+        return;
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: verifiedUserId },
+        select: { id: true, name: true, email: true },
+      });
+      if (!user) {
+        next(new Error("Socket auth user not found."));
+        return;
+      }
+
+      userId = user.id;
+      userName = user.name ?? user.email;
     }
 
-    socket.data.userId = session.userId;
-    socket.data.userName = session.user.name ?? session.user.email;
+    socket.data.userId = userId;
+    socket.data.userName = userName ?? "Unknown";
     socket.data.joinedRoomIds = [];
-    socket.join(`user:${session.userId}`);
+    socket.join(`user:${userId}`);
 
-    logger.info("Socket connected", { socketId: socket.id, userId: session.userId });
+    logger.info("Socket connected", { socketId: socket.id, userId });
     next();
   } catch (error) {
     next(error instanceof Error ? error : new Error("Socket auth failed unexpectedly."));

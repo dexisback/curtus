@@ -97,6 +97,7 @@ type ClientToServerEvents = {
 export type StudySocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socketSingleton: StudySocket | null = null;
+let socketTokenCache: { token: string; expiresAtMs: number } | null = null;
 
 function getSocketUrl() {
   const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
@@ -108,6 +109,31 @@ function getCookieAuth() {
   return {
     cookie: typeof document === "undefined" ? "" : document.cookie,
   };
+}
+
+async function getSocketToken() {
+  const now = Date.now();
+  if (socketTokenCache && socketTokenCache.expiresAtMs > now) {
+    return socketTokenCache.token;
+  }
+  try {
+    const res = await fetch("/api/socket/token", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { token?: string };
+    if (!data.token) return null;
+    socketTokenCache = {
+      token: data.token,
+      // server issues 10m TTL; refresh earlier.
+      expiresAtMs: now + 8 * 60 * 1000,
+    };
+    return data.token;
+  } catch {
+    return null;
+  }
 }
 
 export function getSocket() {
@@ -125,7 +151,10 @@ export function getSocket() {
     socketSingleton = io(socketUrl, {
       autoConnect: false,
       withCredentials: true,
-      auth: getCookieAuth(),
+      auth: async (cb) => {
+        const token = await getSocketToken();
+        cb(token ? { ...getCookieAuth(), socketToken: token } : getCookieAuth());
+      },
     });
   }
 
@@ -135,8 +164,6 @@ export function getSocket() {
 export function connectWithAuth() {
   const socket = getSocket();
   if (!socket) return null;
-
-  socket.auth = getCookieAuth();
   if (!socket.connected) socket.connect();
 
   return socket;

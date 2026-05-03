@@ -23,9 +23,17 @@ export class ApiRateLimitError extends Error {
 // ─── Session helper ───────────────────────────────────────────────────────────
 
 export async function requireApiSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) throw new ApiAuthError();
-  return session;
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) throw new ApiAuthError();
+    return session;
+  } catch (error) {
+    if (error instanceof ApiAuthError) throw error;
+    // Better Auth can intermittently throw non-Error objects (e.g. ErrorEvent)
+    // during provider/session resolution in dev/tunneled flows.
+    // Treat this as unauthenticated for API guards instead of returning 500.
+    throw new ApiAuthError();
+  }
 }
 
 // ─── Consistent JSON envelope ─────────────────────────────────────────────────
