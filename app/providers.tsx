@@ -1,14 +1,24 @@
 "use client";
 
+import { ServerUserSettingsProvider } from "@/components/server-user-settings";
 import { SoundProvider } from "@/components/sound-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import type { SerializedUserSettings } from "@/lib/user-settings";
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({
+  children,
+  initialUserSettings,
+}: {
+  children: React.ReactNode;
+  initialUserSettings: SerializedUserSettings | null;
+}) {
   return (
-    <ThemeProvider>
-      <SoundProvider>{children}</SoundProvider>
-    </ThemeProvider>
+    <ServerUserSettingsProvider value={initialUserSettings}>
+      <ThemeProvider>
+        <SoundProvider>{children}</SoundProvider>
+      </ThemeProvider>
+    </ServerUserSettingsProvider>
   );
 }
 
-// — Client providers (theme, sound, etc.) for the app tree.
+// — Client providers; initialUserSettings from root layout avoids duplicate /api/settings GETs.

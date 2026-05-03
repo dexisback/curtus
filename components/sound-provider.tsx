@@ -4,12 +4,14 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type MutableRefObject,
 } from "react";
+
+import { useServerUserSettings } from "@/components/server-user-settings";
 
 type SoundKind =
   | "tap"
@@ -154,24 +156,20 @@ function persistSoundEnabled(value: boolean) {
 }
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
-  const [enabled, setEnabledState] = useState<boolean>(() => readInitialEnabled());
+  const server = useServerUserSettings();
+  const [enabled, setEnabledState] = useState<boolean>(() =>
+    server ? server.soundEnabled : readInitialEnabled(),
+  );
   const ctxRef = useRef<AudioContext | null>(null);
 
-  useEffect(() => {
-    void fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((settings: { soundEnabled?: boolean } | null) => {
-        if (typeof settings?.soundEnabled === "boolean") {
-          setEnabledState(settings.soundEnabled);
-          try {
-            localStorage.setItem(STORAGE_KEY, settings.soundEnabled ? "1" : "0");
-          } catch {
-            // ignore
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
+  useLayoutEffect(() => {
+    if (!server) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, server.soundEnabled ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [server]);
 
   const setEnabled = useCallback((value: boolean) => {
     setEnabledState(value);

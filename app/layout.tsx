@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import SocketPrewarm from "@/components/socket-prewarm";
+import { prisma } from "@/lib/db";
+import { getServerSession } from "@/lib/session";
+import { getOrCreateUserSettings } from "@/lib/user-settings";
 import Providers from "./providers";
 
 import "./globals.css";
@@ -21,18 +24,23 @@ export const metadata: Metadata = {
   description: "Study rooms, shared focus, and accountability.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getServerSession();
+  const initialUserSettings = session
+    ? await getOrCreateUserSettings(prisma, session.user.id)
+    : null;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <Providers>
+        <Providers initialUserSettings={initialUserSettings}>
           <SocketPrewarm />
           {children}
         </Providers>
@@ -41,4 +49,4 @@ export default function RootLayout({
   );
 }
 
-// — Root layout: fonts, theme, providers, metadata.
+// — Root layout: fonts, one Prisma settings read when session exists, providers, metadata.

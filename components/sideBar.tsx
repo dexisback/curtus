@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -17,6 +17,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useServerUserSettings } from "@/components/server-user-settings";
 import { useSound } from "@/components/sound-provider";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
@@ -256,9 +257,11 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
 }
 
 export default function Sidebar({ userName }: { userName?: string | null }) {
+  const server = useServerUserSettings();
   const trimmed = userName?.trim();
   const greetingName = trimmed ? trimmed : "there";
   const [isOpen, setIsOpen] = useState(() => {
+    if (server) return !server.compactSidebar;
     if (typeof window === "undefined") return true;
     try {
       return localStorage.getItem("swm:compact-sidebar") !== "1";
@@ -269,20 +272,40 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
   const [createMounted, setCreateMounted] = useState(false);
   const pathname = usePathname();
   const { play } = useSound();
+  const isOpenRef = useRef(isOpen);
+  useLayoutEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
-  useEffect(() => {
-    void fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((settings: { compactSidebar?: boolean } | null) => {
-        if (typeof settings?.compactSidebar === "boolean") {
-          setIsOpen(!settings.compactSidebar);
-          try {
-            localStorage.setItem("swm:compact-sidebar", settings.compactSidebar ? "1" : "0");
-          } catch {}
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const toggleSidebarWidth = useCallback(() => {
+    play("tap");
+    const next = !isOpenRef.current;
+    setIsOpen(next);
+    try {
+      localStorage.setItem("swm:compact-sidebar", next ? "0" : "1");
+    } catch {
+      // ignore
+    }
+    queueMicrotask(() => {
+      try {
+        window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
+      } catch {
+        // ignore
+      }
+    });
+    void fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ compactSidebar: !next }),
+    }).catch(() => {});
+  }, [play]);
+
+  useLayoutEffect(() => {
+    if (!server) return;
+    try {
+      localStorage.setItem("swm:compact-sidebar", server.compactSidebar ? "1" : "0");
+    } catch {}
+  }, [server]);
 
   useEffect(() => {
     const handler = () => {
@@ -310,29 +333,14 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
   return (
     <>
       <motion.aside
-        initial={isOpen ? { width: "13rem" } : { width: "3.5rem" }}
+        initial={false}
         animate={{ width: isOpen ? "13rem" : "3.5rem" }}
         transition={{ type: "spring", stiffness: 380, damping: 32 }}
         className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border/40"
       >
         <motion.button
           type="button"
-          onClick={() => {
-            play("tap");
-            setIsOpen((v) => {
-              const next = !v;
-              try {
-                localStorage.setItem("swm:compact-sidebar", next ? "0" : "1");
-                window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
-                void fetch("/api/settings", {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ compactSidebar: !next }),
-                }).catch(() => {});
-              } catch {}
-              return next;
-            });
-          }}
+          onClick={toggleSidebarWidth}
           whileTap={{ scale: 0.96 }}
           className="m-0.5 flex h-[3.5rem] w-[3.5rem] shrink-0 cursor-pointer items-center justify-center
             rounded-lg transition-colors duration-150 hover:bg-accent/60"

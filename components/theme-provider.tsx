@@ -4,11 +4,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
+
+import { useServerUserSettings } from "@/components/server-user-settings";
 
 type Theme = "light" | "dark";
 
@@ -50,23 +51,16 @@ function persistTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => readInitialTheme());
-  const initialThemeRef = useRef(theme);
+  const server = useServerUserSettings();
+  const [theme, setTheme] = useState<Theme>(() =>
+    server ? server.theme : readInitialTheme(),
+  );
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    applyDom(initialThemeRef.current);
+  useLayoutEffect(() => {
+    applyDom(theme);
     queueMicrotask(() => setMounted(true));
-
-    void fetch("/api/settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((settings: { theme?: Theme } | null) => {
-        if (settings?.theme === "light" || settings?.theme === "dark") {
-          setTheme(settings.theme);
-          applyDom(settings.theme);
-        }
-      })
-      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount: sync DOM to initial theme (server or localStorage)
   }, []);
 
   const setAndPersist = useCallback((t: Theme) => {

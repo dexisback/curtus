@@ -154,6 +154,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
     if (!title) return;
     setModalBusy(true);
     try {
+      //i aint reading all that shi, happy for you or sad that it happened
       if (modalMode === "edit" && editingTaskId) {
         const res = await fetch(`/api/tasks/${editingTaskId}`, {
           method: "PATCH",
