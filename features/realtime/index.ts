@@ -1,5 +1,1 @@
-/**
- * Realtime — Socket.io client + env for the separate Node server (Railway).
- */
-
-// — Realtime helpers barrel.
+// — features/realtime: barrel for socket/realtime helpers.

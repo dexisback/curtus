@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Moon, Sun } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
 import { useTheme } from "@/components/theme-provider";
 
 const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
+
+function subscribeReducedMotion(onChange: () => void) {
+  const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+function reducedMotionSnapshot() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 type Props = {
   className?: string;
@@ -17,17 +27,16 @@ export default function ThemeToggle({ className, "aria-label": ariaLabel }: Prop
   const { theme, toggleTheme, mounted } = useTheme();
   const { play } = useSound();
   const isDark = theme === "dark";
-  const [reduced, setReduced] = useState(false);
+  const reduced = useSyncExternalStore(
+    subscribeReducedMotion,
+    reducedMotionSnapshot,
+    () => false,
+  );
 
   const onToggle = () => {
     play(isDark ? "toggleOff" : "toggleOn");
     toggleTheme();
   };
-  useEffect(() => {
-    setReduced(
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    );
-  }, []);
 
   if (!mounted) {
     return (

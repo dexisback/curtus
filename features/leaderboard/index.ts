@@ -1,6 +1,1 @@
-/**
- * Leaderboard — derived from FocusSession (no dedicated table).
- * HTTP: app/api/leaderboard.
- */
-
-// — Leaderboard feature barrel exports.
+// — features/leaderboard: barrel re-exports for leaderboard UI.

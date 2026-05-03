@@ -46,18 +46,11 @@ function ActivityCalendarShell() {
             );
           })}
         </div>
-        <p className="mt-1.5 text-pretty text-center text-[9px] text-muted-foreground/80">
-          Calendar-style stats — live data next
-        </p>
       </div>
     </div>
   );
 }
 
-/**
- * Renders in a portal. `open` is controlled internally so exit can finish, then
- * call `onExited` so the parent can clear selection.
- */
 export default function ProfileModal({
   user,
   onExited,
@@ -76,7 +69,7 @@ export default function ProfileModal({
   }, []);
 
   useEffect(() => {
-    setMounted(true);
+    queueMicrotask(() => setMounted(true));
   }, []);
 
   useEffect(() => {

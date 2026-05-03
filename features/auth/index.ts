@@ -1,5 +1,1 @@
-/**
- * Auth — NextAuth (Google + credentials): config here + app/api/auth/[...nextauth].
- */
-
-// — Auth feature barrel exports.
+// — features/auth: barrel re-exports for auth-related UI/helpers.

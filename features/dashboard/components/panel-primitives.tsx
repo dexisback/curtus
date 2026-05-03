@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export const PANEL_SHADOW = [
   "0 1px 2px rgba(17,24,39,0.04)",
   "0 4px 14px rgba(17,24,39,0.05)",
@@ -12,7 +14,7 @@ const midArcRadius = OUTER_RADIUS - GAP / 2;
 const corner45Inset = OUTER_RADIUS - midArcRadius / Math.SQRT2;
 export const SCREW_INSET = corner45Inset - SCREW_SIZE / 2;
 
-const slotStyle = (rotate: number): React.CSSProperties => ({
+const slotStyle = (rotate: number): CSSProperties => ({
   position: "absolute",
   width: "48%",
   height: "1.5px",
@@ -29,7 +31,7 @@ export function Screw({
   style,
 }: {
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }) {
   return (
     <div className={`z-10 ${className ?? ""}`} style={style}>

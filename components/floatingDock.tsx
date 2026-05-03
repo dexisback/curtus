@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Focus, Library, Medal, SunMoon, Video } from "lucide-react";
@@ -13,7 +13,7 @@ type DockItem =
       label: string;
       kind: "link";
       href: string;
-      icon: React.ComponentType<{
+      icon: ComponentType<{
         size?: number;
         strokeWidth?: number;
         className?: string;

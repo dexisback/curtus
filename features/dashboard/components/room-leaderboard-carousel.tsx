@@ -45,18 +45,30 @@ export default function RoomLeaderboardCarousel({
   const [index, setIndex] = useState(0);
   const [nowMs, setNowMs] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const current = boards[index] ?? boards[0];
+  const safeIndex = boards.length === 0 ? 0 : Math.min(index, boards.length - 1);
+  const current = boards[safeIndex];
 
   useEffect(() => {
-    setMounted(true);
-    setNowMs(Date.now());
+    queueMicrotask(() => {
+      setMounted(true);
+      setNowMs(Date.now());
+    });
     const i = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
 
-  useEffect(() => {
-    if (index > boards.length - 1) setIndex(0);
-  }, [boards.length, index]);
+  const nextBoard = () =>
+    setIndex((v) => {
+      if (boards.length === 0) return 0;
+      const i = Math.min(v, boards.length - 1);
+      return (i + 1) % boards.length;
+    });
+  const prevBoard = () =>
+    setIndex((v) => {
+      if (boards.length === 0) return 0;
+      const i = Math.min(v, boards.length - 1);
+      return (i - 1 + boards.length) % boards.length;
+    });
 
   const sortedMembers = useMemo(() => {
     if (!current) return [];
@@ -70,9 +82,6 @@ export default function RoomLeaderboardCarousel({
 
   if (!current) return null;
 
-  const next = () => setIndex((v) => (v + 1) % boards.length);
-  const prev = () => setIndex((v) => (v - 1 + boards.length) % boards.length);
-
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <div className="flex items-center justify-between gap-2 border-b border-border/50 px-2.5 pb-2 pt-2.5">
@@ -85,7 +94,7 @@ export default function RoomLeaderboardCarousel({
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
-            onClick={prev}
+            onClick={prevBoard}
             className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
               text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
             aria-label="Previous room"
@@ -95,7 +104,7 @@ export default function RoomLeaderboardCarousel({
           <motion.button
             type="button"
             whileTap={{ scale: 0.96 }}
-            onClick={next}
+            onClick={nextBoard}
             className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-card/70
               text-muted-foreground transition-colors duration-150 hover:bg-accent/70 hover:text-foreground"
             aria-label="Next room"

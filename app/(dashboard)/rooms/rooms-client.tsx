@@ -76,7 +76,7 @@ function RoomCard({
         <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
           <Users size={11} strokeWidth={1.6} />
           <span className="tabular-nums">
-            {memberCount} member{memberCount !== 1 ? "s" : ""}
+            {memberCount === 1 ? `${memberCount} member` : `${memberCount} members`}
           </span>
         </div>
         <motion.button

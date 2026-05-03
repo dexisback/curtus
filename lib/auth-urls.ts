@@ -7,7 +7,6 @@ export function stripAuthOrigin(u: string | undefined): string {
   return (u ?? "").trim().replace(/\/$/, "");
 }
 
-/** Better Auth `baseURL` / OAuth redirect host. */
 export function effectiveBetterAuthUrl(): string {
   if (authUseTunnel()) {
     const t = stripAuthOrigin(process.env.BETTER_AUTH_TUNNEL_URL);
@@ -20,7 +19,6 @@ export function effectiveBetterAuthUrl(): string {
   return "http://localhost:3000";
 }
 
-/** All origins that may host the Next app (local + tunnel + legacy env). */
 export function buildTrustedAuthOrigins(): string[] {
   const set = new Set<string>();
   const add = (raw?: string) => {

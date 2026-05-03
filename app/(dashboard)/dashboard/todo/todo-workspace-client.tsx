@@ -115,14 +115,16 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
     let previousCompleted = false;
     let nextCompleted = false;
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        previousCompleted = t.isCompleted;
-        nextCompleted = !t.isCompleted;
-        return { ...t, isCompleted: !t.isCompleted };
-      }),
-    );
+    let found = false;
+    setTasks((prev) => {
+      const row = prev.find((t) => t.id === id);
+      if (!row) return prev;
+      found = true;
+      previousCompleted = row.isCompleted;
+      nextCompleted = !previousCompleted;
+      return prev.map((t) => (t.id === id ? { ...t, isCompleted: nextCompleted } : t));
+    });
+    if (!found) return;
     play(previousCompleted ? "toggleOff" : "success");
 
     const nextSeq = (opSeqRef.current.get(id) ?? 0) + 1;
@@ -263,7 +265,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
             {tasks.length === 0 ? (
               <div className="flex min-h-[18rem] items-center justify-center px-6 text-center">
                 <p className="max-w-md text-[13px] font-medium text-muted-foreground [text-wrap:pretty]">
-                  "Scientists agree: writing it down beats overthinking it."
+                  Scientists agree: writing it down beats overthinking it.
                 </p>
               </div>
             ) : (

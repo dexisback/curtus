@@ -4,13 +4,6 @@ import { prisma } from "@/lib/db";
 import { getStudyDayStart } from "@/lib/periods";
 import { logger } from "@/lib/logger";
 
-/**
- * POST /api/jobs/recompute-streaks
- * Scheduled by QStash nightly.k
- *
- * For any user whose lastActiveDate is before yesterday's study-day start,
- * resets currentStreak to 0. Prevents stale streaks showing after inactivity.
- */
 export async function POST(req: Request) {
   try {
     await verifyQStash(req);
@@ -22,7 +15,6 @@ export async function POST(req: Request) {
   const todayStart = getStudyDayStart(now);
   const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1_000);
 
-  // Anyone whose lastActiveDate is before yesterday should have streak reset
   const { count } = await prisma.streak.updateMany({
     where: {
       lastActiveDate: { lt: yesterdayStart },

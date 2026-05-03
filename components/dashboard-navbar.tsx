@@ -11,9 +11,6 @@ type UserLite = {
   email?: string | null;
 };
 
-/**
- * Compact top bar (does not span full width) — theme + profile for dashboard shell.
- */
 export default function DashboardNavbar({ user }: { user: UserLite }) {
   return (
     <header className="relative z-50 flex shrink-0 justify-end px-3 pb-0 pt-1 sm:px-4 sm:pt-2">

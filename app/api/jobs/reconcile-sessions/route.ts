@@ -8,14 +8,6 @@ import { logger } from "@/lib/logger";
 
 const MAX_SESSION_HOURS = 4;
 
-/**
- * POST /api/jobs/reconcile-sessions
- * Scheduled by QStash every 5 minutes.
- *
- * Scans Redis for user liveSession keys whose startedAt is older than
- * MAX_SESSION_HOURS. Force-finalizes them capped at MAX_SESSION_HOURS duration
- * to guard against crashed Render instances losing the session:stopped event.
- */
 export async function POST(req: Request) {
   try {
     await verifyQStash(req);
@@ -45,9 +37,8 @@ export async function POST(req: Request) {
       const startedAt = new Date(raw.startedAt);
       if (startedAt >= cutoff) continue;
 
-      // Atomically claim this key
       const claimed = await redis.getdel<{ startedAt: string; roomId: string | null }>(key);
-      if (!claimed) continue; // Another reconcile beat us to it
+      if (!claimed) continue;
 
       const completedAt = new Date(
         Math.min(
@@ -61,7 +52,6 @@ export async function POST(req: Request) {
       );
       const studyDayStart = getStudyDayStart(completedAt);
 
-      // Extract userId from key pattern "user:{userId}:liveSession"
       const userId = key.split(":")[1];
       if (!userId) continue;
 

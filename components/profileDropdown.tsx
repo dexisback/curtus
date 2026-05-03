@@ -9,7 +9,6 @@ import { useSound } from "@/components/sound-provider";
 
 type UserLite = { name?: string | null; image?: string | null; email?: string | null };
 
-/** Session comes from the server layout to avoid `useSession` (nanostores/react) + Turbopack hook issues. */
 export default function ProfileDropdown({ user }: { user: UserLite }) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -112,4 +111,4 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   );
 }
 
-// — Header dropdown: profile link, sign out.
+// — Header dropdown: avatar menu (session from server layout); sign-out routes to /login.

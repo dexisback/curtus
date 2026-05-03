@@ -87,7 +87,6 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
         dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
         transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.6 }}
       >
-        {/* Left anchor — date + timezone */}
         <div
           className="shrink-0 w-[88px] flex flex-col items-center justify-center gap-0.5 border-r border-border/60 px-3"
           style={{ background: "oklch(0.945 0.005 75)" }}
@@ -117,7 +116,6 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
           </div>
         </div>
 
-        {/* Timeline scroll area */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-x-auto relative"
@@ -126,12 +124,10 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
             msOverflowStyle: "none",
           }}
         >
-          {/* Total width container */}
           <div
             className="relative h-full"
             style={{ width: `${HOURS.length * HOUR_WIDTH}px` }}
           >
-            {/* Hour column guides */}
             <div className="absolute inset-0 flex pointer-events-none">
               {HOURS.map((h) => {
                 const isCurrentHour = Math.floor(nowHour) === h;
@@ -154,7 +150,6 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
               })}
             </div>
 
-            {/* Task pills */}
             <div className="absolute inset-0 pointer-events-none">
               {tasks.map((task, i) => {
                 const startHour = 8 + (i % 10);
@@ -185,17 +180,11 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                       type="button"
                       whileTap={{ scale: 0.96 }}
                       onClick={async () => {
-                        let previousCompleted = false;
-                        let nextCompleted = false;
+                        const previousCompleted = task.isCompleted;
+                        const nextCompleted = !previousCompleted;
                         setTasks((prev) =>
                           prev.map((t) =>
-                            t.id === task.id
-                              ? (() => {
-                                  previousCompleted = t.isCompleted;
-                                  nextCompleted = !t.isCompleted;
-                                  return { ...t, isCompleted: nextCompleted };
-                                })()
-                              : t,
+                            t.id === task.id ? { ...t, isCompleted: nextCompleted } : t,
                           ),
                         );
                         play(previousCompleted ? "toggleOff" : "toggleOn");
@@ -262,7 +251,6 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
               })}
             </div>
 
-            {/* Current-time indicator */}
             {nowHour >= 6 && nowHour <= 23 && (
               <div
                 ref={nowIndicatorRef}

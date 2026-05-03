@@ -2,7 +2,6 @@ function stripAuthOrigin(u: string | undefined): string {
   return (u ?? "").trim().replace(/\/$/, "");
 }
 
-/** Browser origins allowed to open Socket.IO (union of every configured app URL). */
 export function getSocketCorsOrigins(): string[] {
   const set = new Set<string>();
   const add = (raw?: string) => {

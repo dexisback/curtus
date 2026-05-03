@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 import ProfileModal, { type ProfileModalUser } from "./profile-modal";
 import RoomLeaderboardCarousel, { type RoomTimerBoard } from "./room-leaderboard-carousel";
 
-/** Slimmer concentric radii + lighter shadow than the video panel — same column width, less visual bulk. */
 const LB_OUTER = 22;
 const LB_GAP = 14;
 const LB_INNER = LB_OUTER - LB_GAP;
@@ -21,8 +20,14 @@ const RANK_COLORS: Record<number, string> = {
   3: "oklch(0.60 0.09 45)",
 };
 
+function pseudoRankFromMinutes(minutes: number): number {
+  if (minutes >= 100) return 1;
+  if (minutes >= 80) return 2;
+  return 3;
+}
+
 function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
-  const pseudoRank = u.todayMinutes >= 100 ? 1 : u.todayMinutes >= 80 ? 2 : 3;
+  const pseudoRank = pseudoRankFromMinutes(u.todayMinutes);
   return {
     id: u.id,
     name: u.name,

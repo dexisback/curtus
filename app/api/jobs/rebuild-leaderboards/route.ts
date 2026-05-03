@@ -11,13 +11,6 @@ import {
 } from "@/lib/periods";
 import { logger } from "@/lib/logger";
 
-/**
- * POST /api/jobs/rebuild-leaderboards
- * Scheduled by QStash nightly at 04:50 UTC.(to be made to be configurable later on)
- *
- * Recomputes each period's leaderboard from DailyStats and atomically
- * replaces the Redis ZSET. Self-healing if ZINCRBY drift accumulates.
- */
 export async function POST(req: Request) {
   try {
     await verifyQStash(req);
@@ -59,16 +52,16 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const keyFn = period === "daily"
-        ? () => `lb:daily:${dateStart.toISOString().slice(0, 10)}`
-        : period === "weekly"
-        ? () => `lb:weekly:${dateStart.toISOString().slice(0, 10)}`
-        : () => `lb:monthly:${dateStart.toISOString().slice(0, 7)}`;
-
-      const canonicalKey = keyFn();
+      let canonicalKey: string;
+      if (period === "daily") {
+        canonicalKey = `lb:daily:${dateStart.toISOString().slice(0, 10)}`;
+      } else if (period === "weekly") {
+        canonicalKey = `lb:weekly:${dateStart.toISOString().slice(0, 10)}`;
+      } else {
+        canonicalKey = `lb:monthly:${dateStart.toISOString().slice(0, 7)}`;
+      }
       const tmpKey = `${canonicalKey}:rebuild`;
 
-      // Write to temp key then rename for atomic swap
       const pipeline = redis.pipeline();
       pipeline.del(tmpKey);
       for (const row of rows) {

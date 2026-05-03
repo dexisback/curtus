@@ -35,14 +35,10 @@ function applyDom(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
   try {
     localStorage.setItem(STORAGE, theme);
-  } catch {
-    // ignore
-  }
+  } catch {}
   try {
     document.cookie = `${STORAGE}=${theme}; path=/; max-age=31536000; SameSite=Lax`;
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 function persistTheme(theme: Theme) {
