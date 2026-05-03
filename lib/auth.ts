@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "./db";
 import { redis } from "./redis";
+import { buildTrustedAuthOrigins, effectiveBetterAuthUrl } from "./auth-urls";
 
 const isProd = process.env.NODE_ENV === "production";
 const hasGoogleAuth = Boolean(
@@ -12,22 +13,7 @@ const hasGitHubAuth = Boolean(
   process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET,
 );
 
-const trustedOrigins: string[] = [
-  process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
-];
-
-if (process.env.NEXT_PUBLIC_APP_URL) {
-  trustedOrigins.push(process.env.NEXT_PUBLIC_APP_URL);
-}
-
-if (!isProd) {
-  trustedOrigins.push("http://localhost:3000");
-  trustedOrigins.push("http://127.0.0.1:3000");
-}
-
-if (isProd) {
-  trustedOrigins.push("https://*.vercel.app");
-}
+const trustedOrigins = buildTrustedAuthOrigins();
 
 function betterAuthSecondaryStorage(r: NonNullable<typeof redis>) {
   return {
@@ -56,7 +42,7 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: effectiveBetterAuthUrl(),
   secret: process.env.BETTER_AUTH_SECRET,
 
   trustedOrigins,

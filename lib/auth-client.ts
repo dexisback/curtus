@@ -13,5 +13,5 @@ export const authClient = createAuthClient({
 
 export const { useSession, signIn, signOut } = authClient;
 
-// — auth-client.ts: Better Auth React client bound to browser origin or NEXT_PUBLIC_APP_URL.
+// — auth-client.ts: Browser uses origin; SSR uses NEXT_PUBLIC_APP_URL from next.config (local vs tunnel).
 

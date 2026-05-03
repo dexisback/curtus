@@ -15,13 +15,10 @@ import {
   type ClientToServerEvents,
   type ServerToClientEvents,
 } from "./events.js";
+import { getSocketCorsOrigins } from "./auth-urls.js";
 
 const port = Number(process.env.PORT ?? 4001);
-const appOrigin = process.env.BETTER_AUTH_URL;
-
-if (!appOrigin) {
-  throw new Error("Missing BETTER_AUTH_URL for socket server CORS.");
-}
+const socketCorsOrigins = getSocketCorsOrigins();
 
 const httpServer = createServer(async (request, response) => {
   if (request.url === "/health") {
@@ -62,7 +59,7 @@ const io = new Server<
   SocketData
 >(httpServer, {
   cors: {
-    origin: appOrigin,
+    origin: socketCorsOrigins,
     credentials: true,
   },
   pingTimeout: 25_000,
@@ -86,7 +83,7 @@ function extractSessionToken(rawCookieHeader: string | undefined) {
 io.use(async (socket, next) => {
   try {
     const origin = socket.handshake.headers.origin;
-    if (origin && origin !== appOrigin) {
+    if (origin && !socketCorsOrigins.includes(origin)) {
       next(new Error("Socket origin not allowed."));
       return;
     }
