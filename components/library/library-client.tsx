@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ExternalLink, Play, Plus, Youtube } from "lucide-react";
+import { ExternalLink, Pause, Play, Plus, Waves, Youtube } from "lucide-react";
 import YouTubeEmbedPanel from "@/features/dashboard/components/youtube-embed-panel";
 import { parseYouTubeInput } from "@/lib/youtube";
 import { writeDashboardLecture } from "@/lib/dashboard-lecture";
+import { useWhiteNoise } from "@/components/white-noise-provider";
+import { DEVELOPER_LIKES_AMBIENT, FEATURED_AMBIENT, type WhiteNoiseToneId } from "@/lib/ambient-sounds";
 
 export type LibraryItemView = {
   id: string;
@@ -43,6 +45,8 @@ function formatDate(iso: string) {
 
 export default function LibraryClient({ initialItems }: { initialItems: LibraryItemView[] }) {
   const router = useRouter();
+  const { currentTone, isPlaying, previewSoundId, initAudio, setTone, playTone, playDeveloperPreview } =
+    useWhiteNoise();
   const [items, setItems] = useState<LibraryItemView[]>(initialItems);
   const [activeId, setActiveId] = useState<string | null>(initialItems[0]?.id ?? null);
   const [urlInput, setUrlInput] = useState("");
@@ -134,9 +138,14 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
   }
 
   const previewEmbed = previewOpen ? parseYouTubeInput(previewRawUrl)?.embedUrl ?? null : null;
+  async function activateTone(tone: WhiteNoiseToneId) {
+    void initAudio();
+    if (isPlaying) await setTone(tone);
+    else await playTone(tone);
+  }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-4 overflow-hidden px-5 pb-5 pt-8 sm:px-6 sm:pt-10">
+    <div className="flex h-full min-h-0 w-full flex-col gap-5 overflow-y-auto overflow-x-hidden px-5 pb-10 pt-8 sm:px-6 sm:pt-10">
       <section
         className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-4
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
@@ -171,12 +180,12 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         {error && <p className="mt-2 text-[11px] text-destructive">{error}</p>}
       </section>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(20rem,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(20rem,1fr)] xl:items-start">
         <section
-          className="min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
+          className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
-          <div className="h-full rounded-xl bg-background p-2">
+          <div className="rounded-xl bg-background p-2">
             <YouTubeEmbedPanel
               embedUrl={active?.embedUrl ?? null}
               large
@@ -186,29 +195,36 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         </section>
 
         <section
-          className="min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
+          className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
-          <div className="flex h-full min-h-0 flex-col rounded-xl bg-background p-2.5">
+          <div className="flex flex-col rounded-xl bg-background p-3">
             <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
               Saved links
             </p>
-            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-0.5">
+            <div className="space-y-2 pr-0.5">
               <AnimatePresence initial={false}>
                 {items.map((item) => {
                   const activeRow = item.id === active?.id;
                   return (
-                    <motion.button
+                    <motion.div
                       key={item.id}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => void openItem(item.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          void openItem(item.id);
+                        }
+                      }}
                       initial={{ opacity: 0, y: 4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
                       whileTap={{ scale: 0.985 }}
                       className={
-                        "w-full rounded-lg border px-2.5 py-2 text-left transition-colors " +
+                        "w-full rounded-lg border px-3 py-2.5 text-left transition-colors " +
                         (activeRow
                           ? "border-cta/40 bg-cta/10"
                           : "border-border/50 bg-card/65 hover:bg-accent/55")
@@ -255,13 +271,13 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                           </a>
                         </div>
                       </div>
-                    </motion.button>
+                    </motion.div>
                   );
                 })}
               </AnimatePresence>
 
               {items.length === 0 && (
-                <div className="flex h-full min-h-[8rem] items-center justify-center rounded-lg border border-dashed border-border/60 text-center">
+                <div className="flex min-h-[10rem] items-center justify-center rounded-lg border border-dashed border-border/60 text-center">
                   <p className="px-6 text-[11px] text-muted-foreground">
                     No links yet. Add a YouTube URL above and it will appear here.
                   </p>
@@ -271,6 +287,68 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
           </div>
         </section>
       </div>
+
+      <section
+        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
+          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
+      >
+        <div className="rounded-xl bg-background p-3">
+          <p className="mb-2 inline-flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            <Waves size={12} />
+            Sound Library
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {FEATURED_AMBIENT.map((sound) => {
+              const active =
+                Boolean(sound.tone) &&
+                currentTone === sound.tone &&
+                isPlaying &&
+                previewSoundId === null;
+              return (
+                <motion.button
+                  key={sound.id}
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    if (sound.tone) void activateTone(sound.tone);
+                  }}
+                  className={
+                    "flex h-12 items-center justify-center rounded-lg border px-3 text-[11px] font-medium transition-colors " +
+                    (active
+                      ? "border-cta/45 bg-cta/10 text-foreground"
+                      : "border-border/60 bg-card/65 text-foreground/85 hover:bg-accent/55")
+                  }
+                >
+                  {sound.label}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          <p className="mt-4 mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            the developer likes these sounds
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {DEVELOPER_LIKES_AMBIENT.map((sound) => (
+              <div
+                key={sound.id}
+                className="flex min-h-[2.75rem] items-center justify-between rounded-lg border border-border/55 bg-card/60 px-3 py-2.5"
+              >
+                <span className="truncate pr-2 text-[10.5px] text-foreground/85">{sound.label}</span>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => void playDeveloperPreview(sound.id, sound.fileName)}
+                  className="inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-border/60 bg-background text-foreground/85 hover:bg-accent/55"
+                  aria-label={`Preview ${sound.label}`}
+                >
+                  {previewSoundId === sound.id ? <Pause size={12} /> : <Play size={12} />}
+                </motion.button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <AnimatePresence>
         {previewOpen && (
@@ -295,7 +373,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
               className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-3 shadow-[0_12px_40px_rgba(17,24,39,0.14)]"
             >
               <p className="mb-2 text-[12px] font-medium text-foreground">Preview before saving</p>
-              <div className="h-[min(65vh,36rem)] rounded-xl bg-background p-2">
+              <div className="rounded-xl bg-background p-2">
                 <YouTubeEmbedPanel embedUrl={previewEmbed} large />
               </div>
               <div className="mt-2 flex justify-end gap-2">

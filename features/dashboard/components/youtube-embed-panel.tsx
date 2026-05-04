@@ -32,18 +32,21 @@ export default function YouTubeEmbedPanel({
   activeLabel,
 }: Props) {
   const screwInset = SCREW_INSET;
+  /** Library uses scroll layout — fixed 16:9 instead of filling an unknown flex height. */
+  const libraryLayout = large;
 
   return (
     <div
       className={
-        "flex h-full w-full min-h-0 min-w-0 items-start justify-end " +
-        (large ? "p-1 sm:p-2" : "pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4")
+        libraryLayout
+          ? "flex w-full min-w-0 flex-col items-stretch p-1 sm:p-2"
+          : "flex h-full w-full min-h-0 min-w-0 items-start justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
       }
     >
       <motion.div
         className={
-          "relative flex min-h-0 min-w-0 max-h-full shrink-0 flex-col border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] " +
-          (large ? "h-full w-full" : "h-[100%] w-[min(100%,90%)]")
+          "relative flex w-full flex-col border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] " +
+          (libraryLayout ? "min-w-0 shrink-0" : "min-h-0 min-w-0 max-h-full shrink-0 h-[100%] w-[min(100%,90%)]")
         }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
@@ -73,7 +76,11 @@ export default function YouTubeEmbedPanel({
         />
 
         <div
-          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950"
+          className={
+            libraryLayout
+              ? "relative aspect-video w-full overflow-hidden bg-neutral-950"
+              : "relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950"
+          }
           style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
           {embedUrl && onClearLecture && (
@@ -91,7 +98,7 @@ export default function YouTubeEmbedPanel({
             <iframe
               src={embedUrl}
               title="YouTube player"
-              className="h-full w-full"
+              className={libraryLayout ? "absolute inset-0 h-full w-full" : "h-full w-full"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen

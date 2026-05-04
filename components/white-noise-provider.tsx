@@ -10,12 +10,13 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-
-export type WhiteNoiseToneId = "paris-cafe" | "beach" | "rainforest";
+import { TONE_SOUND_FILE, ambientUrl, type WhiteNoiseToneId } from "@/lib/ambient-sounds";
 
 type WhiteNoiseContextValue = {
   currentTone: WhiteNoiseToneId;
   isPlaying: boolean;
+  /** Non-looping library preview (developer picks); mutually exclusive with tone playback. */
+  previewSoundId: string | null;
   volume: number;
   ready: boolean;
   error: string | null;
@@ -24,17 +25,15 @@ type WhiteNoiseContextValue = {
   toggle: () => Promise<void>;
   stop: () => void;
   setVolume: (value: number) => void;
+  playDeveloperPreview: (soundId: string, fileName: string) => Promise<void>;
+  /** Start the given looping tone; stops any preview or other tone first. */
+  playTone: (tone: WhiteNoiseToneId) => Promise<boolean>;
 };
 
 const WhiteNoiseContext = createContext<WhiteNoiseContextValue | null>(null);
 const TONE_KEY = "swm:white-noise-tone";
 const PLAYING_KEY = "swm:white-noise-playing";
 const VOLUME_KEY = "swm:white-noise-volume";
-
-type Engine = {
-  stop: () => void;
-  gain: GainNode;
-};
 
 function createContextSafe(ctxRef: MutableRefObject<AudioContext | null>) {
   if (typeof window === "undefined") return null;
@@ -45,10 +44,10 @@ function createContextSafe(ctxRef: MutableRefObject<AudioContext | null>) {
 }
 
 function readTone() {
-  if (typeof window === "undefined") return "rainforest" as WhiteNoiseToneId;
+  if (typeof window === "undefined") return "river" as WhiteNoiseToneId;
   const v = localStorage.getItem(TONE_KEY);
-  if (v === "paris-cafe" || v === "beach" || v === "rainforest") return v;
-  return "rainforest";
+  if (v === "paris-cafe" || v === "beach" || v === "river") return v;
+  return "river";
 }
 
 function readPlaying() {
@@ -63,121 +62,6 @@ function readVolume() {
   return Math.min(1, Math.max(0.05, n));
 }
 
-function createNoiseBuffer(ctx: AudioContext) {
-  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-  const out = buffer.getChannelData(0);
-  for (let i = 0; i < out.length; i++) out[i] = Math.random() * 2 - 1;
-  return buffer;
-}
-
-function startNoiseLoop(
-  ctx: AudioContext,
-  noiseBuffer: AudioBuffer,
-  destination: AudioNode,
-  gainValue: number,
-  filterType: BiquadFilterType,
-  filterFreq: number,
-  filterQ = 1,
-) {
-  const src = ctx.createBufferSource();
-  src.buffer = noiseBuffer;
-  src.loop = true;
-  const filter = ctx.createBiquadFilter();
-  filter.type = filterType;
-  filter.frequency.value = filterFreq;
-  filter.Q.value = filterQ;
-  const gain = ctx.createGain();
-  gain.gain.value = gainValue;
-  src.connect(filter);
-  filter.connect(gain);
-  gain.connect(destination);
-  src.start();
-  return {
-    stop: () => {
-      try {
-        src.stop();
-      } catch {}
-      src.disconnect();
-      filter.disconnect();
-      gain.disconnect();
-    },
-  };
-}
-
-function buildToneEngine(
-  ctx: AudioContext,
-  noiseBuffer: AudioBuffer,
-  tone: WhiteNoiseToneId,
-  destination: AudioNode,
-): Engine {
-  const toneGain = ctx.createGain();
-  toneGain.gain.value = 0.42;
-  toneGain.connect(destination);
-  const stops: Array<() => void> = [];
-
-  if (tone === "rainforest") {
-    const base = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.34, "bandpass", 850, 0.5);
-    const hiss = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.12, "highpass", 4200, 0.7);
-    stops.push(base.stop, hiss.stop);
-  }
-
-  if (tone === "beach") {
-    const surf = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.26, "lowpass", 1200, 0.8);
-    const foam = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.1, "bandpass", 2200, 0.5);
-    const osc = ctx.createOscillator();
-    const oscGain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.value = 80;
-    oscGain.gain.value = 0.012;
-    osc.connect(oscGain);
-    oscGain.connect(toneGain);
-    osc.start();
-    stops.push(
-      surf.stop,
-      foam.stop,
-      () => {
-        try {
-          osc.stop();
-        } catch {}
-        osc.disconnect();
-        oscGain.disconnect();
-      },
-    );
-  }
-
-  if (tone === "paris-cafe") {
-    const room = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.22, "bandpass", 1400, 0.7);
-    const chatter = startNoiseLoop(ctx, noiseBuffer, toneGain, 0.08, "highpass", 2600, 0.7);
-    const hum = ctx.createOscillator();
-    const humGain = ctx.createGain();
-    hum.type = "triangle";
-    hum.frequency.value = 115;
-    humGain.gain.value = 0.015;
-    hum.connect(humGain);
-    humGain.connect(toneGain);
-    hum.start();
-    stops.push(
-      room.stop,
-      chatter.stop,
-      () => {
-        try {
-          hum.stop();
-        } catch {}
-        hum.disconnect();
-        humGain.disconnect();
-      },
-    );
-  }
-
-  return {
-    gain: toneGain,
-    stop: () => {
-      for (const stop of stops) stop();
-      toneGain.disconnect();
-    },
-  };
-}
-
 export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) {
   const [currentTone, setCurrentTone] = useState<WhiteNoiseToneId>(() => readTone());
   const [isPlaying, setIsPlaying] = useState(false);
@@ -187,16 +71,47 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   const shouldResumeRef = useRef<boolean>(false);
 
   const ctxRef = useRef<AudioContext | null>(null);
-  const noiseBufferRef = useRef<AudioBuffer | null>(null);
-  const masterRef = useRef<GainNode | null>(null);
-  const engineRef = useRef<Engine | null>(null);
+  const playersRef = useRef<Partial<Record<WhiteNoiseToneId, HTMLAudioElement>>>({});
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewIdRef = useRef<string | null>(null);
+  const [previewSoundId, setPreviewSoundId] = useState<string | null>(null);
+
+  const stopPreviewInternal = useCallback((clearId = true) => {
+    const el = previewAudioRef.current;
+    if (el) {
+      el.pause();
+      el.currentTime = 0;
+      el.src = "";
+      previewAudioRef.current = null;
+    }
+    if (clearId) {
+      previewIdRef.current = null;
+      setPreviewSoundId(null);
+    }
+  }, []);
+
+  const getPlayer = useCallback((tone: WhiteNoiseToneId) => {
+    const cached = playersRef.current[tone];
+    if (cached) return cached;
+    const audio = new Audio(ambientUrl(TONE_SOUND_FILE[tone]));
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.volume = volume;
+    playersRef.current[tone] = audio;
+    return audio;
+  }, [volume]);
 
   const stop = useCallback(() => {
-    engineRef.current?.stop();
-    engineRef.current = null;
+    stopPreviewInternal(true);
+    for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
+      const a = playersRef.current[key];
+      if (!a) continue;
+      a.pause();
+      a.currentTime = 0;
+    }
     setIsPlaying(false);
     if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
-  }, []);
+  }, [stopPreviewInternal]);
 
   const initAudio = useCallback(async () => {
     const ctx = createContextSafe(ctxRef);
@@ -223,25 +138,84 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
     async (tone: WhiteNoiseToneId) => {
       const canPlay = await initAudio();
       if (!canPlay) return false;
-      const ctx = ctxRef.current;
-      if (!ctx) return false;
-
-      if (!noiseBufferRef.current) noiseBufferRef.current = createNoiseBuffer(ctx);
-      if (!masterRef.current) {
-        masterRef.current = ctx.createGain();
-        masterRef.current.gain.value = volume;
-        masterRef.current.connect(ctx.destination);
+      stopPreviewInternal(true);
+      for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
+        const prev = playersRef.current[key];
+        if (!prev) continue;
+        prev.pause();
+        prev.currentTime = 0;
       }
-
-      engineRef.current?.stop();
-      engineRef.current = buildToneEngine(ctx, noiseBufferRef.current, tone, masterRef.current);
+      const player = getPlayer(tone);
+      player.volume = volume;
+      try {
+        await player.play();
+      } catch {
+        setError("Could not play selected ambience.");
+        return false;
+      }
       setCurrentTone(tone);
       setIsPlaying(true);
       localStorage.setItem(TONE_KEY, tone);
       localStorage.setItem(PLAYING_KEY, "1");
+      setError(null);
       return true;
     },
-    [initAudio, volume],
+    [getPlayer, initAudio, stopPreviewInternal, volume],
+  );
+
+  const playDeveloperPreview = useCallback(
+    async (soundId: string, fileName: string) => {
+      const current = previewAudioRef.current;
+      if (previewIdRef.current === soundId && current && !current.paused) {
+        stopPreviewInternal(true);
+        setIsPlaying(false);
+        if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+        return;
+      }
+
+      const canPlay = await initAudio();
+      if (!canPlay) return;
+
+      for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
+        const prev = playersRef.current[key];
+        if (!prev) continue;
+        prev.pause();
+        prev.currentTime = 0;
+      }
+      stopPreviewInternal(false);
+
+      const el = new Audio(ambientUrl(fileName));
+      el.loop = false;
+      el.preload = "auto";
+      el.volume = volume;
+      previewAudioRef.current = el;
+      previewIdRef.current = soundId;
+      setPreviewSoundId(soundId);
+
+      const onEnded = () => {
+        if (previewAudioRef.current !== el) return;
+        stopPreviewInternal(true);
+        setIsPlaying(false);
+        if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+      };
+      el.addEventListener("ended", onEnded, { once: true });
+
+      try {
+        await el.play();
+      } catch {
+        stopPreviewInternal(true);
+        setIsPlaying(false);
+        setError("Could not play this sample.");
+        return;
+      }
+
+      if (previewAudioRef.current !== el) return;
+
+      setIsPlaying(true);
+      if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+      setError(null);
+    },
+    [initAudio, stopPreviewInternal, volume],
   );
 
   const setTone = useCallback(
@@ -266,13 +240,14 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   const setVolume = useCallback((value: number) => {
     const next = Math.min(1, Math.max(0.05, value));
     setVolumeState(next);
-    if (masterRef.current) masterRef.current.gain.value = next;
+    for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
+      const a = playersRef.current[key];
+      if (a) a.volume = next;
+    }
+    const preview = previewAudioRef.current;
+    if (preview) preview.volume = next;
     if (typeof window !== "undefined") localStorage.setItem(VOLUME_KEY, String(next));
   }, []);
-
-  useEffect(() => {
-    if (masterRef.current) masterRef.current.gain.value = volume;
-  }, [volume]);
 
   useEffect(() => {
     shouldResumeRef.current = readPlaying();
@@ -290,9 +265,21 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const ctx = ctxRef.current;
+    const players = playersRef.current;
     return () => {
-      engineRef.current?.stop();
-      masterRef.current?.disconnect();
+      const pv = previewAudioRef.current;
+      if (pv) {
+        pv.pause();
+        pv.src = "";
+        previewAudioRef.current = null;
+      }
+      previewIdRef.current = null;
+      for (const key of Object.keys(players) as WhiteNoiseToneId[]) {
+        const a = players[key];
+        if (!a) continue;
+        a.pause();
+        a.src = "";
+      }
       if (ctx && ctx.state !== "closed") {
         void ctx.close();
       }
@@ -300,8 +287,36 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const value = useMemo(
-    () => ({ currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, stop, setVolume }),
-    [currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, stop, setVolume],
+    () => ({
+      currentTone,
+      isPlaying,
+      previewSoundId,
+      volume,
+      ready,
+      error,
+      initAudio,
+      setTone,
+      toggle,
+      stop,
+      setVolume,
+      playDeveloperPreview,
+      playTone: start,
+    }),
+    [
+      currentTone,
+      isPlaying,
+      previewSoundId,
+      volume,
+      ready,
+      error,
+      initAudio,
+      setTone,
+      toggle,
+      stop,
+      setVolume,
+      playDeveloperPreview,
+      start,
+    ],
   );
 
   return <WhiteNoiseContext.Provider value={value}>{children}</WhiteNoiseContext.Provider>;

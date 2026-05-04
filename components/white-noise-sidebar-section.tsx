@@ -3,12 +3,13 @@
 import { motion } from "motion/react";
 import { Pause, Play, Volume2, Waves } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
-import { useWhiteNoise, type WhiteNoiseToneId } from "@/components/white-noise-provider";
+import { useWhiteNoise } from "@/components/white-noise-provider";
+import { type WhiteNoiseToneId } from "@/lib/ambient-sounds";
 
 const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
   { id: "paris-cafe", label: "Paris Cafe" },
   { id: "beach", label: "Beach" },
-  { id: "rainforest", label: "Rainforest" },
+  { id: "river", label: "River" },
 ];
 
 export default function WhiteNoiseSidebarSection() {
