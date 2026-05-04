@@ -21,6 +21,7 @@ import {
 import { useServerUserSettings } from "@/components/server-user-settings";
 import { useSound } from "@/components/sound-provider";
 import WhiteNoiseSidebarSection from "@/components/white-noise-sidebar-section";
+import { DURATION, EASE_IN, EASE_OUT, SPRING_SNAP } from "@/lib/ui-motion";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
@@ -34,29 +35,26 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-const EASE_OUT: readonly [number, number, number, number] = [0, 0, 0.58, 1];
-const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
-
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.032, delayChildren: 0.04 } },
+  visible: { transition: { staggerChildren: 0.036, delayChildren: 0.04 } },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -10, filter: "blur(3px)" },
+  hidden: { opacity: 0, x: -8, filter: "blur(3px)" },
   visible: {
     opacity: 1,
     x: 0,
     filter: "blur(0px)",
-    transition: { duration: 0.22, ease: EASE_OUT },
+    transition: { duration: DURATION.medium, ease: EASE_OUT },
   },
 };
 
 const itemExit = {
   opacity: 0,
-  x: -8,
+  x: -6,
   filter: "blur(3px)",
-  transition: { duration: 0.15, ease: EASE_IN },
+  transition: { duration: DURATION.fast, ease: EASE_IN },
 };
 
 function CreateRoomModal({ onExited }: { onExited: () => void }) {
@@ -137,7 +135,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
           className="fixed inset-0 z-[210] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: 0.18, ease: EASE_IN } }}
+          exit={{ opacity: 0, transition: { duration: DURATION.fast, ease: EASE_IN } }}
           onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
         >
           <div
@@ -155,8 +153,8 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
             className="relative z-10 w-full max-w-sm"
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98, transition: { duration: 0.18, ease: EASE_IN } }}
-            transition={{ duration: 0.22, ease: EASE_OUT }}
+            exit={{ opacity: 0, y: 4, scale: 0.985, transition: { duration: DURATION.fast, ease: EASE_IN } }}
+            transition={SPRING_SNAP}
             onClick={(e) => e.stopPropagation()}
           >
             <div
@@ -356,7 +354,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 className="flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: 0.15, ease: EASE_IN } }}
+                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: DURATION.fast, ease: EASE_IN } }}
                 transition={{ type: "spring", duration: 0.3, bounce: 0 }}
               >
                 <X size={16} strokeWidth={1.5} />
@@ -367,7 +365,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 className="flex items-center justify-center"
                 initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: 0.15, ease: EASE_IN } }}
+                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: DURATION.fast, ease: EASE_IN } }}
                 transition={{ type: "spring", duration: 0.3, bounce: 0 }}
               >
                 <Menu size={16} strokeWidth={1.5} />

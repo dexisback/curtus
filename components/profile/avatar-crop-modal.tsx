@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import { X } from "lucide-react";
 import { renderCroppedAvatarDataUrl } from "@/lib/avatar-crop";
+import { DURATION, EASE_OUT_SMOOTH, SPRING_SNAP } from "@/lib/ui-motion";
 
 type Props = {
   open: boolean;
@@ -65,7 +66,7 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
+          transition={{ duration: DURATION.fast, ease: EASE_OUT_SMOOTH }}
           onClick={(e) => {
             if (e.target === e.currentTarget && !busy) onClose();
           }}
@@ -83,8 +84,8 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
             aria-labelledby="avatar-crop-title"
             initial={{ y: 10, opacity: 0, scale: 0.985 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 8, opacity: 0, scale: 0.985 }}
-            transition={{ type: "spring", duration: 0.28, bounce: 0 }}
+            exit={{ y: 6, opacity: 0, scale: 0.985 }}
+            transition={SPRING_SNAP}
             className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-[0_12px_48px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
               dark:bg-card/90 dark:shadow-[0_12px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
             onClick={(e) => e.stopPropagation()}
@@ -109,7 +110,7 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
               <p className="text-[11px] leading-relaxed text-muted-foreground">
                 Drag to reposition. Use the slider to zoom. The preview is a square crop.
               </p>
-              <div className="relative mt-3 h-[min(52vh,22rem)] w-full overflow-hidden rounded-xl bg-neutral-950">
+              <div className="app-cursor-precision relative mt-3 h-[min(52vh,22rem)] w-full overflow-hidden rounded-xl bg-neutral-950">
                 <Cropper
                   image={imageSrc}
                   crop={crop}
@@ -134,7 +135,7 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
                   step={0.01}
                   value={zoom}
                   onChange={(e) => setZoom(Number(e.target.value))}
-                  className="h-2 w-full cursor-pointer accent-[var(--color-cta)]"
+                  className="h-2 w-full accent-[var(--color-cta)]"
                   aria-label="Zoom"
                 />
               </div>

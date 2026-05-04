@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { motion } from "motion/react";
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
 import ProfileModal, { type ProfileModalUser } from "./profile-modal";
 import RoomLeaderboardCarousel, { type RoomTimerBoard } from "./room-leaderboard-carousel";
 
@@ -53,7 +54,7 @@ export default function Leaderboard({ boards }: { boards: RoomTimerBoard[] }) {
     <>
       <div className="flex h-full min-h-0 w-full min-w-0 items-stretch justify-start pl-0.5 pr-0 pt-1 pb-2">
         <motion.div
-          className="relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
+          className="app-cursor-drag relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
           style={{
             borderRadius: `${LB_OUTER}px`,
             padding: `${LB_GAP}px`,
@@ -63,8 +64,8 @@ export default function Leaderboard({ boards }: { boards: RoomTimerBoard[] }) {
           drag
           dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
           dragElastic={0.08}
-          dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
-          transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.6 }}
+          dragTransition={SPRING_DRAG_RELEASE}
+          transition={SPRING_HOVER}
         >
           <div
             className="relative flex h-full w-full flex-col overflow-hidden bg-background"

@@ -11,6 +11,7 @@ import {
   SCREW_INSET,
   Screw,
 } from "./panel-primitives";
+import { SPRING_HOVER } from "@/lib/ui-motion";
 
 const EMPTY_TOOLTIP = "start watching a youtube video";
 
@@ -60,8 +61,8 @@ export default function YouTubeEmbedPanel({
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={isLibraryLayout ? undefined : { y: -1, rotate: 0.08, scale: 1.003 }}
-        transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.65 }}
+        whileHover={isLibraryLayout ? undefined : { y: -1, rotate: 0.06, scale: 1.002 }}
+        transition={SPRING_HOVER}
       >
         <Screw
           className="absolute"

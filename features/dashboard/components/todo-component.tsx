@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { CheckSquare2 } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
 
 const HOUR_WIDTH = 96;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM – 11 PM
@@ -71,7 +72,7 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
   return (
     <div className="h-full min-h-0 w-full min-w-0 pt-0.5 pb-2.5">
       <motion.div
-        className="w-full h-full border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex items-stretch overflow-hidden"
+        className="app-cursor-drag flex h-full w-full items-stretch overflow-hidden border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
         style={{
           borderRadius: 16,
           boxShadow: [
@@ -84,8 +85,8 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
         drag
         dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
         dragElastic={0.08}
-        dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.6 }}
+        dragTransition={SPRING_DRAG_RELEASE}
+        transition={SPRING_HOVER}
       >
         <div
           className="shrink-0 w-[88px] flex flex-col items-center justify-center gap-0.5 border-r border-border/60 px-3"

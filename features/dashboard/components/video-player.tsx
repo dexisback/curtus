@@ -12,6 +12,7 @@ import {
   SCREW_INSET,
   Screw,
 } from "./panel-primitives";
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
 
 export default function VideoPlayer() {
   const screwInset = SCREW_INSET;
@@ -77,19 +78,19 @@ export default function VideoPlayer() {
         pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
     >
       <motion.div
-        className="relative flex h-[100%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
+        className="app-cursor-drag relative flex h-[100%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
           border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={{ y: -1, rotate: 0.08, scale: 1.003 }}
+        whileHover={{ y: -1, rotate: 0.06, scale: 1.002 }}
         drag
         dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
         dragElastic={0.08}
-        dragTransition={{ bounceStiffness: 820, bounceDamping: 40 }}
-        transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.65 }}
+        dragTransition={SPRING_DRAG_RELEASE}
+        transition={SPRING_HOVER}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => isPlaying && setShowControls(false)}
       >

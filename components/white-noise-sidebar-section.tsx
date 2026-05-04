@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Music2, Pause, Play, Volume2 } from "lucide-rea
 import { useSound } from "@/components/sound-provider";
 import { useWhiteNoise } from "@/components/white-noise-provider";
 import { DEVELOPER_LIKES_AMBIENT, type WhiteNoiseToneId } from "@/lib/ambient-sounds";
+import { DURATION, EASE_OUT_SMOOTH } from "@/lib/ui-motion";
 
 const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
   { id: "paris-cafe", label: "Paris Cafe" },
@@ -129,7 +130,7 @@ export default function WhiteNoiseSidebarSection() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0, 0, 0.58, 1] }}
+            transition={{ duration: DURATION.medium, ease: EASE_OUT_SMOOTH }}
             className="overflow-hidden"
           >
             <div className="pt-2">
