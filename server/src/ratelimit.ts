@@ -14,6 +14,7 @@ export const socketLimiters = {
   pingSend: make("60 s", 10),
   roomJoin: make("60 s", 30),
   sessionStarted: make("60 s", 6),
+  presenceRefresh: make("10 s", 30),
 };
 
 export async function socketAllow(

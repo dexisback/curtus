@@ -7,6 +7,7 @@ type ServerToClientEvents = {
     studyingUserIds: string[];
     videoEnabledUserIds: string[];
     todayMinutes: Record<string, number>;
+    sessionStartedAt: Record<string, string | null>;
   }) => void;
   "chat:message": (payload: {
     id: string;
@@ -92,6 +93,7 @@ type ClientToServerEvents = {
   "session:started": (payload: { roomId?: string | null }) => void;
   "session:stopped": () => void;
   "ping:send": (payload: { toUserId: string }) => void;
+  "presence:refresh": () => void;
 };
 
 export type StudySocket = Socket<ServerToClientEvents, ClientToServerEvents>;

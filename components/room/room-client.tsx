@@ -89,10 +89,10 @@ export default function RoomClient({
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
+  const [sessionStartedAt, setSessionStartedAt] = useState<Record<string, string | null>>({});
   const [leaving, setLeaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(null);
-  const [renderBaseMs] = useState(() => Date.now());
   const {
     localStream,
     remoteStreams,
@@ -129,11 +129,13 @@ export default function RoomClient({
       studyingUserIds: string[];
       videoEnabledUserIds: string[];
       todayMinutes: Record<string, number>;
+      sessionStartedAt: Record<string, string | null>;
     }) => {
       if (payload.roomId !== roomId) return;
       setStudyingUserIds(payload.studyingUserIds);
       setVideoEnabledUserIds(payload.videoEnabledUserIds);
       setTodayMinutes(payload.todayMinutes);
+      setSessionStartedAt(payload.sessionStartedAt);
     };
 
     const onKicked = (payload: { roomId: string }) => {
@@ -191,7 +193,10 @@ export default function RoomClient({
         .join("")
         .toUpperCase(),
       active: studyingUserIds.includes(m.id),
-      startedAtIso: new Date(renderBaseMs - ((todayMinutes[m.id] ?? 10) % 120) * 60 * 1000).toISOString(),
+      startedAtIso:
+        studyingUserIds.includes(m.id) && sessionStartedAt[m.id]
+          ? sessionStartedAt[m.id]!
+          : new Date(0).toISOString(),
       todayMinutes: todayMinutes[m.id] ?? 0,
     })),
   };

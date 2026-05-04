@@ -1,14 +1,12 @@
 import { prisma } from "@/lib/db";
-import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from "@/lib/dashboard-room";
 import { requireSession } from "@/lib/session";
-import { getStudyDayStart } from "@/lib/periods";
+import { getRoomTimerBoards } from "@/lib/room-timer-boards";
 import RoomsClient from "./rooms-client";
 
 export default async function RoomsPage() {
   const session = await requireSession();
-  const todayStart = getStudyDayStart(new Date());
 
-  const [publicRooms, myMemberships, boardRooms] = await Promise.all([
+  const [publicRooms, myMemberships, boards] = await Promise.all([
     prisma.room.findMany({
       where: { isPublic: true },
       orderBy: { createdAt: "desc" },
@@ -35,69 +33,8 @@ export default async function RoomsPage() {
         },
       },
     }),
-    prisma.room.findMany({
-      where: {
-        OR: [
-          { isPublic: true },
-          { members: { some: { userId: session.user.id } } },
-        ],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        members: {
-          take: ROOM_BOARD_MEMBER_PREVIEW_LIMIT,
-          select: {
-            user: { select: { id: true, name: true, image: true } },
-          },
-          orderBy: { joinedAt: "asc" },
-        },
-      },
-    }),
+    getRoomTimerBoards(session.user.id, "rooms"),
   ]);
-
-  const boardMemberIds = Array.from(
-    new Set(
-      boardRooms.flatMap((room) => room.members.map((member) => member.user.id)),
-    ),
-  );
-  const todayRows =
-    boardMemberIds.length > 0
-      ? await prisma.dailyStats.groupBy({
-          by: ["userId"],
-          where: { userId: { in: boardMemberIds }, date: todayStart },
-          _sum: { totalMinutes: true },
-        })
-      : [];
-  const todayMinutesByUserId = new Map(
-    todayRows.map((row) => [row.userId, row._sum.totalMinutes ?? 0]),
-  );
-
-  const boards = boardRooms.map((room) => ({
-    id: room.id,
-    roomName: room.name,
-    roomCode: room.code,
-    members: room.members.map((member) => {
-      const displayName = member.user.name ?? "Unknown";
-      const parts = displayName.trim().split(/\s+/);
-      const initials =
-        parts.length === 1
-          ? parts[0].slice(0, 2).toUpperCase()
-          : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      return {
-        id: member.user.id,
-        name: displayName,
-        initials,
-        image: member.user.image,
-        active: false,
-        startedAtIso: new Date().toISOString(),
-        todayMinutes: todayMinutesByUserId.get(member.user.id) ?? 0,
-      };
-    }),
-  }));
 
   return (
     <RoomsClient

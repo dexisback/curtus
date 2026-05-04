@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Trophy } from "lucide-react";
 import type { LeaderboardEntry, Period } from "@/lib/leaderboard";
@@ -29,10 +29,11 @@ function getInitials(name: string | null): string {
 }
 
 function formatMin(min: number): string {
+  if (min <= 0) return "00:00";
+  if (min < 60) return `${String(min).padStart(2, "0")}:00`;
   const h = Math.floor(min / 60);
   const m = min % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  return `${h}h ${m}m`;
 }
 
 type Props = {
@@ -74,23 +75,26 @@ export default function LeaderboardClient({
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
 
-  function loadLeaderboard(nextPeriod: Period, nextScope: "global" | "room", nextRoomId: string) {
-    startTransition(async () => {
-      const query = new URLSearchParams({
-        period: nextPeriod,
-        scope: nextScope,
+  const loadLeaderboard = useCallback(
+    (nextPeriod: Period, nextScope: "global" | "room", nextRoomId: string) => {
+      startTransition(async () => {
+        const query = new URLSearchParams({
+          period: nextPeriod,
+          scope: nextScope,
+        });
+        if (nextScope === "room" && nextRoomId) query.set("roomId", nextRoomId);
+        const res = await fetch(`/api/leaderboard?${query.toString()}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          entries: LeaderboardEntry[];
+          me: { rank: number; totalMinutes: number } | null;
+        };
+        setEntries(data.entries);
+        setMe(data.me);
       });
-      if (nextScope === "room" && nextRoomId) query.set("roomId", nextRoomId);
-      const res = await fetch(`/api/leaderboard?${query.toString()}`);
-      if (!res.ok) return;
-      const data = (await res.json()) as {
-        entries: LeaderboardEntry[];
-        me: { rank: number; totalMinutes: number } | null;
-      };
-      setEntries(data.entries);
-      setMe(data.me);
-    });
-  }
+    },
+    [],
+  );
 
   function switchPeriod(next: Period) {
     if (next === period) return;
@@ -120,6 +124,14 @@ export default function LeaderboardClient({
   const onProfileExited = useCallback(() => {
     setSelected(null);
   }, []);
+
+  useEffect(() => {
+    const refresh = () => {
+      loadLeaderboard(period, scope, roomId);
+    };
+    window.addEventListener("study-stats-changed", refresh);
+    return () => window.removeEventListener("study-stats-changed", refresh);
+  }, [loadLeaderboard, period, scope, roomId]);
 
   const meInTop = currentUserId
     ? entries.some((e) => e.userId === currentUserId)
@@ -278,9 +290,19 @@ export default function LeaderboardClient({
                   transition={{ duration: 0.18 }}
                   className="flex flex-col gap-0.5 px-2 py-2"
                 >
-                  {entries.length === 0 && !isPending && (
+                  {entries.length === 0 &&
+                    !isPending &&
+                    !(scope === "global" && currentUserId) && (
                     <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
                       No data yet for this selection.
+                    </li>
+                  )}
+                  {entries.length === 0 &&
+                    !isPending &&
+                    scope === "global" &&
+                    currentUserId && (
+                    <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
+                      No one else on the leaderboard yet. Your row above updates when you focus.
                     </li>
                   )}
                   {entries.map((entry, i) => {

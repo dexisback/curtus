@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, ChevronDown, Hash, Lock, Users, Video } from "lucide-react";
@@ -95,12 +95,45 @@ function RoomCard({
   );
 }
 
-export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
+export default function RoomsClient({ publicRooms, myRooms, boards: initialBoards }: Props) {
   const router = useRouter();
+  const [boards, setBoards] = useState(initialBoards);
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [roomListView, setRoomListView] = useState<"my" | "public">("my");
+  const [roomListView, setRoomListView] = useState<"my" | "public">("public");
+
+  useEffect(() => {
+    setBoards(initialBoards);
+  }, [initialBoards]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function pull() {
+      try {
+        const res = await fetch("/api/room-boards?mode=rooms", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { boards?: typeof initialBoards };
+        if (data.boards) setBoards(data.boards);
+      } catch {
+        /* ignore */
+      }
+    }
+    const onStats = () => void pull();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void pull();
+    };
+    window.addEventListener("study-stats-changed", onStats);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("study-stats-changed", onStats);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -213,8 +246,9 @@ export default function RoomsClient({ publicRooms, myRooms, boards }: Props) {
                       className="appearance-none rounded-[6px] border border-border/70 bg-background py-1 pl-2.5 pr-7 text-[10.5px] font-medium text-foreground
                         focus:outline-none focus:ring-2 focus:ring-ring/40"
                     >
-                      <option value="my">My Rooms</option>
                       <option value="public">Public Rooms</option>
+                      <option value="my">My Rooms</option>
+
                     </select>
                     <ChevronDown
                       size={11}

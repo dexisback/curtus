@@ -66,6 +66,8 @@ export type PresencePayload = {
   studyingUserIds: string[];
   videoEnabledUserIds: string[];
   todayMinutes: Record<string, number>;
+  /** ISO start time of each member's live session, when any (same Redis key as studying). */
+  sessionStartedAt: Record<string, string | null>;
 };
 
 export type SocketData = {
@@ -93,6 +95,7 @@ export type ClientToServerEvents = {
   "session:started": (payload: z.infer<typeof sessionStartedSchema>) => void;
   "session:stopped": () => void;
   "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
+  "presence:refresh": () => void;
 };
 
 export type ServerToClientEvents = {
@@ -213,11 +216,22 @@ async function getStudyingUserIds(memberIds: string[]): Promise<string[]> {
   return memberIds.filter((_, i) => values[i] !== null);
 }
 
+async function getSessionStartedAtMap(memberIds: string[]): Promise<Record<string, string | null>> {
+  if (!memberIds.length) return {};
+  const keys = memberIds.map(getLiveSessionKey);
+  const values = await Promise.all(keys.map((k) => redis.get<LiveSession>(k)));
+  const out: Record<string, string | null> = {};
+  memberIds.forEach((id, i) => {
+    out[id] = values[i]?.startedAt ?? null;
+  });
+  return out;
+}
+
 async function publishPresence(io: StudyServer, roomId: string) {
   const memberIds = await redis.smembers<string[]>(getRoomMembersKey(roomId));
   const uniqueMemberIds = Array.from(new Set(memberIds)).sort();
 
-  const [minutePairs, studyingUserIds, videoEnabledIds] = await Promise.all([
+  const [minutePairs, studyingUserIds, sessionStartedAt, videoEnabledIds] = await Promise.all([
     Promise.all(
       uniqueMemberIds.map(async (id) => [
         id,
@@ -225,6 +239,7 @@ async function publishPresence(io: StudyServer, roomId: string) {
       ]),
     ),
     getStudyingUserIds(uniqueMemberIds),
+    getSessionStartedAtMap(uniqueMemberIds),
     redis.smembers<string[]>(getRoomVideoEnabledKey(roomId)),
   ]);
   const enabledSet = new Set(videoEnabledIds);
@@ -236,6 +251,7 @@ async function publishPresence(io: StudyServer, roomId: string) {
     studyingUserIds,
     videoEnabledUserIds,
     todayMinutes: Object.fromEntries(minutePairs),
+    sessionStartedAt,
   });
 }
 
@@ -410,6 +426,15 @@ export function registerSocketEvents(io: StudyServer) {
       socket.leave(parsed.data.roomId);
       removeJoinedRoom(socket, parsed.data.roomId);
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
+    });
+
+    socket.on("presence:refresh", async () => {
+      const rooms = socket.data.joinedRoomIds ?? [];
+      if (!rooms.length) return;
+      if (!await socketAllow(socketLimiters.presenceRefresh, `presence:refresh:${socket.data.userId}`)) {
+        return;
+      }
+      await Promise.all(rooms.map((rid) => publishPresence(io, rid)));
     });
 
     socket.on("room:video-state", async (payload, ack?: (response: { ok: boolean; error?: string }) => void) => {

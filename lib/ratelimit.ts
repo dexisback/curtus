@@ -21,6 +21,7 @@ function make(window: Parameters<typeof Ratelimit.slidingWindow>[1], max: number
 }
 
 export const limiters = {
+  studyTimer: make("1 m", 45),
   roomsCreate: make("1 h", 10),
   roomsJoin: make("1 m", 30),
   roomsList: make("1 m", 60),

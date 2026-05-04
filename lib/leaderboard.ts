@@ -170,7 +170,7 @@ export async function getUserRankAndScore(
       redis.zscore(key, userId),
       redis.zrevrank(key, userId),
     ]);
-    if (score !== null) {
+    if (score !== null && score !== undefined) {
       return { rank: (revRank ?? 0) + 1, totalMinutes: Number(score) };
     }
   }
@@ -185,7 +185,6 @@ export async function getUserRankAndScore(
     _sum: { totalMinutes: true },
   });
   const totalMinutes = myAgg._sum.totalMinutes ?? 0;
-  if (!totalMinutes) return null;
 
   const aboveRows = await prisma.dailyStats.groupBy({
     by: ["userId"],

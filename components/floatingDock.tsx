@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, type ComponentType } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { Focus, Library, Medal, SunMoon, Video } from "lucide-react";
+import { Focus, Library, Medal, Play, Square, SunMoon, Video } from "lucide-react";
 import { useSound } from "@/components/sound-provider";
 import { useTheme } from "@/components/theme-provider";
+import { useStudyTimer } from "@/components/study-timer-provider";
 
 type DockItem =
   | {
@@ -30,7 +31,7 @@ const DOCK_LINKS: DockItem[] = [
   { id: "leaderboard", label: "Leaderboard", kind: "link", href: "/leaderboard", icon: Medal },
   { id: "library", label: "Library", kind: "link", href: "/dashboard", icon: Library },
   { id: "rooms", label: "Rooms", kind: "link", href: "/rooms", icon: Video },
-  { id: "focus", label: "Focus", kind: "link", href: "/dashboard#focus", icon: Focus },
+  { id: "focus", label: "Focus", kind: "link", href: "/rooms", icon: Focus },
   { id: "theme", label: "Theme", kind: "theme", icon: SunMoon },
 ];
 
@@ -93,6 +94,108 @@ function DockIcon({
   );
 }
 
+/** Running session: mm:ss under 1 hour, else show hours field. */
+function formatElapsed(seconds: number): string {
+  if (seconds >= 3600) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  }
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+/** Completed focus today (integer minutes): mm:ss style under 1 total hour, else hh:mm as hours:minutes. */
+function formatTodayClock(totalMinutes: number): string {
+  if (totalMinutes <= 0) return "00:00";
+  if (totalMinutes < 60) {
+    return `${String(totalMinutes).padStart(2, "0")}:00`;
+  }
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function StudyTimerDockControl() {
+  const { active, elapsedSeconds, redisAvailable, busy, toggle } = useStudyTimer();
+  const { play } = useSound();
+  const [todayMinutes, setTodayMinutes] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadToday() {
+      try {
+        const res = await fetch("/api/stats/me", { credentials: "include", cache: "no-store" });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { today?: number };
+        setTodayMinutes(typeof data.today === "number" ? data.today : 0);
+      } catch {
+        /* ignore */
+      }
+    }
+    void loadToday();
+    const onStats = () => void loadToday();
+    window.addEventListener("study-stats-changed", onStats);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("study-stats-changed", onStats);
+    };
+  }, []);
+
+  const idleLabel =
+    todayMinutes === null ? "—" : formatTodayClock(todayMinutes);
+
+  return (
+    <div className="mr-1 flex items-center gap-1.5 border-r border-border/50 pr-2">
+      <span
+        className="min-w-[2.75rem] tabular-nums text-[11px] font-medium text-muted-foreground"
+        aria-live="polite"
+      >
+        {active ? formatElapsed(elapsedSeconds) : idleLabel}
+      </span>
+      <motion.button
+        type="button"
+        style={{ width: 46, height: 46 }}
+        whileTap={{ scale: 0.96 }}
+        disabled={!redisAvailable || busy}
+        title={
+          !redisAvailable
+            ? "Study timer unavailable (Redis)"
+            : active
+              ? "Stop study timer"
+              : "Start study timer"
+        }
+        aria-label={active ? "Stop study timer" : "Start study timer"}
+        aria-pressed={active}
+        onClick={() => {
+          play("tap");
+          void toggle();
+        }}
+        className="group relative flex shrink-0 items-center justify-center rounded-2xl border border-border/70
+          bg-card/88 text-foreground/85 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_7px_16px_rgba(17,24,39,0.08),inset_0_1px_0_rgba(255,255,255,0.45)]
+          backdrop-blur-md transition-[color,background-color,opacity] duration-200 hover:text-foreground
+          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60
+          disabled:pointer-events-none disabled:opacity-45
+          dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_7px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      >
+        <span
+          className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border/60
+            bg-popover/95 px-2 py-1 text-[11px] leading-none text-foreground/85 opacity-0
+            shadow-[0_1px_2px_rgba(17,24,39,0.08)] backdrop-blur-sm
+            transition-[opacity,transform] duration-200 [transition-timing-function:cubic-bezier(0.2,0,0,0.1)]
+            group-hover:-translate-y-0.5 group-hover:opacity-100
+            dark:shadow-md"
+        >
+          {active ? "Stop timer" : "Start timer"}
+        </span>
+        {active ? <Square size={15} strokeWidth={2} fill="currentColor" className="opacity-90" /> : <Play size={17} strokeWidth={1.75} className="translate-x-[1px] opacity-90" />}
+      </motion.button>
+    </div>
+  );
+}
+
 function DockWithTheme({ mouseX }: { mouseX: ReturnType<typeof useMotionValue<number>> }) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
@@ -110,6 +213,7 @@ function DockWithTheme({ mouseX }: { mouseX: ReturnType<typeof useMotionValue<nu
 
   return (
     <>
+      <StudyTimerDockControl />
       {DOCK_LINKS.map((item) => (
         <DockIcon
           key={item.id}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion } from "motion/react";
 import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
 import ProfileModal, { type ProfileModalUser } from "./profile-modal";
@@ -39,8 +39,41 @@ function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
   };
 }
 
-export default function Leaderboard({ boards }: { boards: RoomTimerBoard[] }) {
+export default function Leaderboard({ boards: initialBoards }: { boards: RoomTimerBoard[] }) {
+  const [boards, setBoards] = useState(initialBoards);
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
+
+  useEffect(() => {
+    setBoards(initialBoards);
+  }, [initialBoards]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function pull() {
+      try {
+        const res = await fetch("/api/room-boards?mode=dashboard", {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as { boards?: RoomTimerBoard[] };
+        if (data.boards) setBoards(data.boards);
+      } catch {
+        /* ignore */
+      }
+    }
+    const onStats = () => void pull();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void pull();
+    };
+    window.addEventListener("study-stats-changed", onStats);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("study-stats-changed", onStats);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
 
   const openProfile = useCallback((u: RoomTimerBoard["members"][number]) => {
     setSelected(toProfileUser(u));
