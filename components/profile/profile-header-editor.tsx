@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Pencil, X } from "lucide-react";
+import AvatarCropModal, { MAX_AVATAR_SOURCE_BYTES } from "@/components/profile/avatar-crop-modal";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -29,8 +30,26 @@ export default function ProfileHeaderEditor({
   const [draftImage, setDraftImage] = useState(initialImage ?? "");
   const [pickedFileName, setPickedFileName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [pendingCropName, setPendingCropName] = useState("");
+  const cropBlobUrlRef = useRef<string | null>(null);
 
   const initials = useMemo(() => getInitials(name || "U"), [name]);
+
+  function revokeCropBlob() {
+    const u = cropBlobUrlRef.current;
+    if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+    cropBlobUrlRef.current = null;
+  }
+
+  useEffect(() => {
+    return () => {
+      const u = cropBlobUrlRef.current;
+      if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+      cropBlobUrlRef.current = null;
+    };
+  }, []);
 
   async function save() {
     if (busy) return;
@@ -75,19 +94,31 @@ export default function ProfileHeaderEditor({
       setError("Please choose an image file.");
       return;
     }
-    if (file.size > 1_500_000) {
-      setError("Image is too large. Please keep it under 1.5MB.");
+    if (file.size > MAX_AVATAR_SOURCE_BYTES) {
+      setError("Image is too large. Please use a file under 15MB.");
       return;
     }
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(file);
-    });
-    setDraftImage(dataUrl);
-    setPickedFileName(file.name);
+    revokeCropBlob();
+    const url = URL.createObjectURL(file);
+    cropBlobUrlRef.current = url;
+    setCropImageSrc(url);
+    setPendingCropName(file.name);
+    setCropOpen(true);
     setError(null);
+  }
+
+  function closeCropModal() {
+    revokeCropBlob();
+    setCropImageSrc(null);
+    setCropOpen(false);
+  }
+
+  function applyCroppedAvatar(dataUrl: string, fileName: string) {
+    revokeCropBlob();
+    setCropImageSrc(null);
+    setCropOpen(false);
+    setDraftImage(dataUrl);
+    setPickedFileName(fileName);
   }
 
   return (
@@ -235,6 +266,14 @@ export default function ProfileHeaderEditor({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AvatarCropModal
+        open={cropOpen}
+        imageSrc={cropImageSrc}
+        suggestedFileName={pendingCropName}
+        onClose={closeCropModal}
+        onApply={applyCroppedAvatar}
+      />
     </>
   );
 }

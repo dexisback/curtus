@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ThemeToggle from "@/components/theme-toggle";
 import { Bell, Pencil, Settings, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { SerializedUserSettings } from "@/lib/user-settings";
+import AvatarCropModal, { MAX_AVATAR_SOURCE_BYTES } from "@/components/profile/avatar-crop-modal";
 
 function SectionHeader({
   icon: Icon,
@@ -97,6 +98,10 @@ export default function SettingsClient({
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [pickedFileName, setPickedFileName] = useState("");
   const [editingAccount, setEditingAccount] = useState(false);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [pendingCropName, setPendingCropName] = useState("");
+  const cropBlobUrlRef = useRef<string | null>(null);
 
   const [compactSidebar, setCompactSidebar] = useState(initialSettings.compactSidebar);
   const [leaderboardUpdates, setLeaderboardUpdates] = useState(initialSettings.leaderboardUpdates);
@@ -104,6 +109,20 @@ export default function SettingsClient({
   const [friendActivity, setFriendActivity] = useState(initialSettings.friendActivity);
   const [roomInvites, setRoomInvites] = useState(initialSettings.roomInvites);
   const [showMotionMessage, setShowMotionMessage] = useState(false);
+
+  function revokeCropBlob() {
+    const u = cropBlobUrlRef.current;
+    if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+    cropBlobUrlRef.current = null;
+  }
+
+  useEffect(() => {
+    return () => {
+      const u = cropBlobUrlRef.current;
+      if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+      cropBlobUrlRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -132,19 +151,31 @@ export default function SettingsClient({
       setSaveError("Please choose an image file.");
       return;
     }
-    if (file.size > 1_500_000) {
-      setSaveError("Image is too large. Please keep it under 1.5MB.");
+    if (file.size > MAX_AVATAR_SOURCE_BYTES) {
+      setSaveError("Image is too large. Please use a file under 15MB.");
       return;
     }
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(file);
-    });
-    setImage(dataUrl);
-    setPickedFileName(file.name);
+    revokeCropBlob();
+    const url = URL.createObjectURL(file);
+    cropBlobUrlRef.current = url;
+    setCropImageSrc(url);
+    setPendingCropName(file.name);
+    setCropOpen(true);
     setSaveError(null);
+  }
+
+  function closeCropModal() {
+    revokeCropBlob();
+    setCropImageSrc(null);
+    setCropOpen(false);
+  }
+
+  function applyCroppedAvatar(dataUrl: string, fileName: string) {
+    revokeCropBlob();
+    setCropImageSrc(null);
+    setCropOpen(false);
+    setImage(dataUrl);
+    setPickedFileName(fileName);
   }
 
   async function saveAccount() {
@@ -402,6 +433,14 @@ export default function SettingsClient({
           </div>
         </div>
       </div>
+
+      <AvatarCropModal
+        open={cropOpen}
+        imageSrc={cropImageSrc}
+        suggestedFileName={pendingCropName}
+        onClose={closeCropModal}
+        onApply={applyCroppedAvatar}
+      />
     </div>
   );
 }
