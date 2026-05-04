@@ -1,18 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import YouTubeEmbedPanel from "./youtube-embed-panel";
 
-const VideoPlayer = dynamic(() => import("./video-player"), {
-  ssr: false,
-  loading: () => <div className="h-full min-h-[12rem] w-full" />,
-});
-
-export default function VideoPlayerWrapper() {
+export default function VideoPlayerWrapper({ embedUrl }: { embedUrl: string | null }) {
   return (
     <div className="h-full min-h-0 w-full min-w-0">
-      <VideoPlayer />
+      <YouTubeEmbedPanel embedUrl={embedUrl} />
     </div>
   );
 }
 
-// — Loads video source and wraps VideoPlayer.
+// — Wraps dashboard YouTube player panel.

@@ -3,6 +3,7 @@
 import { ServerUserSettingsProvider } from "@/components/server-user-settings";
 import { SoundProvider } from "@/components/sound-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { WhiteNoiseProvider } from "@/components/white-noise-provider";
 import type { SerializedUserSettings } from "@/lib/user-settings";
 
 export default function Providers({
@@ -15,7 +16,9 @@ export default function Providers({
   return (
     <ServerUserSettingsProvider value={initialUserSettings}>
       <ThemeProvider>
-        <SoundProvider>{children}</SoundProvider>
+        <SoundProvider>
+          <WhiteNoiseProvider>{children}</WhiteNoiseProvider>
+        </SoundProvider>
       </ThemeProvider>
     </ServerUserSettingsProvider>
   );

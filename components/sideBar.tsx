@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   CheckSquare,
+  LibraryBig,
   LayoutDashboard,
   Menu,
   Plus,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { useServerUserSettings } from "@/components/server-user-settings";
 import { useSound } from "@/components/sound-provider";
+import WhiteNoiseSidebarSection from "@/components/white-noise-sidebar-section";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
@@ -26,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
   { label: "Rooms", href: "/rooms", icon: Video },
+  { label: "Library", href: "/library", icon: LibraryBig },
   { label: "Todo", href: "/dashboard/todo", icon: CheckSquare },
   { label: "Profile", href: "/profile", icon: UserCircle },
   { label: "Settings", href: "/settings", icon: Settings },
@@ -422,6 +425,10 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                   );
                 })}
               </div>
+
+              <motion.div variants={itemVariants} exit={itemExit}>
+                <WhiteNoiseSidebarSection />
+              </motion.div>
 
               <motion.button
                 type="button"
