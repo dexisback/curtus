@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireApiSession, withApi } from "@/lib/api-session";
 import { limiters, enforce } from "@/lib/ratelimit";
@@ -6,26 +7,66 @@ import { isMissingLibraryTableError } from "@/lib/library-db";
 
 type Params = { params: Promise<{ id: string }> };
 
-export const PATCH = withApi(async (_request: Request, { params }: Params) => {
+const patchTitleSchema = z.object({
+  title: z.string().max(200),
+});
+
+async function bumpOpened(id: string, userId: string) {
+  return prisma.libraryItem.updateMany({
+    where: { id, userId },
+    data: { updatedAt: new Date() },
+  });
+}
+
+export const PATCH = withApi(async (request: Request, { params }: Params) => {
   const session = await requireApiSession();
   await enforce(limiters.profileWrite, session.user.id);
   const { id } = await params;
 
-  const updated = await prisma.libraryItem
-    .updateMany({
-      where: { id, userId: session.user.id },
-      data: { updatedAt: new Date() },
-    })
-    .catch((error) => {
+  const raw = await request.text();
+  if (!raw.trim()) {
+    const updated = await bumpOpened(id, session.user.id).catch((error) => {
       if (isMissingLibraryTableError(error)) return { count: 0 };
       throw error;
     });
+    if (updated.count === 0) {
+      return NextResponse.json({ error: "Item not found." }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
-  if (updated.count === 0) {
+  let json: unknown;
+  try {
+    json = JSON.parse(raw) as unknown;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const parsed = patchTitleSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid request body.", issues: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const nextTitle = parsed.data.title.trim() || null;
+
+  const row = await prisma.libraryItem
+    .findFirst({
+      where: { id, userId: session.user.id },
+      select: { id: true },
+    })
+    .catch((error) => {
+      if (isMissingLibraryTableError(error)) return null;
+      throw error;
+    });
+
+  if (!row) {
     return NextResponse.json({ error: "Item not found." }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true });
-});
+  await prisma.libraryItem.update({
+    where: { id },
+    data: { title: nextTitle },
+  });
 
-// — Library item API: bump updatedAt when item is opened.
+  return NextResponse.json({ ok: true, title: nextTitle });
+});

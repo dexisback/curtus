@@ -242,6 +242,7 @@ model LibraryItem {
   mediaKind   LibraryMediaKind
   videoId     String?
   playlistId  String?
+  title       String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 

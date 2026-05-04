@@ -15,7 +15,6 @@ import { TONE_SOUND_FILE, ambientUrl, type WhiteNoiseToneId } from "@/lib/ambien
 type WhiteNoiseContextValue = {
   currentTone: WhiteNoiseToneId;
   isPlaying: boolean;
-  /** Non-looping library preview (developer picks); mutually exclusive with tone playback. */
   previewSoundId: string | null;
   volume: number;
   ready: boolean;
@@ -26,7 +25,6 @@ type WhiteNoiseContextValue = {
   stop: () => void;
   setVolume: (value: number) => void;
   playDeveloperPreview: (soundId: string, fileName: string) => Promise<void>;
-  /** Start the given looping tone; stops any preview or other tone first. */
   playTone: (tone: WhiteNoiseToneId) => Promise<boolean>;
 };
 

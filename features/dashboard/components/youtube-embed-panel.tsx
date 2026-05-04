@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { PlayCircle, X } from "lucide-react";
+import { Maximize2, Plus, X } from "lucide-react";
 import {
   PANEL_SHADOW,
   OUTER_RADIUS,
@@ -12,41 +12,48 @@ import {
   Screw,
 } from "./panel-primitives";
 
+const EMPTY_TOOLTIP = "start watching a youtube video";
+
 type Props = {
   embedUrl: string | null;
-  placeholder?: string;
+  /** Library: fixed 16:9; dashboard: fills parent height. */
   large?: boolean;
-  ctaLabel?: string;
+  /** Shown when `large` and no URL (one line, no icon). */
+  emptyHint?: string | null;
   onWatchLecture?: () => void;
   onClearLecture?: () => void;
   activeLabel?: string | null;
+  /** Dashboard only: expands into fullscreen shell (iframe does not remount). */
+  onEnterFocus?: () => void;
+  focusMode?: boolean;
 };
 
 export default function YouTubeEmbedPanel({
   embedUrl,
-  placeholder = "Add a YouTube URL in Library to start watching.",
   large = false,
-  ctaLabel = "Watch a lecture",
+  emptyHint = null,
   onWatchLecture,
   onClearLecture,
   activeLabel,
+  onEnterFocus,
+  focusMode = false,
 }: Props) {
   const screwInset = SCREW_INSET;
-  /** Library uses scroll layout — fixed 16:9 instead of filling an unknown flex height. */
   const libraryLayout = large;
+  const dashboardEmpty = !libraryLayout && !!onWatchLecture;
 
   return (
     <div
       className={
         libraryLayout
           ? "flex w-full min-w-0 flex-col items-stretch p-1 sm:p-2"
-          : "flex h-full w-full min-h-0 min-w-0 items-start justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
+          : "flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
       }
     >
       <motion.div
         className={
           "relative flex w-full flex-col border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] " +
-          (libraryLayout ? "min-w-0 shrink-0" : "min-h-0 min-w-0 max-h-full shrink-0 h-[100%] w-[min(100%,90%)]")
+          (libraryLayout ? "min-w-0 shrink-0" : "h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0")
         }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
@@ -83,7 +90,7 @@ export default function YouTubeEmbedPanel({
           }
           style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
-          {embedUrl && onClearLecture && (
+          {embedUrl && onClearLecture && !focusMode && (
             <motion.button
               type="button"
               whileTap={{ scale: 0.96 }}
@@ -92,6 +99,18 @@ export default function YouTubeEmbedPanel({
               aria-label="Clear lecture"
             >
               <X size={15} strokeWidth={1.9} />
+            </motion.button>
+          )}
+          {embedUrl && onEnterFocus && !focusMode && (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={onEnterFocus}
+              className="absolute left-2 top-2 z-20 flex h-10 w-10 items-center justify-center rounded-lg border border-white/18 bg-black/45 text-white/85 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+              aria-label="Focus mode — full screen lecture"
+              title="Focus mode — full screen lecture"
+            >
+              <Maximize2 size={15} strokeWidth={1.9} />
             </motion.button>
           )}
           {embedUrl ? (
@@ -103,22 +122,21 @@ export default function YouTubeEmbedPanel({
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
-          ) : (
-            <div className="flex flex-col items-center gap-3 px-6 text-center">
-              <PlayCircle size={28} className="text-white/60" />
-              <p className="text-[11px] text-white/65">{placeholder}</p>
-              {onWatchLecture && (
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={onWatchLecture}
-                  className="inline-flex h-10 min-w-40 items-center justify-center rounded-lg bg-cta px-3.5 text-[11px] font-medium text-cta-foreground shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
-                >
-                  {ctaLabel}
-                </motion.button>
-              )}
+          ) : dashboardEmpty ? (
+            <div className="flex h-full w-full flex-1 items-center justify-center">
+              <button
+                type="button"
+                onClick={onWatchLecture}
+                title={EMPTY_TOOLTIP}
+                aria-label={EMPTY_TOOLTIP}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/22 text-white/88 transition-colors hover:border-white/45 hover:bg-white/10 hover:text-white"
+              >
+                <Plus className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              </button>
             </div>
-          )}
+          ) : emptyHint ? (
+            <p className="max-w-[20rem] px-4 text-center text-[11px] leading-snug text-white/55">{emptyHint}</p>
+          ) : null}
           {embedUrl && activeLabel && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-8 text-center">
               <p className="truncate text-[10.5px] text-white/85">{activeLabel}</p>
@@ -129,5 +147,3 @@ export default function YouTubeEmbedPanel({
     </div>
   );
 }
-
-// — Styled dashboard panel for embedding YouTube video/playlist playback.

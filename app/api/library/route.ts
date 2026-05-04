@@ -5,6 +5,7 @@ import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
 import { limiters, enforce } from "@/lib/ratelimit";
 import { parseYouTubeInput } from "@/lib/youtube";
+import { fetchYouTubeOEmbedTitle } from "@/lib/youtube-oembed";
 import { isMissingLibraryTableError } from "@/lib/library-db";
 
 const createLibrarySchema = z.object({
@@ -26,6 +27,7 @@ export const GET = withApi(async () => {
         mediaKind: true,
         videoId: true,
         playlistId: true,
+        title: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -58,6 +60,17 @@ export const POST = withApi(async (request: Request) => {
     return NextResponse.json({ error: "Please enter a valid YouTube video or playlist URL." }, { status: 400 });
   }
 
+  let resolvedTitle: string | null = null;
+  const ac = new AbortController();
+  const tid = setTimeout(() => ac.abort(), 8000);
+  try {
+    resolvedTitle = await fetchYouTubeOEmbedTitle(yt.normalizedUrl, { signal: ac.signal });
+  } catch {
+    resolvedTitle = null;
+  } finally {
+    clearTimeout(tid);
+  }
+
   const created = await prisma.libraryItem
     .create({
       data: {
@@ -66,6 +79,7 @@ export const POST = withApi(async (request: Request) => {
         mediaKind: yt.kind,
         videoId: yt.videoId,
         playlistId: yt.playlistId,
+        title: resolvedTitle,
       },
       select: {
         id: true,
@@ -73,6 +87,7 @@ export const POST = withApi(async (request: Request) => {
         mediaKind: true,
         videoId: true,
         playlistId: true,
+        title: true,
         createdAt: true,
         updatedAt: true,
       },

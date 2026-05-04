@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { ExternalLink, Pause, Play, Plus, Waves, Youtube } from "lucide-react";
+import { ExternalLink, Pencil, Pause, Play, Plus, Waves, Youtube } from "lucide-react";
 import YouTubeEmbedPanel from "@/features/dashboard/components/youtube-embed-panel";
 import { parseYouTubeInput } from "@/lib/youtube";
 import { writeDashboardLecture } from "@/lib/dashboard-lecture";
@@ -16,6 +16,7 @@ export type LibraryItemView = {
   mediaKind: "VIDEO" | "PLAYLIST";
   videoId: string | null;
   playlistId: string | null;
+  title: string | null;
   createdAtIso: string;
   updatedAtIso: string;
   embedUrl: string | null;
@@ -28,6 +29,7 @@ type AddResponse = {
     mediaKind: "VIDEO" | "PLAYLIST";
     videoId: string | null;
     playlistId: string | null;
+    title: string | null;
     createdAt: string;
     updatedAt: string;
     embedUrl: string | null;
@@ -37,6 +39,12 @@ type AddResponse = {
 function shortLabel(item: LibraryItemView) {
   if (item.mediaKind === "PLAYLIST") return `Playlist ${item.playlistId ?? ""}`.trim();
   return `Video ${item.videoId ?? ""}`.trim();
+}
+
+function displayLabel(item: LibraryItemView) {
+  const t = item.title?.trim();
+  if (t) return t;
+  return shortLabel(item);
 }
 
 function formatDate(iso: string) {
@@ -54,6 +62,9 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRawUrl, setPreviewRawUrl] = useState("");
+  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [titleBusyId, setTitleBusyId] = useState<string | null>(null);
 
   const active = useMemo(
     () => items.find((item) => item.id === activeId) ?? items[0] ?? null,
@@ -95,6 +106,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         mediaKind: json.item.mediaKind,
         videoId: json.item.videoId,
         playlistId: json.item.playlistId,
+        title: json.item.title ?? null,
         createdAtIso: json.item.createdAt,
         updatedAtIso: json.item.updatedAt,
         embedUrl: json.item.embedUrl,
@@ -112,6 +124,8 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
   }
 
   async function openItem(id: string) {
+    setEditingTitleId(null);
+    setDraftTitle("");
     setActiveId(id);
     setItems((prev) => {
       const found = prev.find((x) => x.id === id);
@@ -132,9 +146,45 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
       id: item.id,
       embedUrl: item.embedUrl,
       url: item.url,
-      label: shortLabel(item),
+      label: displayLabel(item),
     });
     router.push("/dashboard");
+  }
+
+  function beginEditTitle(item: LibraryItemView) {
+    setEditingTitleId(item.id);
+    setDraftTitle(displayLabel(item));
+  }
+
+  function cancelTitleEdit() {
+    setEditingTitleId(null);
+    setDraftTitle("");
+  }
+
+  async function saveTitle(itemId: string) {
+    if (titleBusyId) return;
+    setTitleBusyId(itemId);
+    try {
+      const res = await fetch(`/api/library/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: draftTitle }),
+      });
+      const json = (await res.json()) as { ok?: boolean; title?: string | null; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? "Could not update title.");
+        return;
+      }
+      const nextTitle = json.title !== undefined ? json.title : draftTitle.trim() || null;
+      setItems((prev) => prev.map((x) => (x.id === itemId ? { ...x, title: nextTitle } : x)));
+      setEditingTitleId(null);
+      setDraftTitle("");
+      setError(null);
+    } catch {
+      setError("Could not update title.");
+    } finally {
+      setTitleBusyId(null);
+    }
   }
 
   const previewEmbed = previewOpen ? parseYouTubeInput(previewRawUrl)?.embedUrl ?? null : null;
@@ -189,7 +239,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
             <YouTubeEmbedPanel
               embedUrl={active?.embedUrl ?? null}
               large
-              placeholder="Add a YouTube URL to start watching in-app."
+              emptyHint="Add a YouTube URL above to watch here."
             />
           </div>
         </section>
@@ -231,16 +281,56 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                       }
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-1.5 text-[11.5px] font-medium text-foreground">
-                            <Youtube size={14} className="shrink-0 text-red-500" />
-                            <span className="truncate">{shortLabel(item)}</span>
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          {editingTitleId === item.id ? (
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <Youtube size={14} className="shrink-0 text-red-500" aria-hidden />
+                              <input
+                                autoFocus
+                                value={draftTitle}
+                                onChange={(e) => setDraftTitle(e.target.value)}
+                                maxLength={200}
+                                disabled={titleBusyId === item.id}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    void saveTitle(item.id);
+                                  }
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    cancelTitleEdit();
+                                  }
+                                }}
+                                className="min-w-0 flex-1 rounded-md border border-border/70 bg-background px-2 py-1 text-[11.5px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring/45"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] font-medium text-foreground">
+                              <Youtube size={14} className="shrink-0 text-red-500" aria-hidden />
+                              <span className="min-w-0 truncate">{displayLabel(item)}</span>
+                            </div>
+                          )}
                           <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.url}</p>
                         </div>
-                        <span className="shrink-0 text-[10px] text-muted-foreground tabular-nums">
-                          {formatDate(item.updatedAtIso)}
-                        </span>
+                        <div
+                          className="flex shrink-0 items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                            {formatDate(item.updatedAtIso)}
+                          </span>
+                          {editingTitleId !== item.id ? (
+                            <motion.button
+                              type="button"
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => beginEditTitle(item)}
+                              className="-m-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+                              aria-label="Edit title"
+                            >
+                              <Pencil size={12} strokeWidth={1.75} />
+                            </motion.button>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
