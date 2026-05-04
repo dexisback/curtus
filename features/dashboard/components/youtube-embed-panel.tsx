@@ -39,13 +39,13 @@ export default function YouTubeEmbedPanel({
   focusMode = false,
 }: Props) {
   const screwInset = SCREW_INSET;
-  const libraryLayout = large;
-  const dashboardEmpty = !libraryLayout && !!onWatchLecture;
+  const isLibraryLayout = large;
+  const showDashboardLectureEmpty = !isLibraryLayout && !!onWatchLecture;
 
   return (
     <div
       className={
-        libraryLayout
+        isLibraryLayout
           ? "flex w-full min-w-0 flex-col items-stretch"
           : "flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
       }
@@ -53,14 +53,14 @@ export default function YouTubeEmbedPanel({
       <motion.div
         className={
           "relative flex w-full flex-col border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] " +
-          (libraryLayout ? "min-w-0 shrink-0" : "h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0")
+          (isLibraryLayout ? "min-w-0 shrink-0" : "h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0")
         }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={libraryLayout ? undefined : { y: -1, rotate: 0.08, scale: 1.003 }}
+        whileHover={isLibraryLayout ? undefined : { y: -1, rotate: 0.08, scale: 1.003 }}
         transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.65 }}
       >
         <Screw
@@ -84,7 +84,7 @@ export default function YouTubeEmbedPanel({
 
         <div
           className={
-            libraryLayout
+            isLibraryLayout
               ? "relative aspect-video w-full overflow-hidden bg-neutral-950"
               : "relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950"
           }
@@ -117,12 +117,12 @@ export default function YouTubeEmbedPanel({
             <iframe
               src={embedUrl}
               title="YouTube player"
-              className={libraryLayout ? "absolute inset-0 h-full w-full" : "h-full w-full"}
+              className={isLibraryLayout ? "absolute inset-0 h-full w-full" : "h-full w-full"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
             />
-          ) : dashboardEmpty ? (
+          ) : showDashboardLectureEmpty ? (
             <div className="flex h-full w-full flex-1 items-center justify-center">
               <button
                 type="button"

@@ -33,6 +33,11 @@ const TONE_KEY = "swm:white-noise-tone";
 const PLAYING_KEY = "swm:white-noise-playing";
 const VOLUME_KEY = "swm:white-noise-volume";
 
+function persistPlayingFlag(playing: boolean) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PLAYING_KEY, playing ? "1" : "0");
+}
+
 function createContextSafe(ctxRef: MutableRefObject<AudioContext | null>) {
   if (typeof window === "undefined") return null;
   const Ctx = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -112,7 +117,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
     stopPreviewInternal(true);
     pauseAllTonePlayers(playersRef.current);
     setIsPlaying(false);
-    if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+    persistPlayingFlag(false);
   }, [stopPreviewInternal]);
 
   const initAudio = useCallback(async () => {
@@ -153,7 +158,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       setCurrentTone(tone);
       setIsPlaying(true);
       localStorage.setItem(TONE_KEY, tone);
-      localStorage.setItem(PLAYING_KEY, "1");
+      persistPlayingFlag(true);
       setError(null);
       return true;
     },
@@ -166,7 +171,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       if (previewIdRef.current === soundId && current && !current.paused) {
         stopPreviewInternal(true);
         setIsPlaying(false);
-        if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+        persistPlayingFlag(false);
         return;
       }
 
@@ -188,7 +193,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
         if (previewAudioRef.current !== el) return;
         stopPreviewInternal(true);
         setIsPlaying(false);
-        if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+        persistPlayingFlag(false);
       };
       el.addEventListener("ended", onEnded, { once: true });
 
@@ -204,7 +209,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       if (previewAudioRef.current !== el) return;
 
       setIsPlaying(true);
-      if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
+      persistPlayingFlag(false);
       setError(null);
     },
     [initAudio, stopPreviewInternal, volume],

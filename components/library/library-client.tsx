@@ -9,47 +9,15 @@ import { parseYouTubeInput } from "@/lib/youtube";
 import { writeDashboardLecture } from "@/lib/dashboard-lecture";
 import { useWhiteNoise } from "@/components/white-noise-provider";
 import { DEVELOPER_LIKES_AMBIENT, FEATURED_AMBIENT, type WhiteNoiseToneId } from "@/lib/ambient-sounds";
+import {
+  type LibraryItemView,
+  type LibraryItemPostBody,
+  displayLabel,
+  formatItemDate,
+  libraryItemFromPostBody,
+} from "@/lib/library-item";
 
-export type LibraryItemView = {
-  id: string;
-  url: string;
-  mediaKind: "VIDEO" | "PLAYLIST";
-  videoId: string | null;
-  playlistId: string | null;
-  title: string | null;
-  createdAtIso: string;
-  updatedAtIso: string;
-  embedUrl: string | null;
-};
-
-type AddResponse = {
-  item: {
-    id: string;
-    url: string;
-    mediaKind: "VIDEO" | "PLAYLIST";
-    videoId: string | null;
-    playlistId: string | null;
-    title: string | null;
-    createdAt: string;
-    updatedAt: string;
-    embedUrl: string | null;
-  };
-};
-
-function shortLabel(item: LibraryItemView) {
-  if (item.mediaKind === "PLAYLIST") return `Playlist ${item.playlistId ?? ""}`.trim();
-  return `Video ${item.videoId ?? ""}`.trim();
-}
-
-function displayLabel(item: LibraryItemView) {
-  const t = item.title?.trim();
-  if (t) return t;
-  return shortLabel(item);
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
+export type { LibraryItemView } from "@/lib/library-item";
 
 export default function LibraryClient({ initialItems }: { initialItems: LibraryItemView[] }) {
   const router = useRouter();
@@ -70,6 +38,11 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
     () => items.find((item) => item.id === activeId) ?? items[0] ?? null,
     [activeId, items],
   );
+
+  const previewEmbed = useMemo(() => {
+    if (!previewOpen) return null;
+    return parseYouTubeInput(previewRawUrl)?.embedUrl ?? null;
+  }, [previewOpen, previewRawUrl]);
 
   function openPreview() {
     const raw = urlInput.trim();
@@ -95,22 +68,12 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: raw }),
       });
-      const json = (await res.json()) as AddResponse & { error?: string };
-      if (!res.ok) {
+      const json = (await res.json()) as { item?: LibraryItemPostBody; error?: string };
+      if (!res.ok || !json.item) {
         setError(json.error ?? "Could not save this URL.");
         return;
       }
-      const next: LibraryItemView = {
-        id: json.item.id,
-        url: json.item.url,
-        mediaKind: json.item.mediaKind,
-        videoId: json.item.videoId,
-        playlistId: json.item.playlistId,
-        title: json.item.title ?? null,
-        createdAtIso: json.item.createdAt,
-        updatedAtIso: json.item.updatedAt,
-        embedUrl: json.item.embedUrl,
-      };
+      const next = libraryItemFromPostBody(json.item);
       setItems((prev) => [next, ...prev]);
       setActiveId(next.id);
       setUrlInput("");
@@ -136,7 +99,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
     try {
       await fetch(`/api/library/${id}`, { method: "PATCH" });
     } catch {
-      // Keep optimistic ordering even if this fails.
+      /* optimistic order kept */
     }
   }
 
@@ -170,12 +133,12 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: draftTitle }),
       });
-      const json = (await res.json()) as { ok?: boolean; title?: string | null; error?: string };
+      const body = (await res.json()) as { title?: string | null; error?: string };
       if (!res.ok) {
-        setError(json.error ?? "Could not update title.");
+        setError(body.error ?? "Could not update title.");
         return;
       }
-      const nextTitle = json.title !== undefined ? json.title : draftTitle.trim() || null;
+      const nextTitle = body.title ?? null;
       setItems((prev) => prev.map((x) => (x.id === itemId ? { ...x, title: nextTitle } : x)));
       setEditingTitleId(null);
       setDraftTitle("");
@@ -187,11 +150,17 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
     }
   }
 
-  const previewEmbed = previewOpen ? parseYouTubeInput(previewRawUrl)?.embedUrl ?? null : null;
   async function activateTone(tone: WhiteNoiseToneId) {
     void initAudio();
-    if (isPlaying) await setTone(tone);
-    else await playTone(tone);
+    if (isPlaying) {
+      await setTone(tone);
+    } else {
+      await playTone(tone);
+    }
+  }
+
+  function featuredToneActive(tone: WhiteNoiseToneId): boolean {
+    return currentTone === tone && isPlaying && previewSoundId === null;
   }
 
   return (
@@ -229,7 +198,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
             {busy ? "Adding…" : "Add URL"}
           </motion.button>
         </div>
-        {error && <p className="mt-2 text-[11px] text-destructive">{error}</p>}
+        {error ? <p className="mt-2 text-[11px] text-destructive">{error}</p> : null}
       </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(20rem,1fr)] xl:items-start">
@@ -253,6 +222,9 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
               <AnimatePresence initial={false}>
                 {items.map((item) => {
                   const activeRow = item.id === active?.id;
+                  const rowClass = activeRow
+                    ? "border-cta/40 bg-cta/10"
+                    : "border-border/50 bg-card/65 hover:bg-accent/55";
                   return (
                     <motion.div
                       key={item.id}
@@ -270,12 +242,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
                       whileTap={{ scale: 0.985 }}
-                      className={
-                        "w-full rounded-lg border px-3 py-2.5 text-left transition-colors " +
-                        (activeRow
-                          ? "border-cta/40 bg-cta/10"
-                          : "border-border/50 bg-card/65 hover:bg-accent/55")
-                      }
+                      className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${rowClass}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -311,12 +278,9 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                             {item.url}
                           </p>
                         </div>
-                        <div
-                          className="flex shrink-0 items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground antialiased">
-                            {formatDate(item.updatedAtIso)}
+                            {formatItemDate(item.updatedAtIso)}
                           </span>
                           {editingTitleId !== item.id ? (
                             <motion.button
@@ -365,13 +329,13 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                 })}
               </AnimatePresence>
 
-              {items.length === 0 && (
+              {items.length === 0 ? (
                 <div className="flex min-h-[10rem] items-center justify-center rounded-lg border border-dashed border-border/60 text-center">
                   <p className="px-6 text-[11px] text-muted-foreground">
                     No links yet. Add a YouTube URL above and it will appear here.
                   </p>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </section>
@@ -387,25 +351,19 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
         </p>
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {FEATURED_AMBIENT.map((sound) => {
-            const toneActive =
-              Boolean(sound.tone) &&
-              currentTone === sound.tone &&
-              isPlaying &&
-              previewSoundId === null;
+            if (!sound.tone) return null;
+            const tone = sound.tone;
+            const active = featuredToneActive(tone);
+            const toneClass = active
+              ? "border-cta/40 bg-cta/12 text-foreground"
+              : "border-border/45 bg-transparent text-foreground/90 hover:bg-foreground/[0.05]";
             return (
               <motion.button
                 key={sound.id}
                 type="button"
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  if (sound.tone) void activateTone(sound.tone);
-                }}
-                className={
-                  "flex h-11 items-center justify-center rounded-lg border px-3 text-xs font-medium leading-snug tracking-tight transition-colors " +
-                  (toneActive
-                    ? "border-cta/40 bg-cta/12 text-foreground"
-                    : "border-border/45 bg-transparent text-foreground/90 hover:bg-foreground/[0.05]")
-                }
+                onClick={() => void activateTone(tone)}
+                className={`flex h-11 items-center justify-center rounded-lg border px-3 text-xs font-medium leading-snug tracking-tight transition-colors ${toneClass}`}
               >
                 {sound.label}
               </motion.button>
@@ -444,7 +402,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
       </section>
 
       <AnimatePresence>
-        {previewOpen && (
+        {previewOpen ? (
           <motion.div
             className="fixed inset-0 z-[140] flex items-center justify-center p-4"
             initial={{ opacity: 0 }}
@@ -452,9 +410,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
             onClick={(e) => {
-              if (e.target === e.currentTarget && !busy) {
-                setPreviewOpen(false);
-              }
+              if (e.target === e.currentTarget && !busy) setPreviewOpen(false);
             }}
           >
             <div className="absolute inset-0 bg-background/45 backdrop-blur-sm" />
@@ -491,10 +447,8 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
               </div>
             </motion.div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>
   );
 }
-
-// — Library page UI: add URL, watch YouTube embed, and resume from saved links.

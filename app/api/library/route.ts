@@ -6,7 +6,7 @@ import { parseRequestJson } from "@/lib/api";
 import { limiters, enforce } from "@/lib/ratelimit";
 import { parseYouTubeInput } from "@/lib/youtube";
 import { fetchYouTubeOEmbedTitle } from "@/lib/youtube-oembed";
-import { isMissingLibraryTableError } from "@/lib/library-db";
+import { isMissingLibraryTableError, LIBRARY_LIST_SELECT } from "@/lib/library-db";
 
 const createLibrarySchema = z.object({
   url: z.string().trim().min(1).max(500),
@@ -21,16 +21,7 @@ export const GET = withApi(async () => {
       where: { userId: session.user.id },
       orderBy: { updatedAt: "desc" },
       take: 40,
-      select: {
-        id: true,
-        url: true,
-        mediaKind: true,
-        videoId: true,
-        playlistId: true,
-        title: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: LIBRARY_LIST_SELECT,
     })
     .catch((error) => {
       if (isMissingLibraryTableError(error)) return [];
@@ -81,16 +72,7 @@ export const POST = withApi(async (request: Request) => {
         playlistId: yt.playlistId,
         title: resolvedTitle,
       },
-      select: {
-        id: true,
-        url: true,
-        mediaKind: true,
-        videoId: true,
-        playlistId: true,
-        title: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: LIBRARY_LIST_SELECT,
     })
     .catch((error) => {
       if (!isMissingLibraryTableError(error)) throw error;

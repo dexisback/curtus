@@ -5,6 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import YouTubeEmbedPanel from "./youtube-embed-panel";
 import { clearDashboardLecture, readDashboardLecture } from "@/lib/dashboard-lecture";
 
+function stripFocusHashFromUrl() {
+  if (typeof window === "undefined" || window.location.hash !== "#focus") return;
+  history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+}
+
 export default function VideoPlayerWrapper() {
   const router = useRouter();
   const pathname = usePathname();
@@ -15,9 +20,7 @@ export default function VideoPlayerWrapper() {
 
   const exitFocus = useCallback(() => {
     setFocus(false);
-    if (typeof window !== "undefined" && window.location.hash === "#focus") {
-      history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-    }
+    stripFocusHashFromUrl();
   }, []);
 
   useEffect(() => {

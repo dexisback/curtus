@@ -12,6 +12,15 @@ const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
   { id: "river", label: "River" },
 ];
 
+function toneChipClass(active: boolean) {
+  return (
+    "h-9 rounded-lg border px-2.5 text-left text-[11px] transition-colors " +
+    (active
+      ? "border-cta/45 bg-cta/10 text-foreground"
+      : "border-border/60 bg-background text-foreground/75 hover:bg-accent/55")
+  );
+}
+
 export default function WhiteNoiseSidebarSection() {
   const { play } = useSound();
   const { currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, setVolume } = useWhiteNoise();
@@ -57,12 +66,7 @@ export default function WhiteNoiseSidebarSection() {
                 void initAudio();
                 void setTone(tone.id);
               }}
-              className={
-                "h-9 rounded-lg border px-2.5 text-left text-[11px] transition-colors " +
-                (active
-                  ? "border-cta/45 bg-cta/10 text-foreground"
-                  : "border-border/60 bg-background text-foreground/75 hover:bg-accent/55")
-              }
+              className={toneChipClass(active)}
               aria-pressed={active}
             >
               {tone.label}

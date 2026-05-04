@@ -54,11 +54,11 @@ export const AMBIENT_SOUNDS: AmbientSound[] = [
 export const FEATURED_AMBIENT = AMBIENT_SOUNDS.filter((s) => s.featured);
 export const DEVELOPER_LIKES_AMBIENT = AMBIENT_SOUNDS.filter((s) => !s.featured);
 
-export const TONE_SOUND_FILE: Record<WhiteNoiseToneId, string> = {
-  beach: FEATURED_AMBIENT.find((s) => s.tone === "beach")!.fileName,
-  "paris-cafe": FEATURED_AMBIENT.find((s) => s.tone === "paris-cafe")!.fileName,
-  river: FEATURED_AMBIENT.find((s) => s.tone === "river")!.fileName,
-};
+const toneFiles: Partial<Record<WhiteNoiseToneId, string>> = {};
+for (const s of FEATURED_AMBIENT) {
+  if (s.tone) toneFiles[s.tone] = s.fileName;
+}
+export const TONE_SOUND_FILE = toneFiles as Record<WhiteNoiseToneId, string>;
 
 export function ambientUrl(fileName: string) {
   return `/api/sounds/${encodeURIComponent(fileName)}`;
