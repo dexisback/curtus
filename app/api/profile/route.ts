@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireApiSession, withApi } from "@/lib/api-session";
@@ -43,6 +44,9 @@ export const PATCH = withApi(async (request: Request) => {
       select: { id: true, name: true, bio: true, image: true, email: true },
     });
 
+    if (image !== undefined) {
+      revalidatePath("/leaderboard");
+    }
     return NextResponse.json(updated);
   } catch (error) {
     if (

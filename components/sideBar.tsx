@@ -393,7 +393,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 hi, {greetingName}
               </motion.p>
 
-              <div className="flex flex-1 flex-col gap-0.5">
+              <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
                 {NAV_ITEMS.map((item) => {
                   const active = isActive(item.href);
                   return (
@@ -426,7 +426,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 })}
               </div>
 
-              <motion.div variants={itemVariants} exit={itemExit}>
+              <motion.div variants={itemVariants} exit={itemExit} className="mt-2 shrink-0">
                 <WhiteNoiseSidebarSection />
               </motion.div>
 
@@ -437,7 +437,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={openCreate}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-cta/25 bg-cta
+                className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-cta/25 bg-cta
                   px-4 py-2.5 text-[11.5px] font-medium text-cta-foreground
                   shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
                   transition-[box-shadow,transform] duration-150 whitespace-nowrap cursor-pointer

@@ -131,7 +131,7 @@ export default function LeaderboardClient({
           rank: me.rank,
           userId: currentUserId,
           name: "You",
-          image: null,
+          image: currentUserImage,
           totalMinutes: me.totalMinutes,
           isSelf: true,
         }
@@ -324,7 +324,7 @@ export default function LeaderboardClient({
 
                           <AvatarWithFallback
                             name={entry.name}
-                            src={entry.image}
+                            src={isMe && currentUserImage ? currentUserImage : entry.image}
                             initials={initials}
                             className="h-7 w-7 shrink-0 rounded-full [outline:1px_solid_rgba(0,0,0,0.07)]"
                             fallbackClassName="rounded-full text-[10px] font-semibold text-white"
@@ -366,15 +366,16 @@ export default function LeaderboardClient({
                   <span className="w-5 shrink-0 text-right text-[11.5px] tabular-nums text-muted-foreground">
                     {meEntry.rank}
                   </span>
-                  <div
-                    className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                    style={{
+                  <AvatarWithFallback
+                    name={currentUserName ?? meEntry.name}
+                    src={currentUserImage ?? meEntry.image}
+                    initials={getInitials(currentUserName ?? meEntry.name)}
+                    className="h-7 w-7 shrink-0 rounded-full [outline:1px_solid_rgba(0,0,0,0.07)]"
+                    fallbackClassName="rounded-full text-[10px] font-semibold text-white"
+                    fallbackStyle={{
                       background: "oklch(0.72 0.02 75)",
-                      outline: "1px solid rgba(0,0,0,0.07)",
                     }}
-                  >
-                    {getInitials(meEntry.name)}
-                  </div>
+                  />
                   <span className="min-w-0 flex-1 truncate text-[12px] text-foreground">
                     You
                   </span>
