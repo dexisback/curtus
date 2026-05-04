@@ -60,6 +60,15 @@ function readVolume() {
   return Math.min(1, Math.max(0.05, n));
 }
 
+function pauseAllTonePlayers(players: Partial<Record<WhiteNoiseToneId, HTMLAudioElement>>) {
+  for (const key of Object.keys(players) as WhiteNoiseToneId[]) {
+    const a = players[key];
+    if (!a) continue;
+    a.pause();
+    a.currentTime = 0;
+  }
+}
+
 export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) {
   const [currentTone, setCurrentTone] = useState<WhiteNoiseToneId>(() => readTone());
   const [isPlaying, setIsPlaying] = useState(false);
@@ -101,12 +110,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
 
   const stop = useCallback(() => {
     stopPreviewInternal(true);
-    for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
-      const a = playersRef.current[key];
-      if (!a) continue;
-      a.pause();
-      a.currentTime = 0;
-    }
+    pauseAllTonePlayers(playersRef.current);
     setIsPlaying(false);
     if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
   }, [stopPreviewInternal]);
@@ -137,12 +141,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       const canPlay = await initAudio();
       if (!canPlay) return false;
       stopPreviewInternal(true);
-      for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
-        const prev = playersRef.current[key];
-        if (!prev) continue;
-        prev.pause();
-        prev.currentTime = 0;
-      }
+      pauseAllTonePlayers(playersRef.current);
       const player = getPlayer(tone);
       player.volume = volume;
       try {
@@ -174,12 +173,7 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       const canPlay = await initAudio();
       if (!canPlay) return;
 
-      for (const key of Object.keys(playersRef.current) as WhiteNoiseToneId[]) {
-        const prev = playersRef.current[key];
-        if (!prev) continue;
-        prev.pause();
-        prev.currentTime = 0;
-      }
+      pauseAllTonePlayers(playersRef.current);
       stopPreviewInternal(false);
 
       const el = new Audio(ambientUrl(fileName));

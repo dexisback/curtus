@@ -27,7 +27,6 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   }, []);
 
   async function handleSignOut() {
-    setIsOpen(false);
     play("modalClose");
     await signOut({
       fetchOptions: {
@@ -40,9 +39,27 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   const displayName = user?.name ?? user?.email ?? "User";
 
   const menuItems = [
-    { label: "Profile", icon: UserCircle, onClick: () => {} },
-    { label: "Preferences", icon: SlidersHorizontal, onClick: () => {} },
-    { label: "Help", icon: HelpCircle, onClick: () => {} },
+    {
+      label: "Profile",
+      icon: UserCircle,
+      onClick: () => {
+        router.push("/profile");
+      },
+    },
+    {
+      label: "Preferences",
+      icon: SlidersHorizontal,
+      onClick: () => {
+        router.push("/settings");
+      },
+    },
+    {
+      label: "Help",
+      icon: HelpCircle,
+      onClick: () => {
+        router.push("/help");
+      },
+    },
     { label: "Sign Out", icon: LogOut, onClick: handleSignOut },
   ];
 
@@ -96,7 +113,8 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
                   play("tap");
-                  item.onClick();
+                  setIsOpen(false);
+                  void item.onClick();
                 }}
                 className="w-full flex items-center gap-2.5 text-left px-2.5 py-[6px] text-xs rounded-lg
                   text-foreground/80 hover:text-foreground hover:bg-accent/70

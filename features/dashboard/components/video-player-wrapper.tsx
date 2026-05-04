@@ -13,14 +13,6 @@ export default function VideoPlayerWrapper() {
 
   const embedUrl = selection?.embedUrl ?? null;
 
-  useEffect(() => {
-    const next = readDashboardLecture();
-    setSelection(next);
-    if (pathname === "/dashboard" && typeof window !== "undefined" && window.location.hash === "#focus" && next?.embedUrl) {
-      setFocus(true);
-    }
-  }, [pathname]);
-
   const exitFocus = useCallback(() => {
     setFocus(false);
     if (typeof window !== "undefined" && window.location.hash === "#focus") {
@@ -29,15 +21,20 @@ export default function VideoPlayerWrapper() {
   }, []);
 
   useEffect(() => {
-    const syncHash = () => {
+    const next = readDashboardLecture();
+    setSelection(next);
+    if (pathname === "/dashboard" && window.location.hash === "#focus" && next?.embedUrl) {
+      setFocus(true);
+    }
+
+    const onHashChange = () => {
       if (window.location.hash !== "#focus") return;
       const lec = readDashboardLecture();
       if (lec?.embedUrl) setFocus(true);
     };
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    return () => window.removeEventListener("hashchange", syncHash);
-  }, []);
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [pathname]);
 
   useEffect(() => {
     if (!focus) return;
