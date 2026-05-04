@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, LogOut, Mic, Settings, Video, VideoOff, X } from "lucide-react";
 import { connectWithAuth } from "@/lib/socket";
 import { useSound } from "@/components/sound-provider";
+import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 import Chat from "./chat";
 import { useRoomVideo } from "./use-room-video";
 import RoomSettingsModal from "./room-settings-modal";
@@ -283,18 +284,13 @@ export default function RoomClient({
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-3 text-center">
-                        {focusedMember.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={focusedMember.image}
-                            alt={focusedMember.name}
-                            className="h-20 w-20 rounded-full object-cover [outline:1px_solid_rgba(255,255,255,0.16)]"
-                          />
-                        ) : (
-                          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-[22px] font-semibold text-white">
-                            {focusedMember.initials}
-                          </div>
-                        )}
+                        <AvatarWithFallback
+                          name={focusedMember.name}
+                          src={focusedMember.image}
+                          initials={focusedMember.initials}
+                          className="h-20 w-20 rounded-full [outline:1px_solid_rgba(255,255,255,0.16)]"
+                          fallbackClassName="rounded-full bg-white/10 text-[22px] font-semibold text-white"
+                        />
                         <p className="text-[12px] text-white/80">
                           {videoError && focusedMember.id === currentUserId
                             ? videoError

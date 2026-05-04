@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Video, VideoOff } from "lucide-react";
+import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 
 export type RoomTimerMember = {
   id: string;
@@ -204,22 +205,17 @@ export default function RoomLeaderboardCarousel({
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center px-2 py-2">
-                    {member.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={member.image}
-                        alt=""
-                        className={
-                          compact
-                            ? "h-9 w-9 rounded-full object-cover [outline:1px_solid_rgba(0,0,0,0.08)]"
-                            : "h-10 w-10 rounded-full object-cover [outline:1px_solid_rgba(0,0,0,0.08)]"
-                        }
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-foreground">
-                        {member.initials}
-                      </div>
-                    )}
+                    <AvatarWithFallback
+                      name={member.name}
+                      src={member.image}
+                      initials={member.initials}
+                      className={
+                        compact
+                          ? "h-9 w-9 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]"
+                          : "h-10 w-10 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]"
+                      }
+                      fallbackClassName="rounded-full bg-muted text-[11px] font-semibold text-foreground"
+                    />
                     <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground/90">{member.name}</p>
                     <p className="tabular-nums text-[12px] font-semibold tracking-tight text-foreground">
                       {formatTimer(running)}

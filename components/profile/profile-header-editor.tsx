@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Pencil, X } from "lucide-react";
 import AvatarCropModal, { MAX_AVATAR_SOURCE_BYTES } from "@/components/profile/avatar-crop-modal";
+import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -128,22 +129,14 @@ export default function ProfileHeaderEditor({
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
       >
         <div className="flex items-center gap-4">
-          {image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={image}
-              alt=""
-              className="h-14 w-14 shrink-0 rounded-2xl object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
-            />
-          ) : (
-            <div
-              className="flex h-14 w-14 shrink-0 select-none items-center justify-center rounded-2xl text-sm font-semibold text-white
-                [outline:1px_solid_rgba(0,0,0,0.06)]"
-              style={{ background: "oklch(0.62 0.06 75)" }}
-            >
-              {initials}
-            </div>
-          )}
+          <AvatarWithFallback
+            name={name}
+            src={image}
+            initials={initials}
+            className="h-14 w-14 shrink-0 rounded-2xl [outline:1px_solid_rgba(0,0,0,0.07)]"
+            fallbackClassName="rounded-2xl text-sm font-semibold text-white"
+            fallbackStyle={{ background: "oklch(0.62 0.06 75)" }}
+          />
           <div>
             <p className="text-base font-semibold tracking-tight text-foreground">{name}</p>
             <p className="mt-0.5 text-[12px] text-muted-foreground">{initialEmail}</p>

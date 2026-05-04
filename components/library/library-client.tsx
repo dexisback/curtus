@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { ExternalLink, Play, Plus, Youtube } from "lucide-react";
 import YouTubeEmbedPanel from "@/features/dashboard/components/youtube-embed-panel";
 import { parseYouTubeInput } from "@/lib/youtube";
+import { writeDashboardLecture } from "@/lib/dashboard-lecture";
 
 export type LibraryItemView = {
   id: string;
@@ -40,6 +42,7 @@ function formatDate(iso: string) {
 }
 
 export default function LibraryClient({ initialItems }: { initialItems: LibraryItemView[] }) {
+  const router = useRouter();
   const [items, setItems] = useState<LibraryItemView[]>(initialItems);
   const [activeId, setActiveId] = useState<string | null>(initialItems[0]?.id ?? null);
   const [urlInput, setUrlInput] = useState("");
@@ -117,6 +120,17 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
     } catch {
       // Keep optimistic ordering even if this fails.
     }
+  }
+
+  function selectForDashboard(item: LibraryItemView) {
+    if (!item.embedUrl) return;
+    writeDashboardLecture({
+      id: item.id,
+      embedUrl: item.embedUrl,
+      url: item.url,
+      label: shortLabel(item),
+    });
+    router.push("/dashboard");
   }
 
   const previewEmbed = previewOpen ? parseYouTubeInput(previewRawUrl)?.embedUrl ?? null : null;
@@ -217,16 +231,29 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                           <Play size={10} />
                           Resume
                         </span>
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 hover:text-foreground"
-                        >
-                          Open
-                          <ExternalLink size={10} />
-                        </a>
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.96 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              selectForDashboard(item);
+                            }}
+                            className="inline-flex h-6 items-center rounded-md border border-border/60 bg-background px-2 text-[10px] font-medium text-foreground hover:bg-accent/55"
+                          >
+                            Watch on dashboard
+                          </motion.button>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                          >
+                            Open
+                            <ExternalLink size={10} />
+                          </a>
+                        </div>
                       </div>
                     </motion.button>
                   );

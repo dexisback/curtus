@@ -5,24 +5,11 @@ import { getStudyDayStart } from "@/lib/periods";
 import VideoPlayerWrapper from "@/features/dashboard/components/video-player-wrapper";
 import Leaderboard from "@/features/dashboard/components/leaderboard";
 import TodoComponent from "@/features/dashboard/components/todo-component";
-import { parseYouTubeInput } from "@/lib/youtube";
-import { isMissingLibraryTableError } from "@/lib/library-db";
 
 export default async function DashboardPage() {
   const session = await requireSession();
   const todayStart = getStudyDayStart(new Date());
-  const latestLibraryItemPromise = prisma.libraryItem
-    .findFirst({
-      where: { userId: session.user.id },
-      orderBy: { updatedAt: "desc" },
-      select: { url: true },
-    })
-    .catch((error) => {
-      if (isMissingLibraryTableError(error)) return null;
-      throw error;
-    });
-
-  const [tasks, membershipRooms, latestLibraryItem] = await Promise.all([
+  const [tasks, membershipRooms] = await Promise.all([
     prisma.task.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
@@ -55,9 +42,7 @@ export default async function DashboardPage() {
         },
       },
     }),
-    latestLibraryItemPromise,
   ]);
-  const latestEmbedUrl = latestLibraryItem ? (parseYouTubeInput(latestLibraryItem.url)?.embedUrl ?? null) : null;
 
   const memberIds = Array.from(
     new Set(
@@ -109,7 +94,7 @@ export default async function DashboardPage() {
       {/* Top bento: ~38% leaderboard (left) + ~62% video (right) */}
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.9fr)_minmax(0,3.1fr)] gap-6 sm:gap-7 md:gap-8">
         <Leaderboard boards={boards} />
-        <VideoPlayerWrapper embedUrl={latestEmbedUrl} />
+        <VideoPlayerWrapper />
       </div>
 
       {/* Bottom todo/calendar strip */}

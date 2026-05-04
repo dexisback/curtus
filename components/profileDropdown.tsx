@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { User, UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
+import { UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
 import { useSound } from "@/components/sound-provider";
+import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 
 type UserLite = { name?: string | null; image?: string | null; email?: string | null };
 
@@ -36,6 +37,7 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
   }
 
   const avatarUrl = user?.image;
+  const displayName = user?.name ?? user?.email ?? "User";
 
   const menuItems = [
     { label: "Profile", icon: UserCircle, onClick: () => {} },
@@ -57,12 +59,12 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
           hover:bg-accent transition-colors duration-150 cursor-pointer
           border border-border/40 shadow-[0_1px_2px_rgba(17,24,39,0.04)] overflow-hidden"
       >
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
-        ) : (
-          <User size={14} strokeWidth={1.5} />
-        )}
+        <AvatarWithFallback
+          name={displayName}
+          src={avatarUrl}
+          className="h-full w-full rounded-full"
+          fallbackClassName="rounded-full bg-muted text-[10px] font-semibold text-foreground"
+        />
       </motion.button>
 
       <AnimatePresence>

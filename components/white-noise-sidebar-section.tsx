@@ -13,7 +13,7 @@ const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
 
 export default function WhiteNoiseSidebarSection() {
   const { play } = useSound();
-  const { currentTone, isPlaying, volume, setTone, toggle, setVolume } = useWhiteNoise();
+  const { currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, setVolume } = useWhiteNoise();
 
   return (
     <div
@@ -30,6 +30,7 @@ export default function WhiteNoiseSidebarSection() {
           whileTap={{ scale: 0.96 }}
           onClick={() => {
             play("tap");
+            void initAudio();
             void toggle();
           }}
           className="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-border/65 bg-background text-foreground/85 transition-colors hover:bg-accent/60"
@@ -38,6 +39,9 @@ export default function WhiteNoiseSidebarSection() {
           {isPlaying ? <Pause size={14} /> : <Play size={14} className="translate-x-[0.5px]" />}
         </motion.button>
       </div>
+      {!ready && (
+        <p className="mb-2 text-[10px] text-muted-foreground">Click play to initialize audio output.</p>
+      )}
 
       <div className="grid grid-cols-1 gap-1.5">
         {TONES.map((tone) => {
@@ -49,6 +53,7 @@ export default function WhiteNoiseSidebarSection() {
               whileTap={{ scale: 0.96 }}
               onClick={() => {
                 play("tap");
+                void initAudio();
                 void setTone(tone.id);
               }}
               className={
@@ -81,6 +86,7 @@ export default function WhiteNoiseSidebarSection() {
           aria-label="White noise volume"
         />
       </label>
+      {error && <p className="mt-2 text-[10px] text-destructive">{error}</p>}
     </div>
   );
 }

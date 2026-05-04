@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Trophy } from "lucide-react";
 import type { LeaderboardEntry, Period } from "@/lib/leaderboard";
+import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 import ProfileModal, {
   type ProfileModalUser,
 } from "@/features/dashboard/components/profile-modal";
@@ -249,18 +250,13 @@ export default function LeaderboardClient({
                   <span className="shrink-0 tabular-nums text-[12px] font-semibold text-foreground">
                     #{me?.rank ?? "—"}
                   </span>
-                  {currentUserImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={currentUserImage}
-                      alt=""
-                      className="h-6 w-6 shrink-0 rounded-full object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
-                    />
-                  ) : (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[9.5px] font-semibold text-foreground">
-                      {getInitials(currentUserName)}
-                    </div>
-                  )}
+                  <AvatarWithFallback
+                    name={currentUserName}
+                    src={currentUserImage}
+                    initials={getInitials(currentUserName)}
+                    className="h-6 w-6 shrink-0 rounded-full [outline:1px_solid_rgba(0,0,0,0.07)]"
+                    fallbackClassName="rounded-full bg-muted text-[9.5px] font-semibold text-foreground"
+                  />
                   <span className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-foreground">
                     {currentUserName ?? "You"}
                   </span>
@@ -326,26 +322,16 @@ export default function LeaderboardClient({
                             {entry.rank}
                           </span>
 
-                          {entry.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={entry.image}
-                              alt=""
-                              className="h-7 w-7 shrink-0 rounded-full object-cover [outline:1px_solid_rgba(0,0,0,0.07)]"
-                            />
-                          ) : (
-                            <div
-                              className="flex h-7 w-7 shrink-0 select-none items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                              style={{
-                                background: isTop3
-                                  ? rankColor
-                                  : "oklch(0.72 0.02 75)",
-                                outline: "1px solid rgba(0,0,0,0.07)",
-                              }}
-                            >
-                              {initials}
-                            </div>
-                          )}
+                          <AvatarWithFallback
+                            name={entry.name}
+                            src={entry.image}
+                            initials={initials}
+                            className="h-7 w-7 shrink-0 rounded-full [outline:1px_solid_rgba(0,0,0,0.07)]"
+                            fallbackClassName="rounded-full text-[10px] font-semibold text-white"
+                            fallbackStyle={{
+                              background: isTop3 ? rankColor : "oklch(0.72 0.02 75)",
+                            }}
+                          />
 
                           <span className="min-w-0 flex-1 truncate text-[12px] text-foreground">
                             {isMe ? (entry.name ?? "You") + " (you)" : (entry.name ?? "Unknown")}

@@ -17,6 +17,9 @@ type WhiteNoiseContextValue = {
   currentTone: WhiteNoiseToneId;
   isPlaying: boolean;
   volume: number;
+  ready: boolean;
+  error: string | null;
+  initAudio: () => Promise<boolean>;
   setTone: (tone: WhiteNoiseToneId) => Promise<void>;
   toggle: () => Promise<void>;
   stop: () => void;
@@ -177,8 +180,11 @@ function buildToneEngine(
 
 export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) {
   const [currentTone, setCurrentTone] = useState<WhiteNoiseToneId>(() => readTone());
-  const [isPlaying, setIsPlaying] = useState<boolean>(() => readPlaying());
+  const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolumeState] = useState<number>(() => readVolume());
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const shouldResumeRef = useRef<boolean>(false);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const noiseBufferRef = useRef<AudioBuffer | null>(null);
@@ -192,11 +198,33 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
     if (typeof window !== "undefined") localStorage.setItem(PLAYING_KEY, "0");
   }, []);
 
+  const initAudio = useCallback(async () => {
+    const ctx = createContextSafe(ctxRef);
+    if (!ctx) {
+      setError("Audio is not supported in this browser.");
+      return false;
+    }
+    try {
+      if (ctx.state === "suspended") await ctx.resume();
+      setReady(ctx.state === "running");
+      if (ctx.state !== "running") {
+        setError("Tap again to allow audio playback.");
+        return false;
+      }
+      setError(null);
+      return true;
+    } catch {
+      setError("Could not start audio.");
+      return false;
+    }
+  }, []);
+
   const start = useCallback(
     async (tone: WhiteNoiseToneId) => {
-      const ctx = createContextSafe(ctxRef);
-      if (!ctx) return;
-      if (ctx.state === "suspended") await ctx.resume();
+      const canPlay = await initAudio();
+      if (!canPlay) return false;
+      const ctx = ctxRef.current;
+      if (!ctx) return false;
 
       if (!noiseBufferRef.current) noiseBufferRef.current = createNoiseBuffer(ctx);
       if (!masterRef.current) {
@@ -211,8 +239,9 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       setIsPlaying(true);
       localStorage.setItem(TONE_KEY, tone);
       localStorage.setItem(PLAYING_KEY, "1");
+      return true;
     },
-    [volume],
+    [initAudio, volume],
   );
 
   const setTone = useCallback(
@@ -228,7 +257,10 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
 
   const toggle = useCallback(async () => {
     if (isPlaying) stop();
-    else await start(currentTone);
+    else {
+      const ok = await start(currentTone);
+      if (!ok) setIsPlaying(false);
+    }
   }, [currentTone, isPlaying, start, stop]);
 
   const setVolume = useCallback((value: number) => {
@@ -243,6 +275,20 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   }, [volume]);
 
   useEffect(() => {
+    shouldResumeRef.current = readPlaying();
+  }, []);
+
+  useEffect(() => {
+    const onFirstGesture = () => {
+      if (!shouldResumeRef.current || isPlaying) return;
+      shouldResumeRef.current = false;
+      void start(currentTone);
+    };
+    window.addEventListener("pointerdown", onFirstGesture, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirstGesture);
+  }, [currentTone, isPlaying, start]);
+
+  useEffect(() => {
     const ctx = ctxRef.current;
     return () => {
       engineRef.current?.stop();
@@ -254,8 +300,8 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const value = useMemo(
-    () => ({ currentTone, isPlaying, volume, setTone, toggle, stop, setVolume }),
-    [currentTone, isPlaying, volume, setTone, toggle, stop, setVolume],
+    () => ({ currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, stop, setVolume }),
+    [currentTone, isPlaying, volume, ready, error, initAudio, setTone, toggle, stop, setVolume],
   );
 
   return <WhiteNoiseContext.Provider value={value}>{children}</WhiteNoiseContext.Provider>;
