@@ -46,7 +46,7 @@ export default function YouTubeEmbedPanel({
     <div
       className={
         libraryLayout
-          ? "flex w-full min-w-0 flex-col items-stretch p-1 sm:p-2"
+          ? "flex w-full min-w-0 flex-col items-stretch"
           : "flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
       }
     >
@@ -60,7 +60,7 @@ export default function YouTubeEmbedPanel({
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={{ y: -1, rotate: 0.08, scale: 1.003 }}
+        whileHover={libraryLayout ? undefined : { y: -1, rotate: 0.08, scale: 1.003 }}
         transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.65 }}
       >
         <Screw
@@ -135,7 +135,9 @@ export default function YouTubeEmbedPanel({
               </button>
             </div>
           ) : emptyHint ? (
-            <p className="max-w-[20rem] px-4 text-center text-[11px] leading-snug text-white/55">{emptyHint}</p>
+            <p className="max-w-[20rem] px-4 text-center text-xs leading-snug text-white/55 text-balance antialiased">
+              {emptyHint}
+            </p>
           ) : null}
           {embedUrl && activeLabel && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-8 text-center">

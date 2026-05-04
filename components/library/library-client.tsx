@@ -202,7 +202,9 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
       >
         <div className="flex flex-wrap items-end gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
-            <p className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Library</p>
+            <p className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
+              Library
+            </p>
             <input
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
@@ -213,7 +215,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                 }
               }}
               placeholder="Paste YouTube video or playlist URL"
-              className="h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-[12px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/45"
+              className="h-10 w-full rounded-lg border border-border/70 bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground/60 antialiased focus:outline-none focus:ring-2 focus:ring-ring/45"
             />
           </div>
           <motion.button
@@ -231,25 +233,20 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
       </section>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(20rem,1fr)] xl:items-start">
-        <section
-          className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
-        >
-          <div className="rounded-xl bg-background p-2">
-            <YouTubeEmbedPanel
-              embedUrl={active?.embedUrl ?? null}
-              large
-              emptyHint="Add a YouTube URL above to watch here."
-            />
-          </div>
-        </section>
+        <div className="min-w-0 antialiased">
+          <YouTubeEmbedPanel
+            embedUrl={active?.embedUrl ?? null}
+            large
+            emptyHint="Add a YouTube URL above to watch here."
+          />
+        </div>
 
         <section
           className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
           <div className="flex flex-col rounded-xl bg-background p-3">
-            <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
               Saved links
             </p>
             <div className="space-y-2 pr-0.5">
@@ -301,22 +298,24 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                                     cancelTitleEdit();
                                   }
                                 }}
-                                className="min-w-0 flex-1 rounded-md border border-border/70 bg-background px-2 py-1 text-[11.5px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring/45"
+                                className="min-w-0 flex-1 rounded-md border border-border/60 bg-muted/25 px-2 py-1 text-sm text-foreground antialiased focus:outline-none focus:ring-2 focus:ring-ring/45"
                               />
                             </div>
                           ) : (
-                            <div className="flex min-w-0 items-center gap-1.5 text-[11.5px] font-medium text-foreground">
+                            <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium leading-snug tracking-tight text-foreground antialiased">
                               <Youtube size={14} className="shrink-0 text-red-500" aria-hidden />
                               <span className="min-w-0 truncate">{displayLabel(item)}</span>
                             </div>
                           )}
-                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.url}</p>
+                          <p className="mt-0.5 truncate text-xs tabular-nums text-muted-foreground antialiased">
+                            {item.url}
+                          </p>
                         </div>
                         <div
                           className="flex shrink-0 items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <span className="text-[10px] text-muted-foreground tabular-nums whitespace-nowrap">
+                          <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground antialiased">
                             {formatDate(item.updatedAtIso)}
                           </span>
                           {editingTitleId !== item.id ? (
@@ -332,12 +331,12 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                           ) : null}
                         </div>
                       </div>
-                      <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground antialiased">
                         <span className="inline-flex items-center gap-1">
-                          <Play size={10} />
+                          <Play size={10} className="opacity-80" aria-hidden />
                           Resume
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <motion.button
                             type="button"
                             whileTap={{ scale: 0.96 }}
@@ -345,7 +344,7 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                               e.stopPropagation();
                               selectForDashboard(item);
                             }}
-                            className="inline-flex h-6 items-center rounded-md border border-border/60 bg-background px-2 text-[10px] font-medium text-foreground hover:bg-accent/55"
+                            className="inline-flex h-7 items-center rounded-md px-2 text-xs font-medium text-foreground/90 transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
                           >
                             Watch on dashboard
                           </motion.button>
@@ -354,10 +353,10 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
                             target="_blank"
                             rel="noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 hover:text-foreground"
+                            className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
                           >
                             Open
-                            <ExternalLink size={10} />
+                            <ExternalLink size={10} className="opacity-80" aria-hidden />
                           </a>
                         </div>
                       </div>
@@ -379,64 +378,68 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
       </div>
 
       <section
-        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
+        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-4 sm:p-5
+          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)] antialiased"
       >
-        <div className="rounded-xl bg-background p-3">
-          <p className="mb-2 inline-flex items-center gap-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-            <Waves size={12} />
-            Sound Library
-          </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {FEATURED_AMBIENT.map((sound) => {
-              const active =
-                Boolean(sound.tone) &&
-                currentTone === sound.tone &&
-                isPlaying &&
-                previewSoundId === null;
-              return (
-                <motion.button
-                  key={sound.id}
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    if (sound.tone) void activateTone(sound.tone);
-                  }}
-                  className={
-                    "flex h-12 items-center justify-center rounded-lg border px-3 text-[11px] font-medium transition-colors " +
-                    (active
-                      ? "border-cta/45 bg-cta/10 text-foreground"
-                      : "border-border/60 bg-card/65 text-foreground/85 hover:bg-accent/55")
-                  }
-                >
-                  {sound.label}
-                </motion.button>
-              );
-            })}
-          </div>
-
-          <p className="mt-4 mb-1.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-            the developer likes these sounds
-          </p>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {DEVELOPER_LIKES_AMBIENT.map((sound) => (
-              <div
+        <p className="mb-3 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+          <Waves size={13} strokeWidth={1.65} className="opacity-80" aria-hidden />
+          Sound library
+        </p>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          {FEATURED_AMBIENT.map((sound) => {
+            const toneActive =
+              Boolean(sound.tone) &&
+              currentTone === sound.tone &&
+              isPlaying &&
+              previewSoundId === null;
+            return (
+              <motion.button
                 key={sound.id}
-                className="flex min-h-[2.75rem] items-center justify-between rounded-lg border border-border/55 bg-card/60 px-3 py-2.5"
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (sound.tone) void activateTone(sound.tone);
+                }}
+                className={
+                  "flex h-11 items-center justify-center rounded-lg border px-3 text-xs font-medium leading-snug tracking-tight transition-colors " +
+                  (toneActive
+                    ? "border-cta/40 bg-cta/12 text-foreground"
+                    : "border-border/45 bg-transparent text-foreground/90 hover:bg-foreground/[0.05]")
+                }
               >
-                <span className="truncate pr-2 text-[10.5px] text-foreground/85">{sound.label}</span>
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => void playDeveloperPreview(sound.id, sound.fileName)}
-                  className="inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-border/60 bg-background text-foreground/85 hover:bg-accent/55"
-                  aria-label={`Preview ${sound.label}`}
-                >
-                  {previewSoundId === sound.id ? <Pause size={12} /> : <Play size={12} />}
-                </motion.button>
-              </div>
-            ))}
-          </div>
+                {sound.label}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <p className="mb-2 mt-5 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+          The developer likes these sounds
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {DEVELOPER_LIKES_AMBIENT.map((sound) => (
+            <div
+              key={sound.id}
+              className="flex min-h-[2.75rem] items-center justify-between gap-2 rounded-lg border border-border/40 bg-card/40 px-3 py-2.5"
+            >
+              <span className="min-w-0 flex-1 truncate text-xs font-medium leading-snug tracking-tight text-foreground/90">
+                {sound.label}
+              </span>
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.96 }}
+                onClick={() => void playDeveloperPreview(sound.id, sound.fileName)}
+                className="-m-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/[0.06] hover:text-foreground"
+                aria-label={`Preview ${sound.label}`}
+              >
+                {previewSoundId === sound.id ? (
+                  <Pause size={13} strokeWidth={1.75} aria-hidden />
+                ) : (
+                  <Play size={13} strokeWidth={1.75} className="translate-x-[0.5px]" aria-hidden />
+                )}
+              </motion.button>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -462,8 +465,10 @@ export default function LibraryClient({ initialItems }: { initialItems: LibraryI
               transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
               className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-3 shadow-[0_12px_40px_rgba(17,24,39,0.14)]"
             >
-              <p className="mb-2 text-[12px] font-medium text-foreground">Preview before saving</p>
-              <div className="rounded-xl bg-background p-2">
+              <p className="mb-2 text-sm font-medium leading-snug tracking-tight text-foreground antialiased">
+                Preview before saving
+              </p>
+              <div className="min-w-0">
                 <YouTubeEmbedPanel embedUrl={previewEmbed} large />
               </div>
               <div className="mt-2 flex justify-end gap-2">
