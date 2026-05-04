@@ -430,10 +430,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={openCreate}
-                className="mt-3 flex items-center justify-center gap-2 rounded-full bg-cta
-                  px-4 py-2 text-[11.5px] font-medium text-cta-foreground
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-cta/25 bg-cta
+                  px-4 py-2.5 text-[11.5px] font-medium text-cta-foreground
                   shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
-                  transition-shadow duration-150 whitespace-nowrap cursor-pointer"
+                  transition-[box-shadow,transform] duration-150 whitespace-nowrap cursor-pointer
+                  hover:shadow-[0_2px_6px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.14)]"
               >
                 <Plus size={13} strokeWidth={2} />
                 Create New

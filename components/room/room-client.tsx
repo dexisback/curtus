@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeft, LogOut, Mic, Settings, Video, VideoOff, X } from "lucide-react";
 import { connectWithAuth } from "@/lib/socket";
+import { useSound } from "@/components/sound-provider";
 import Chat from "./chat";
 import { useRoomVideo } from "./use-room-video";
+import RoomSettingsModal from "./room-settings-modal";
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
   type RoomTimerMember,
 } from "@/features/dashboard/components/room-leaderboard-carousel";
-import { ArrowLeft, X } from "lucide-react";
 
 function VideoSurface({
   stream,
@@ -29,7 +31,7 @@ function VideoSurface({
   if (!stream) {
     return (
       <div className="flex h-full w-full items-center justify-center text-[12px] text-white/70">
-        Connecting video...
+        Connecting video…
       </div>
     );
   }
@@ -81,11 +83,13 @@ export default function RoomClient({
   initialMessages,
 }: Props) {
   const router = useRouter();
+  const { play } = useSound();
   const [members] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
   const [leaving, setLeaving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(null);
   const [renderBaseMs] = useState(() => Date.now());
   const {
@@ -96,6 +100,21 @@ export default function RoomClient({
     start: startVideo,
     stop: stopVideo,
   } = useRoomVideo({ roomId, currentUserId, videoEnabledUserIds });
+
+  const selfCamOn = videoEnabledUserIds.includes(currentUserId);
+
+  const streamForMember = useCallback(
+    (userId: string) => (userId === currentUserId ? localStream : remoteStreams[userId] ?? null),
+    [currentUserId, localStream, remoteStreams],
+  );
+
+  const hasVideoForMember = useCallback((userId: string) => videoEnabledUserIds.includes(userId), [videoEnabledUserIds]);
+
+  const toggleSelfCamera = useCallback(() => {
+    play("tap");
+    if (selfCamOn) stopVideo();
+    else void startVideo();
+  }, [play, selfCamOn, startVideo, stopVideo]);
 
   useEffect(() => {
     const socket = connectWithAuth();
@@ -133,11 +152,27 @@ export default function RoomClient({
     };
   }, [roomId, router, stopVideo]);
 
-  async function handleLeave() {
+  async function leaveMembership() {
     setLeaving(true);
     stopVideo();
-    await fetch(`/api/rooms/${code}`, { method: "DELETE" });
-    router.push("/rooms");
+    try {
+      await fetch(`/api/rooms/${code}`, { method: "DELETE" });
+      router.push("/rooms");
+    } finally {
+      setLeaving(false);
+    }
+  }
+
+  async function deleteRoomFromSettings() {
+    setLeaving(true);
+    stopVideo();
+    try {
+      await fetch(`/api/rooms/${code}`, { method: "DELETE" });
+      setSettingsOpen(false);
+      router.push("/rooms");
+    } finally {
+      setLeaving(false);
+    }
   }
 
   const board: RoomTimerBoard = {
@@ -160,33 +195,61 @@ export default function RoomClient({
     })),
   };
 
-  const focusHasVideo = focusedMember
-    ? videoEnabledUserIds.includes(focusedMember.id)
-    : false;
+  const focusHasVideo = focusedMember ? videoEnabledUserIds.includes(focusedMember.id) : false;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <Link
           href="/rooms"
-          className="inline-flex h-9 items-center gap-1.5 rounded-[8px] border border-border/60 bg-card/80 px-3 text-[11.5px] font-medium text-foreground/90 transition-colors hover:bg-accent/60"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-border/60 bg-card/80 px-3 text-[11.5px] font-medium text-foreground/90 transition-colors hover:bg-accent/60"
         >
           <ArrowLeft size={13} strokeWidth={1.8} />
           Back
         </Link>
-        <div className="text-center">
-          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">{name}</h1>
+        <div className="min-w-0 flex-1 text-center">
+          <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">{name}</h1>
           <p className="text-[10.5px] text-muted-foreground">Code: {code}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleLeave}
-          disabled={leaving}
-          className="h-9 rounded-[8px] bg-destructive/90 px-3 text-[11.5px] font-medium text-destructive-foreground disabled:opacity-60"
-        >
-          {isHost ? "Delete room" : "Leave room"}
-        </button>
+        <div className="flex shrink-0 justify-end">
+          {isHost ? (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => {
+                play("tap");
+                setSettingsOpen(true);
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-foreground/90 shadow-[0_1px_2px_rgba(17,24,39,0.04)] transition-colors hover:bg-accent/60"
+              aria-label="Room settings"
+            >
+              <Settings size={16} strokeWidth={1.65} />
+            </motion.button>
+          ) : (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => void leaveMembership()}
+              disabled={leaving}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border/60 bg-card/80 px-3 text-[11.5px] font-medium text-foreground/90 transition-colors hover:bg-accent/60 disabled:opacity-50"
+            >
+              <LogOut size={14} strokeWidth={1.75} />
+              Leave
+            </motion.button>
+          )}
+        </div>
       </div>
+
+      {isHost && (
+        <RoomSettingsModal
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          roomName={name}
+          roomCode={code}
+          onDeleteRoom={deleteRoomFromSettings}
+          deleteBusy={leaving}
+        />
+      )}
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.3fr)_minmax(19rem,0.9fr)]">
         <div className="min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]">
@@ -235,38 +298,43 @@ export default function RoomClient({
                         <p className="text-[12px] text-white/80">
                           {videoError && focusedMember.id === currentUserId
                             ? videoError
-                            : `${focusedMember.name} has video off. Showing profile.`}
+                            : `${focusedMember.name} has video off.`}
                         </p>
                       </div>
                     )}
                   </div>
                   <div className="pointer-events-none absolute bottom-3 left-0 right-0 flex justify-center">
-                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/50 px-3 py-2 text-[11px] text-white/80 backdrop-blur-md">
-                      <span className="rounded-full bg-white/10 px-2 py-1">Mic</span>
+                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/55 px-2 py-1.5 text-white/90 backdrop-blur-md">
                       <button
                         type="button"
-                        className="rounded-full bg-white/10 px-2 py-1 transition-colors hover:bg-white/20"
-                        onClick={() => {
-                          const isMe = focusedMember.id === currentUserId;
-                          if (!isMe) return;
-                          if (videoEnabledUserIds.includes(currentUserId)) {
-                            stopVideo();
-                          } else {
-                            void startVideo();
-                          }
-                        }}
+                        disabled
+                        title="Room sessions are video-only; microphone is not used."
+                        className="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-full bg-white/10 text-white/50"
+                        aria-label="Microphone unavailable"
                       >
-                        {focusedMember.id === currentUserId
-                          ? videoStarting
-                            ? "Starting"
-                            : videoEnabledUserIds.includes(currentUserId)
-                            ? "Cam on"
-                            : "Cam off"
-                          : focusHasVideo
-                            ? "Cam on"
-                            : "Cam off"}
+                        <Mic size={16} strokeWidth={1.75} />
                       </button>
-                      <span className="rounded-full bg-white/10 px-2 py-1">Share</span>
+                      {focusedMember.id === currentUserId && (
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.94 }}
+                          disabled={videoStarting}
+                          onClick={() => {
+                            play("tap");
+                            toggleSelfCamera();
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-50"
+                          aria-label={selfCamOn ? "Turn camera off" : "Turn camera on"}
+                        >
+                          {videoStarting ? (
+                            <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-white/70" />
+                          ) : selfCamOn ? (
+                            <Video size={16} strokeWidth={1.85} />
+                          ) : (
+                            <VideoOff size={16} strokeWidth={1.85} />
+                          )}
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -282,6 +350,12 @@ export default function RoomClient({
                   <RoomLeaderboardCarousel
                     boards={[board]}
                     onMemberClick={(member) => setFocusedMember(member)}
+                    streamForMember={streamForMember}
+                    hasVideoForMember={hasVideoForMember}
+                    currentUserId={currentUserId}
+                    selfCameraOn={selfCamOn}
+                    selfCameraStarting={videoStarting}
+                    onToggleSelfCamera={toggleSelfCamera}
                   />
                 </motion.div>
               )}
@@ -303,9 +377,6 @@ export default function RoomClient({
           </div>
         </div>
       </div>
-
     </div>
   );
 }
-
-// — Room shell: timer, socket wiring, chat, children slots.
