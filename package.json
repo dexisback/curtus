@@ -7,8 +7,18 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
     "postinstall": "prisma generate",
-    "db:seed": "node --env-file=.env prisma/seed.mjs"
+    "db:seed": "node --env-file=.env prisma/seed.mjs",
+    "prepare": "husky install",
+    "format": "prettier --write . --ignore-path .gitignore"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -48,6 +58,9 @@
     "@types/typescript": "^0.4.29",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "husky": "^8.0.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.3",
     "prisma": "^7.5.0",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
