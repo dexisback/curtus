@@ -40,7 +40,10 @@ function LoginPageContent() {
         (result as { url?: string } | null)?.url;
       if (redirectUrl && typeof window !== "undefined") {
         window.location.assign(redirectUrl);
+        return;
       }
+      setAuthError("OAuth sign-in could not start. Check auth callback URLs and try again.");
+      setPendingProvider(null);
     } catch {
       setAuthError("OAuth sign-in failed. Please try again.");
       setPendingProvider(null);
