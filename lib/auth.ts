@@ -6,6 +6,11 @@ import { redis } from "./redis";
 import { buildTrustedAuthOrigins, effectiveBetterAuthUrl } from "./auth-urls";
 
 const isProd = process.env.NODE_ENV === "production";
+const useRedisAuthStorage =
+  (process.env.AUTH_USE_REDIS_SECONDARY ?? "").trim().toLowerCase() === "true";
+const useRedisRateLimitStorage =
+  (process.env.AUTH_USE_REDIS_RATELIMIT ?? "").trim().toLowerCase() === "true";
+
 const hasGoogleAuth = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
 );
@@ -47,7 +52,7 @@ export const auth = betterAuth({
 
   trustedOrigins,
 
-  ...(redis ? betterAuthSecondaryStorage(redis) : {}),
+  ...(redis && useRedisAuthStorage ? betterAuthSecondaryStorage(redis) : {}),
 
   verification: {
     storeInDatabase: true,
@@ -56,9 +61,10 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 30,
     updateAge: 60 * 60 * 24,
+    // Avoid 431 "Request Header Fields Too Large" from cached session cookie bloat.
     cookieCache: {
-      enabled: true,
-      maxAge: 5 * 60,
+      enabled: false,
+      maxAge: 0,
     },
   },
 
@@ -66,7 +72,7 @@ export const auth = betterAuth({
     enabled: isProd,
     window: 60,
     max: 100,
-    storage: redis ? "secondary-storage" : "memory",
+    storage: redis && useRedisRateLimitStorage ? "secondary-storage" : "memory",
     customRules: {
       "/sign-in/social": { window: 60, max: 5 },
       "/sign-out": { window: 60, max: 10 },
