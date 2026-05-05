@@ -8,6 +8,13 @@ export function stripAuthOrigin(u: string | undefined): string {
 }
 
 export function effectiveBetterAuthUrl(): string {
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd) {
+    const prod = stripAuthOrigin(process.env.BETTER_AUTH_URL);
+    if (prod) return prod;
+  }
+
   if (authUseTunnel()) {
     const t = stripAuthOrigin(process.env.BETTER_AUTH_TUNNEL_URL);
     if (t) return t;
