@@ -28,8 +28,22 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession();
-  const initialUserSettings = session ? await getCachedUserSettings(session.user.id) : null;
+  let session: Awaited<ReturnType<typeof getServerSession>> = null;
+  try {
+    session = await getServerSession();
+  } catch (err) {
+    console.warn("[layout] getServerSession failed; continuing unauthenticated", err);
+  }
+
+  let initialUserSettings = null;
+  if (session) {
+    try {
+      initialUserSettings = await getCachedUserSettings(session.user.id);
+    } catch (err) {
+      console.warn("[layout] getCachedUserSettings failed; continuing with defaults", err);
+      initialUserSettings = null;
+    }
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

@@ -9,8 +9,22 @@ export default async function DashboardGroupLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession();
-  const dbUser = session ? await getCachedDashboardShellUser(session.user.id) : null;
+  let session: Awaited<ReturnType<typeof getServerSession>> = null;
+  try {
+    session = await getServerSession();
+  } catch (err) {
+    console.warn("[dashboard-layout] getServerSession failed; continuing with fallback user", err);
+  }
+
+  let dbUser = null;
+  if (session) {
+    try {
+      dbUser = await getCachedDashboardShellUser(session.user.id);
+    } catch (err) {
+      console.warn("[dashboard-layout] getCachedDashboardShellUser failed; using session user", err);
+      dbUser = null;
+    }
+  }
   const user = dbUser ?? session?.user ?? { name: null, image: null, email: null };
 
   return (

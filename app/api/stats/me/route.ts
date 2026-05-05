@@ -25,52 +25,69 @@ export const GET = withApi(async () => {
   const nextMonth = new Date(
     Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1, 5),
   );
-  const [
-    user,
-    streak,
-    todayAgg,
-    weekAgg,
-    monthAgg,
-    last7DaysRows,
-    recentSessions,
-  ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { lifetimeFocusMinutes: true, name: true, image: true },
-    }),
-    prisma.streak.findUnique({
-      where: { userId },
-      select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: todayStart, lt: nextDay } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: weekStart, lt: nextWeek } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: monthStart, lt: nextMonth } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.findMany({
-      where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
-      orderBy: { date: "asc" },
-      select: { date: true, totalMinutes: true },
-    }),
-    prisma.focusSession.findMany({
-      where: { userId },
-      orderBy: { completedAt: "desc" },
-      take: 10,
-      select: {
-        id: true,
-        durationMin: true,
-        completedAt: true,
-        room: { select: { code: true, name: true } },
-      },
-    }),
-  ]);
+  let user: { lifetimeFocusMinutes: number; name: string | null; image: string | null } | null = null;
+  let streak: { currentStreak: number; longestStreak: number; lastActiveDate: Date | null } | null = null;
+  let todayAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let weekAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let monthAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let last7DaysRows: { date: Date; totalMinutes: number }[] = [];
+  let recentSessions: {
+    id: string;
+    durationMin: number;
+    completedAt: Date;
+    room: { code: string; name: string } | null;
+  }[] = [];
+
+  try {
+    [
+      user,
+      streak,
+      todayAgg,
+      weekAgg,
+      monthAgg,
+      last7DaysRows,
+      recentSessions,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { lifetimeFocusMinutes: true, name: true, image: true },
+      }),
+      prisma.streak.findUnique({
+        where: { userId },
+        select: { currentStreak: true, longestStreak: true, lastActiveDate: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: todayStart, lt: nextDay } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: weekStart, lt: nextWeek } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: monthStart, lt: nextMonth } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.findMany({
+        where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
+        orderBy: { date: "asc" },
+        select: { date: true, totalMinutes: true },
+      }),
+      prisma.focusSession.findMany({
+        where: { userId },
+        orderBy: { completedAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          durationMin: true,
+          completedAt: true,
+          room: { select: { code: true, name: true } },
+        },
+      }),
+    ]);
+  } catch (err) {
+    console.warn("[stats/me] failed to load aggregates; returning safe defaults", err);
+  }
 
   // Fill in zero-minute days for the last-7-days strip
   const last7Days: { date: string; totalMinutes: number }[] = [];

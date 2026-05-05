@@ -92,13 +92,19 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
 
   let liveByUserId: Map<string, LiveSessionPayload> | null = null;
   if (redis && memberIds.length > 0) {
-    const keys = memberIds.map((id) => liveSessionRedisKey(id));
-    const vals = await Promise.all(keys.map((k) => redis!.get<LiveSessionPayload>(k)));
-    liveByUserId = new Map();
-    memberIds.forEach((id, i) => {
-      const v = vals[i];
-      if (v) liveByUserId!.set(id, v);
-    });
+    try {
+      const keys = memberIds.map((id) => liveSessionRedisKey(id));
+      const vals = await Promise.all(keys.map((k) => redis.get<LiveSessionPayload>(k)));
+      liveByUserId = new Map();
+      memberIds.forEach((id, i) => {
+        const v = vals[i];
+        if (v) liveByUserId!.set(id, v);
+      });
+    } catch (err) {
+      // Keep board APIs and RSC pages resilient when Upstash fetch throws (can surface as ErrorEvent).
+      console.warn("[room-boards] live session read failed; continuing without live status", err);
+      liveByUserId = null;
+    }
   }
 
   return rooms.map((room) => ({

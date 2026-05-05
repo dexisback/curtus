@@ -34,87 +34,119 @@ export default async function ProfilePage() {
     Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1, 5),
   );
 
-  const [
-    user,
-    streakRow,
-    todayAgg,
-    weekAgg,
-    monthAgg,
-    last7DaysRows,
-    last35DaysRows,
-    recentSessions,
-    relatedRoomMemberships,
-    pingRows,
-  ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true, image: true, email: true, lifetimeFocusMinutes: true, createdAt: true },
-    }),
-    prisma.streak.findUnique({
-      where: { userId },
-      select: { currentStreak: true, longestStreak: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: todayStart, lt: nextDay } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: weekStart, lt: nextWeek } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.aggregate({
-      where: { userId, date: { gte: monthStart, lt: nextMonth } },
-      _sum: { totalMinutes: true },
-    }),
-    prisma.dailyStats.findMany({
-      where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
-      orderBy: { date: "asc" },
-      select: { date: true, totalMinutes: true },
-    }),
-    prisma.dailyStats.findMany({
-      where: { userId, date: { gte: thirtyFiveDaysAgo, lte: todayStart } },
-      orderBy: { date: "asc" },
-      select: { date: true, totalMinutes: true },
-    }),
-    prisma.focusSession.findMany({
-      where: { userId },
-      orderBy: { completedAt: "desc" },
-      take: 20,
-      select: {
-        id: true,
-        durationMin: true,
-        completedAt: true,
-        room: { select: { code: true, name: true } },
-      },
-    }),
-    prisma.roomMember.findMany({
-      where: { userId },
-      select: {
-        room: {
-          select: {
-            members: {
-              select: { user: { select: { id: true, name: true } } },
+  let user: {
+    name: string | null;
+    image: string | null;
+    email: string | null;
+    lifetimeFocusMinutes: number;
+    createdAt: Date;
+  } | null = null;
+  let streakRow: { currentStreak: number; longestStreak: number } | null = null;
+  let todayAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let weekAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let monthAgg: { _sum: { totalMinutes: number | null } } = { _sum: { totalMinutes: 0 } };
+  let last7DaysRows: { date: Date; totalMinutes: number }[] = [];
+  let last35DaysRows: { date: Date; totalMinutes: number }[] = [];
+  let recentSessions: {
+    id: string;
+    durationMin: number;
+    completedAt: Date;
+    room: { code: string; name: string } | null;
+  }[] = [];
+  let relatedRoomMemberships: { room: { members: { user: { id: string; name: string | null } }[] } }[] = [];
+  let pingRows: {
+    createdAt: Date;
+    fromUserId: string;
+    toUserId: string;
+    fromUser: { id: string; name: string | null; image: string | null; email: string | null };
+    toUser: { id: string; name: string | null; image: string | null; email: string | null };
+  }[] = [];
+
+  try {
+    [
+      user,
+      streakRow,
+      todayAgg,
+      weekAgg,
+      monthAgg,
+      last7DaysRows,
+      last35DaysRows,
+      recentSessions,
+      relatedRoomMemberships,
+      pingRows,
+    ] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, image: true, email: true, lifetimeFocusMinutes: true, createdAt: true },
+      }),
+      prisma.streak.findUnique({
+        where: { userId },
+        select: { currentStreak: true, longestStreak: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: todayStart, lt: nextDay } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: weekStart, lt: nextWeek } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.aggregate({
+        where: { userId, date: { gte: monthStart, lt: nextMonth } },
+        _sum: { totalMinutes: true },
+      }),
+      prisma.dailyStats.findMany({
+        where: { userId, date: { gte: sevenDaysAgo, lte: todayStart } },
+        orderBy: { date: "asc" },
+        select: { date: true, totalMinutes: true },
+      }),
+      prisma.dailyStats.findMany({
+        where: { userId, date: { gte: thirtyFiveDaysAgo, lte: todayStart } },
+        orderBy: { date: "asc" },
+        select: { date: true, totalMinutes: true },
+      }),
+      prisma.focusSession.findMany({
+        where: { userId },
+        orderBy: { completedAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          durationMin: true,
+          completedAt: true,
+          room: { select: { code: true, name: true } },
+        },
+      }),
+      prisma.roomMember.findMany({
+        where: { userId },
+        select: {
+          room: {
+            select: {
+              members: {
+                select: { user: { select: { id: true, name: true } } },
+              },
             },
           },
         },
-      },
-      take: 8,
-    }),
-    prisma.ping.findMany({
-      where: {
-        OR: [{ fromUserId: userId }, { toUserId: userId }],
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-      select: {
-        createdAt: true,
-        fromUserId: true,
-        toUserId: true,
-        fromUser: { select: { id: true, name: true, image: true, email: true } },
-        toUser: { select: { id: true, name: true, image: true, email: true } },
-      },
-    }),
-  ]);
+        take: 8,
+      }),
+      prisma.ping.findMany({
+        where: {
+          OR: [{ fromUserId: userId }, { toUserId: userId }],
+        },
+        orderBy: { createdAt: "desc" },
+        take: 200,
+        select: {
+          createdAt: true,
+          fromUserId: true,
+          toUserId: true,
+          fromUser: { select: { id: true, name: true, image: true, email: true } },
+          toUser: { select: { id: true, name: true, image: true, email: true } },
+        },
+      }),
+    ]);
+  } catch (err) {
+    console.warn("[profile] failed to load profile aggregates; rendering fallbacks", err);
+  }
 
   // Build a 7-slot strip with zero-fill for missing days
   const last7Days: { date: string; totalMinutes: number }[] = [];
