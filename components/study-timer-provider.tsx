@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { connectWithAuth } from "@/lib/socket";
+import { TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
 
 type StudyTimerState = {
   active: boolean;
@@ -66,6 +67,39 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
     return () => {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [refresh]);
+
+  useEffect(() => {
+    let id: ReturnType<typeof setInterval> | undefined;
+
+    function clearPoll() {
+      if (id !== undefined) {
+        clearInterval(id);
+        id = undefined;
+      }
+    }
+
+    function startPollIfVisible() {
+      clearPoll();
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      id = setInterval(() => void refresh(), TIMER_POLL_INTERVAL_MS);
+    }
+
+    startPollIfVisible();
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        void refresh();
+        startPollIfVisible();
+      } else {
+        clearPoll();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      clearPoll();
     };
   }, [refresh]);
 

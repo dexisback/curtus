@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, LogOut, Mic, Settings, Video, VideoOff, X } from "lucide-react";
 import { connectWithAuth } from "@/lib/socket";
+import { useStudyTimer } from "@/components/study-timer-provider";
 import { useSound } from "@/components/sound-provider";
+import { mergeSelfStudyTimer } from "@/lib/timer-sync";
 import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 import Chat from "./chat";
 import { useRoomVideo } from "./use-room-video";
@@ -85,6 +87,7 @@ export default function RoomClient({
 }: Props) {
   const router = useRouter();
   const { play } = useSound();
+  const { active: selfTimerActive, startedAtMs: selfStartedAtMs } = useStudyTimer();
   const [members] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
@@ -200,6 +203,11 @@ export default function RoomClient({
       todayMinutes: todayMinutes[m.id] ?? 0,
     })),
   };
+
+  const displayBoard = useMemo(
+    () => mergeSelfStudyTimer([board], currentUserId, { active: selfTimerActive, startedAtMs: selfStartedAtMs })[0]!,
+    [board, currentUserId, selfTimerActive, selfStartedAtMs],
+  );
 
   const focusHasVideo = focusedMember ? videoEnabledUserIds.includes(focusedMember.id) : false;
 
@@ -349,7 +357,7 @@ export default function RoomClient({
                   className="min-h-0 flex-1"
                 >
                   <RoomLeaderboardCarousel
-                    boards={[board]}
+                    boards={[displayBoard]}
                     onMemberClick={(member) => setFocusedMember(member)}
                     streamForMember={streamForMember}
                     hasVideoForMember={hasVideoForMember}

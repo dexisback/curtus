@@ -17,7 +17,7 @@ async function DashboardHomeContent() {
       className="flex h-full min-h-0 w-full flex-col gap-6 overflow-hidden px-5 pb-5 pt-10 sm:gap-8 sm:px-6 sm:pb-6 sm:pt-12 md:gap-10 scroll-mt-6"
     >
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.9fr)_minmax(0,3.1fr)] gap-6 sm:gap-7 md:gap-8">
-        <Leaderboard boards={boards} />
+        <Leaderboard boards={boards} currentUserId={session.user.id} />
         <VideoPlayerWrapper />
       </div>
 

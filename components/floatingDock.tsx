@@ -147,13 +147,17 @@ function StudyTimerDockControl() {
   const idleLabel =
     todayMinutes === null ? "—" : formatTodayClock(todayMinutes);
 
+  /** Running: continue from today's logged minutes + current session (not a fresh 00:00 session). */
+  const activeTotalSeconds =
+    active ? (todayMinutes ?? 0) * 60 + elapsedSeconds : 0;
+
   return (
     <div className="mr-1 flex items-center gap-1.5 border-r border-border/50 pr-2">
       <span
         className="min-w-[2.75rem] tabular-nums text-[11px] font-medium text-muted-foreground"
         aria-live="polite"
       >
-        {active ? formatElapsed(elapsedSeconds) : idleLabel}
+        {active ? formatElapsed(activeTotalSeconds) : idleLabel}
       </span>
       <motion.button
         type="button"

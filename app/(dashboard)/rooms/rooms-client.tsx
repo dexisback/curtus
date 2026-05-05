@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, ChevronDown, Hash, Lock, Users, Video } from "lucide-react";
+import { useStudyTimer } from "@/components/study-timer-provider";
+import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
 } from "@/features/dashboard/components/room-leaderboard-carousel";
@@ -27,6 +29,7 @@ type Props = {
   publicRooms: PublicRoom[];
   myRooms: MyRoom[];
   boards: RoomTimerBoard[];
+  currentUserId: string;
 };
 
 function RoomCard({
@@ -95,7 +98,13 @@ function RoomCard({
   );
 }
 
-export default function RoomsClient({ publicRooms, myRooms, boards: initialBoards }: Props) {
+export default function RoomsClient({
+  publicRooms,
+  myRooms,
+  boards: initialBoards,
+  currentUserId,
+}: Props) {
+  const { active, startedAtMs } = useStudyTimer();
   const router = useRouter();
   const [boards, setBoards] = useState(initialBoards);
   const [joinCode, setJoinCode] = useState("");
@@ -103,12 +112,23 @@ export default function RoomsClient({ publicRooms, myRooms, boards: initialBoard
   const [busy, setBusy] = useState(false);
   const [roomListView, setRoomListView] = useState<"my" | "public">("public");
 
+  const displayBoards = useMemo(
+    () =>
+      mergeSelfStudyTimer(boards, currentUserId, {
+        active,
+        startedAtMs,
+      }),
+    [boards, currentUserId, active, startedAtMs],
+  );
+
   useEffect(() => {
     setBoards(initialBoards);
   }, [initialBoards]);
 
   useEffect(() => {
     let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
     async function pull() {
       try {
         const res = await fetch("/api/room-boards?mode=rooms", {
@@ -122,14 +142,37 @@ export default function RoomsClient({ publicRooms, myRooms, boards: initialBoard
         /* ignore */
       }
     }
+
+    function clearPoll() {
+      if (intervalId !== undefined) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+      }
+    }
+
+    function startPollIfVisible() {
+      clearPoll();
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      intervalId = setInterval(() => void pull(), TIMER_POLL_INTERVAL_MS);
+    }
+
     const onStats = () => void pull();
     const onVis = () => {
-      if (document.visibilityState === "visible") void pull();
+      if (document.visibilityState === "visible") {
+        void pull();
+        startPollIfVisible();
+      } else {
+        clearPoll();
+      }
     };
+
+    void pull();
+    startPollIfVisible();
     window.addEventListener("study-stats-changed", onStats);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
+      clearPoll();
       window.removeEventListener("study-stats-changed", onStats);
       document.removeEventListener("visibilitychange", onVis);
     };
@@ -333,9 +376,9 @@ export default function RoomsClient({ publicRooms, myRooms, boards: initialBoard
             xl:h-[88%] xl:self-center
             p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
         >
-          {boards.length > 0 ? (
+          {displayBoards.length > 0 ? (
             <div className="h-full rounded-xl bg-background">
-              <RoomLeaderboardCarousel boards={boards} />
+              <RoomLeaderboardCarousel boards={displayBoards} currentUserId={currentUserId} />
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">

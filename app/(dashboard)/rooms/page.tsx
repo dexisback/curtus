@@ -52,6 +52,7 @@ export default async function RoomsPage() {
         hostName: m.room.host.name ?? "Unknown",
       }))}
       boards={boards}
+      currentUserId={session.user.id}
     />
   );
 }

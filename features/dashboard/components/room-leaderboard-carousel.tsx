@@ -152,7 +152,12 @@ export default function RoomLeaderboardCarousel({
       >
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {sortedMembers.map((member, i) => {
-            const running = mounted && member.active ? elapsedSeconds(member.startedAtIso, nowMs) : 0;
+            const sessionRunning =
+              mounted && member.active ? elapsedSeconds(member.startedAtIso, nowMs) : 0;
+            /** Idle cards show today's logged focus (minutes→duration); active cards show live session elapsed. */
+            const displaySeconds = member.active
+              ? sessionRunning
+              : Math.max(0, member.todayMinutes) * 60;
             const hasVideo = hasVideoForMember?.(member.id) ?? false;
             const stream = streamForMember?.(member.id) ?? null;
             const showVideoTile = videoMode && hasVideo && stream;
@@ -199,7 +204,7 @@ export default function RoomLeaderboardCarousel({
                     <div className="pointer-events-none absolute inset-x-0 bottom-1.5 px-2 text-center">
                       <p className="truncate text-[10.5px] font-medium text-white drop-shadow-sm">{member.name}</p>
                       <p className="tabular-nums text-[11px] font-semibold tracking-tight text-white/95 drop-shadow">
-                        {formatTimer(running)}
+                        {formatTimer(displaySeconds)}
                       </p>
                     </div>
                   </>
@@ -218,7 +223,7 @@ export default function RoomLeaderboardCarousel({
                     />
                     <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground/90">{member.name}</p>
                     <p className="tabular-nums text-[12px] font-semibold tracking-tight text-foreground">
-                      {formatTimer(running)}
+                      {formatTimer(displaySeconds)}
                     </p>
                   </div>
                 )}

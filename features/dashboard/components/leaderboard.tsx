@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
+import { useStudyTimer } from "@/components/study-timer-provider";
+import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
 import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
 import ProfileModal, { type ProfileModalUser } from "./profile-modal";
 import RoomLeaderboardCarousel, { type RoomTimerBoard } from "./room-leaderboard-carousel";
@@ -39,9 +41,25 @@ function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
   };
 }
 
-export default function Leaderboard({ boards: initialBoards }: { boards: RoomTimerBoard[] }) {
+export default function Leaderboard({
+  boards: initialBoards,
+  currentUserId,
+}: {
+  boards: RoomTimerBoard[];
+  currentUserId: string;
+}) {
+  const { active, startedAtMs } = useStudyTimer();
   const [boards, setBoards] = useState(initialBoards);
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
+
+  const displayBoards = useMemo(
+    () =>
+      mergeSelfStudyTimer(boards, currentUserId, {
+        active,
+        startedAtMs,
+      }),
+    [boards, currentUserId, active, startedAtMs],
+  );
 
   useEffect(() => {
     setBoards(initialBoards);
@@ -49,6 +67,8 @@ export default function Leaderboard({ boards: initialBoards }: { boards: RoomTim
 
   useEffect(() => {
     let cancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
     async function pull() {
       try {
         const res = await fetch("/api/room-boards?mode=dashboard", {
@@ -62,14 +82,37 @@ export default function Leaderboard({ boards: initialBoards }: { boards: RoomTim
         /* ignore */
       }
     }
+
+    function clearPoll() {
+      if (intervalId !== undefined) {
+        clearInterval(intervalId);
+        intervalId = undefined;
+      }
+    }
+
+    function startPollIfVisible() {
+      clearPoll();
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      intervalId = setInterval(() => void pull(), TIMER_POLL_INTERVAL_MS);
+    }
+
     const onStats = () => void pull();
     const onVis = () => {
-      if (document.visibilityState === "visible") void pull();
+      if (document.visibilityState === "visible") {
+        void pull();
+        startPollIfVisible();
+      } else {
+        clearPoll();
+      }
     };
+
+    void pull();
+    startPollIfVisible();
     window.addEventListener("study-stats-changed", onStats);
     document.addEventListener("visibilitychange", onVis);
     return () => {
       cancelled = true;
+      clearPoll();
       window.removeEventListener("study-stats-changed", onStats);
       document.removeEventListener("visibilitychange", onVis);
     };
@@ -105,10 +148,11 @@ export default function Leaderboard({ boards: initialBoards }: { boards: RoomTim
             style={{ borderRadius: `${LB_INNER}px` }}
           >
             <div className="min-h-0 flex-1 px-1.5 py-1.5">
-              {boards.length > 0 ? (
+              {displayBoards.length > 0 ? (
                 <RoomLeaderboardCarousel
-                  boards={boards}
+                  boards={displayBoards}
                   compact
+                  currentUserId={currentUserId}
                   onMemberClick={openProfile}
                 />
               ) : (

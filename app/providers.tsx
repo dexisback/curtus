@@ -2,6 +2,7 @@
 
 import { ServerUserSettingsProvider } from "@/components/server-user-settings";
 import { SoundProvider } from "@/components/sound-provider";
+import { StudyTimerProvider } from "@/components/study-timer-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WhiteNoiseProvider } from "@/components/white-noise-provider";
 import type { SerializedUserSettings } from "@/lib/user-settings";
@@ -17,7 +18,9 @@ export default function Providers({
     <ServerUserSettingsProvider value={initialUserSettings}>
       <ThemeProvider>
         <SoundProvider>
-          <WhiteNoiseProvider>{children}</WhiteNoiseProvider>
+          <StudyTimerProvider>
+            <WhiteNoiseProvider>{children}</WhiteNoiseProvider>
+          </StudyTimerProvider>
         </SoundProvider>
       </ThemeProvider>
     </ServerUserSettingsProvider>
