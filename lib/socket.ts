@@ -155,6 +155,22 @@ export function getSocket() {
         cb(token ? { ...getCookieAuth(), socketToken: token } : getCookieAuth());
       },
     });
+
+    socketSingleton.on("connect", () => {
+      console.info("[realtime] socket connected", {
+        id: socketSingleton?.id,
+        url: socketUrl,
+      });
+    });
+    socketSingleton.on("disconnect", (reason) => {
+      console.warn("[realtime] socket disconnected", { reason });
+    });
+    socketSingleton.on("connect_error", (error) => {
+      console.error("[realtime] socket connect_error", {
+        message: error.message,
+        name: error.name,
+      });
+    });
   }
 
   return socketSingleton;

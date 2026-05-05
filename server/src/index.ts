@@ -19,11 +19,26 @@ import { getSocketCorsOrigins } from "./auth-urls.js";
 
 const port = Number(process.env.PORT ?? 4001);
 const socketCorsOrigins = getSocketCorsOrigins();
+const socketCorsOriginSet = new Set(socketCorsOrigins);
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return false;
+  if (socketCorsOriginSet.has(origin)) return true;
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== "https:" && protocol !== "http:") return false;
+    // Allow Vercel deployment hosts in production (preview + prod aliases).
+    if (hostname === "vercel.app" || hostname.endsWith(".vercel.app")) return true;
+  } catch {
+    return false;
+  }
+  return false;
+}
 
 const httpServer = createServer(async (request, response) => {
   const originHeader = request.headers.origin;
   const allowedOrigin =
-    typeof originHeader === "string" && socketCorsOrigins.includes(originHeader)
+    typeof originHeader === "string" && isAllowedOrigin(originHeader)
       ? originHeader
       : null;
 
@@ -74,6 +89,25 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
+  if (request.url === "/diag") {
+    const body = JSON.stringify({
+      ok: true,
+      service: "studywithme-socket-server",
+      origins: socketCorsOrigins,
+      uptime: process.uptime(),
+      now: new Date().toISOString(),
+    });
+    response.writeHead(200, {
+      "content-type": "application/json; charset=utf-8",
+      "content-length": Buffer.byteLength(body),
+      ...(allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {}),
+      ...(allowedOrigin ? { "access-control-allow-credentials": "true" } : {}),
+      vary: "Origin",
+    });
+    response.end(body);
+    return;
+  }
+
   response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
   response.end("Not found");
 });
@@ -85,7 +119,11 @@ const io = new Server<
   SocketData
 >(httpServer, {
   cors: {
-    origin: socketCorsOrigins,
+    origin: (origin, cb) => {
+      // Allow non-browser or same-origin server probes without Origin header.
+      if (!origin) return cb(null, true);
+      cb(null, isAllowedOrigin(origin));
+    },
     credentials: true,
   },
   pingTimeout: 25_000,
@@ -107,10 +145,22 @@ function extractSessionToken(rawCookieHeader: string | undefined) {
 }
 
 io.use(async (socket, next) => {
+  const reject = (reason: string) => {
+    logger.warn("Socket auth rejected", {
+      reason,
+      socketId: socket.id,
+      origin: socket.handshake.headers.origin ?? null,
+      hasCookie: Boolean(socket.handshake.headers.cookie),
+      hasSocketToken:
+        typeof socket.handshake.auth?.socketToken === "string" &&
+        socket.handshake.auth.socketToken.length > 0,
+    });
+    next(new Error(reason));
+  };
   try {
     const origin = socket.handshake.headers.origin;
-    if (origin && !socketCorsOrigins.includes(origin)) {
-      next(new Error("Socket origin not allowed."));
+    if (origin && !isAllowedOrigin(origin)) {
+      reject("Socket origin not allowed.");
       return;
     }
 
@@ -141,13 +191,13 @@ io.use(async (socket, next) => {
           : null;
       const secret = process.env.BETTER_AUTH_SECRET;
       if (!socketToken || !secret) {
-        next(new Error("Missing socket authentication."));
+        reject("Missing socket authentication.");
         return;
       }
 
       const verifiedUserId = verifySocketAuthToken(socketToken, secret);
       if (!verifiedUserId) {
-        next(new Error("Invalid socket authentication token."));
+        reject("Invalid socket authentication token.");
         return;
       }
 
@@ -156,7 +206,7 @@ io.use(async (socket, next) => {
         select: { id: true, name: true, email: true },
       });
       if (!user) {
-        next(new Error("Socket auth user not found."));
+        reject("Socket auth user not found.");
         return;
       }
 
@@ -165,7 +215,7 @@ io.use(async (socket, next) => {
     }
 
     if (!userId) {
-      next(new Error("Socket auth user missing after verification."));
+      reject("Socket auth user missing after verification.");
       return;
     }
 
@@ -177,6 +227,11 @@ io.use(async (socket, next) => {
     logger.info("Socket connected", { socketId: socket.id, userId });
     next();
   } catch (error) {
+    logger.error("Socket auth exception", {
+      socketId: socket.id,
+      origin: socket.handshake.headers.origin ?? null,
+      error: error instanceof Error ? error.message : "unknown",
+    });
     next(error instanceof Error ? error : new Error("Socket auth failed unexpectedly."));
   }
 });
