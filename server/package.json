@@ -19,12 +19,12 @@
     "cookie": "^1.1.1",
     "dotenv": "^17.4.2",
     "socket.io": "^4.8.3",
+    "tsx": "^4.21.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "prisma": "^7.7.0",
-    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
 }
