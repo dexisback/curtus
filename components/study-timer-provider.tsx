@@ -8,7 +8,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { connectWithAuth } from "@/lib/socket";
+import { requestPresenceRefresh } from "@/lib/socket";
 import { TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
 
 type StudyTimerState = {
@@ -182,8 +182,7 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("study-stats-changed"));
       }
-      const sock = connectWithAuth();
-      if (sock?.connected) sock.emit("presence:refresh");
+      requestPresenceRefresh();
     } finally {
       setBusy(false);
     }

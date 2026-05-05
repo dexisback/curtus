@@ -204,6 +204,7 @@ async function syncKeyExpiry(userId: string, roomId?: string) {
     redis.expire(getTodayMinutesKey(userId), ttl),
     redis.expire(getTodaySecondsKey(userId), ttl),
     roomId ? redis.expire(getRoomMembersKey(roomId), ttl) : Promise.resolve(1),
+    roomId ? redis.expire(getRoomVideoEnabledKey(roomId), ttl) : Promise.resolve(1),
   ]);
 }
 
@@ -375,13 +376,66 @@ function isJoined(socket: StudySocket, roomId: string) {
   return socket.data.joinedRoomIds.includes(roomId);
 }
 
-async function validateMediaTarget(socket: StudySocket, roomId: string, toUserId: string) {
-  if (!isJoined(socket, roomId)) return false;
-  const [fromEnabled, toEnabled] = await Promise.all([
+async function isCurrentRoomMember(userId: string, roomId: string) {
+  const membership = await prisma.roomMember.findUnique({
+    where: { userId_roomId: { userId, roomId } },
+    select: { userId: true },
+  });
+  return Boolean(membership);
+}
+
+async function evictFromRoom(io: StudyServer, socket: StudySocket, roomId: string) {
+  socket.leave(roomId);
+  removeJoinedRoom(socket, roomId);
+  await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
+  await maybeRemovePresenceMember(io, socket, roomId);
+}
+
+async function enforceRoomAccess(
+  io: StudyServer,
+  socket: StudySocket,
+  roomId: string,
+  opts?: { emitRoomError?: boolean; evictWhenInvalid?: boolean },
+) {
+  if (!isJoined(socket, roomId)) {
+    if (opts?.emitRoomError) socket.emit("room:error", toRoomError("Join room before continuing."));
+    return { ok: false as const, reason: "not_joined" };
+  }
+
+  const wasKicked = await checkAndEvictIfKicked(io, socket, roomId);
+  if (wasKicked) {
+    return { ok: false as const, reason: "kicked" };
+  }
+
+  const stillMember = await isCurrentRoomMember(socket.data.userId, roomId);
+  if (!stillMember) {
+    if (opts?.evictWhenInvalid !== false) {
+      await evictFromRoom(io, socket, roomId);
+    }
+    io.to(`user:${socket.data.userId}`).emit("room:kicked", { roomId });
+    if (opts?.emitRoomError) socket.emit("room:error", toRoomError("You are no longer a member of this room."));
+    return { ok: false as const, reason: "not_member" };
+  }
+
+  return { ok: true as const };
+}
+
+async function validateMediaTarget(
+  io: StudyServer,
+  socket: StudySocket,
+  roomId: string,
+  toUserId: string,
+) {
+  const access = await enforceRoomAccess(io, socket, roomId, { emitRoomError: true });
+  if (!access.ok) return false;
+  const [toMember, fromEnabled, toEnabled, socketsInRoom] = await Promise.all([
+    isCurrentRoomMember(toUserId, roomId),
     redis.sismember(getRoomVideoEnabledKey(roomId), socket.data.userId),
     redis.sismember(getRoomVideoEnabledKey(roomId), toUserId),
+    io.in(roomId).fetchSockets(),
   ]);
-  return Boolean(fromEnabled && toEnabled);
+  const toActiveInRoom = socketsInRoom.some((s) => s.data.userId === toUserId);
+  return Boolean(toMember && fromEnabled && toEnabled && toActiveInRoom);
 }
 
 export function registerSocketEvents(io: StudyServer) {
@@ -441,7 +495,12 @@ export function registerSocketEvents(io: StudyServer) {
       if (!await socketAllow(socketLimiters.presenceRefresh, `presence:refresh:${socket.data.userId}`)) {
         return;
       }
-      await Promise.all(rooms.map((rid) => publishPresence(io, rid)));
+      const validRooms: string[] = [];
+      for (const rid of rooms) {
+        const access = await enforceRoomAccess(io, socket, rid);
+        if (access.ok) validRooms.push(rid);
+      }
+      await Promise.all(validRooms.map((rid) => publishPresence(io, rid)));
     });
 
     socket.on("room:video-state", async (payload, ack?: (response: { ok: boolean; error?: string }) => void) => {
@@ -451,8 +510,8 @@ export function registerSocketEvents(io: StudyServer) {
         ack?.({ ok: false, error: "invalid_payload" });
         return;
       }
-      if (!isJoined(socket, parsed.data.roomId)) {
-        socket.emit("room:error", toRoomError("Join room before updating video state."));
+      const access = await enforceRoomAccess(io, socket, parsed.data.roomId, { emitRoomError: true });
+      if (!access.ok) {
         ack?.({ ok: false, error: "not_in_room" });
         return;
       }
@@ -467,6 +526,7 @@ export function registerSocketEvents(io: StudyServer) {
           return;
         }
         await redis.sadd(key, socket.data.userId);
+        await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
       } else {
         await redis.srem(key, socket.data.userId);
         socket.to(parsed.data.roomId).emit("media:peer-left", {
@@ -480,7 +540,12 @@ export function registerSocketEvents(io: StudyServer) {
 
     socket.on("media:join", async (payload, ack) => {
       const parsed = roomEventSchema.safeParse(payload);
-      if (!parsed.success || !isJoined(socket, parsed.data.roomId)) {
+      if (!parsed.success) {
+        ack?.({ ok: false, error: "not_in_room" });
+        return;
+      }
+      const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
+      if (!access.ok) {
         ack?.({ ok: false, error: "not_in_room" });
         return;
       }
@@ -501,7 +566,8 @@ export function registerSocketEvents(io: StudyServer) {
     socket.on("media:leave", async (payload) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!isJoined(socket, parsed.data.roomId)) return;
+      const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
+      if (!access.ok) return;
       await redis.srem(getRoomVideoEnabledKey(parsed.data.roomId), socket.data.userId);
       socket.to(parsed.data.roomId).emit("media:peer-left", {
         roomId: parsed.data.roomId,
@@ -513,7 +579,7 @@ export function registerSocketEvents(io: StudyServer) {
     socket.on("media:offer", async (payload) => {
       const parsed = mediaDescriptionSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
       io.to(`user:${parsed.data.toUserId}`).emit("media:offer", {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
@@ -524,7 +590,7 @@ export function registerSocketEvents(io: StudyServer) {
     socket.on("media:answer", async (payload) => {
       const parsed = mediaDescriptionSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
       io.to(`user:${parsed.data.toUserId}`).emit("media:answer", {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
@@ -535,7 +601,7 @@ export function registerSocketEvents(io: StudyServer) {
     socket.on("media:ice-candidate", async (payload) => {
       const parsed = mediaIceCandidateSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(socket, parsed.data.roomId, parsed.data.toUserId)) return;
+      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
       io.to(`user:${parsed.data.toUserId}`).emit("media:ice-candidate", {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
@@ -551,8 +617,8 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
-      if (!socket.data.joinedRoomIds.includes(parsed.data.roomId)) {
-        socket.emit("room:error", toRoomError("Join room before sending chat."));
+      const access = await enforceRoomAccess(io, socket, parsed.data.roomId, { emitRoomError: true });
+      if (!access.ok) {
         ack?.({ ok: false, error: "not_in_room" });
         return;
       }
@@ -560,13 +626,6 @@ export function registerSocketEvents(io: StudyServer) {
       if (!await socketAllow(socketLimiters.chatSend, `chat:send:${socket.data.userId}`)) {
         socket.emit("room:error", { message: "rate_limited" });
         ack?.({ ok: false, error: "rate_limited" });
-        return;
-      }
-
-      // Enforce any pending kick before allowing the message through
-      const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
-      if (wasKicked) {
-        ack?.({ ok: false, error: "kicked" });
         return;
       }
 

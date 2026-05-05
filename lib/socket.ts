@@ -101,6 +101,7 @@ export type StudySocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socketSingleton: StudySocket | null = null;
 let socketTokenCache: { token: string; expiresAtMs: number } | null = null;
+let pendingPresenceRefresh = false;
 
 function getSocketUrl() {
   return process.env.NEXT_PUBLIC_SOCKET_URL ?? null;
@@ -123,7 +124,10 @@ async function getSocketToken() {
       credentials: "include",
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("[realtime] socket token fetch failed", { status: res.status });
+      return null;
+    }
     const data = (await res.json()) as { token?: string };
     if (!data.token) return null;
     socketTokenCache = {
@@ -161,6 +165,10 @@ export function getSocket() {
         id: socketSingleton?.id,
         url: socketUrl,
       });
+      if (pendingPresenceRefresh && socketSingleton?.connected) {
+        socketSingleton.emit("presence:refresh");
+        pendingPresenceRefresh = false;
+      }
     });
     socketSingleton.on("disconnect", (reason) => {
       console.warn("[realtime] socket disconnected", { reason });
@@ -182,6 +190,17 @@ export function connectWithAuth() {
   if (!socket.connected) socket.connect();
 
   return socket;
+}
+
+export function requestPresenceRefresh() {
+  const socket = connectWithAuth();
+  if (!socket) return;
+  if (socket.connected) {
+    socket.emit("presence:refresh");
+    pendingPresenceRefresh = false;
+  } else {
+    pendingPresenceRefresh = true;
+  }
 }
 
 export function disconnectSocket() {

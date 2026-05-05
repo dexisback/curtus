@@ -129,7 +129,10 @@ export default function RoomClient({
     const socket = connectWithAuth();
     if (!socket) return;
 
-    socket.emit("room:join", { roomId });
+    const joinRoom = () => {
+      socket.emit("room:join", { roomId });
+    };
+    joinRoom();
 
     const onPresence = (payload: {
       roomId: string;
@@ -153,15 +156,21 @@ export default function RoomClient({
       stopVideo();
       router.push("/rooms");
     };
+    const onConnect = () => {
+      joinRoom();
+      socket.emit("presence:refresh");
+    };
 
     socket.on("presence", onPresence);
     socket.on("room:kicked", onKicked);
+    socket.on("connect", onConnect);
 
     return () => {
       socket.emit("room:leave", { roomId });
       stopVideo();
       socket.off("presence", onPresence);
       socket.off("room:kicked", onKicked);
+      socket.off("connect", onConnect);
     };
   }, [roomId, router, stopVideo]);
 

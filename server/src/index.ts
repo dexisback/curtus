@@ -94,6 +94,14 @@ const httpServer = createServer(async (request, response) => {
       ok: true,
       service: "studywithme-socket-server",
       origins: socketCorsOrigins,
+      env: {
+        hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+        hasRedisUrl: Boolean(process.env.UPSTASH_REDIS_URL),
+        hasRedisToken: Boolean(process.env.UPSTASH_REDIS_TOKEN),
+        hasBetterAuthSecret: Boolean(process.env.BETTER_AUTH_SECRET),
+        betterAuthUrl: process.env.BETTER_AUTH_URL ?? null,
+        nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
+      },
       uptime: process.uptime(),
       now: new Date().toISOString(),
     });
@@ -269,6 +277,15 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 httpServer.listen(port, () => {
+  logger.info("Socket runtime config", {
+    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    hasRedisUrl: Boolean(process.env.UPSTASH_REDIS_URL),
+    hasRedisToken: Boolean(process.env.UPSTASH_REDIS_TOKEN),
+    hasBetterAuthSecret: Boolean(process.env.BETTER_AUTH_SECRET),
+    betterAuthUrl: process.env.BETTER_AUTH_URL ?? null,
+    nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
+    allowedOriginsCount: socketCorsOrigins.length,
+  });
   logger.info("StudyWithMe socket server listening", { port });
 });
 
