@@ -21,6 +21,24 @@ const port = Number(process.env.PORT ?? 4001);
 const socketCorsOrigins = getSocketCorsOrigins();
 
 const httpServer = createServer(async (request, response) => {
+  const originHeader = request.headers.origin;
+  const allowedOrigin =
+    typeof originHeader === "string" && socketCorsOrigins.includes(originHeader)
+      ? originHeader
+      : null;
+
+  if (request.method === "OPTIONS") {
+    response.writeHead(204, {
+      ...(allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {}),
+      "access-control-allow-methods": "GET,OPTIONS",
+      "access-control-allow-headers": "content-type,authorization",
+      ...(allowedOrigin ? { "access-control-allow-credentials": "true" } : {}),
+      vary: "Origin",
+    });
+    response.end();
+    return;
+  }
+
   if (request.url === "/health") {
     try {
       const [dbOk, redisOk] = await Promise.all([
@@ -39,10 +57,18 @@ const httpServer = createServer(async (request, response) => {
       response.writeHead(dbOk && redisOk ? 200 : 503, {
         "content-type": "application/json; charset=utf-8",
         "content-length": Buffer.byteLength(body),
+        ...(allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {}),
+        ...(allowedOrigin ? { "access-control-allow-credentials": "true" } : {}),
+        vary: "Origin",
       });
       response.end(body);
     } catch {
-      response.writeHead(503, { "content-type": "text/plain" });
+      response.writeHead(503, {
+        "content-type": "text/plain",
+        ...(allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {}),
+        ...(allowedOrigin ? { "access-control-allow-credentials": "true" } : {}),
+        vary: "Origin",
+      });
       response.end("error");
     }
     return;
