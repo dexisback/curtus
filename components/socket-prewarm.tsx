@@ -9,6 +9,13 @@ export default function SocketPrewarm() {
     if (!socketUrl) {
       return;
     }
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname !== "localhost" &&
+      socketUrl.includes("localhost")
+    ) {
+      return;
+    }
 
     void fetch(`${socketUrl}/health`, {
       mode: "cors",

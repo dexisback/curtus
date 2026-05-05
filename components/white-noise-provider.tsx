@@ -74,6 +74,22 @@ function pauseAllTonePlayers(players: Partial<Record<WhiteNoiseToneId, HTMLAudio
   }
 }
 
+function createNoiseBuffer(ctx: AudioContext, seconds = 2): AudioBuffer {
+  const length = Math.max(1, Math.floor(ctx.sampleRate * seconds));
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  return buffer;
+}
+
+function synthConfigForTone(tone: WhiteNoiseToneId): { filterHz: number; q: number; gain: number } {
+  if (tone === "beach") return { filterHz: 2800, q: 0.7, gain: 0.085 };
+  if (tone === "paris-cafe") return { filterHz: 1200, q: 1.1, gain: 0.06 };
+  return { filterHz: 700, q: 0.9, gain: 0.08 }; // river
+}
+
 export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) {
   const [currentTone, setCurrentTone] = useState<WhiteNoiseToneId>(() => readTone());
   const [isPlaying, setIsPlaying] = useState(false);
@@ -84,6 +100,8 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
 
   const ctxRef = useRef<AudioContext | null>(null);
   const playersRef = useRef<Partial<Record<WhiteNoiseToneId, HTMLAudioElement>>>({});
+  const synthGainRef = useRef<GainNode | null>(null);
+  const synthStopRef = useRef<(() => void) | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const previewIdRef = useRef<string | null>(null);
   const [previewSoundId, setPreviewSoundId] = useState<string | null>(null);
@@ -116,6 +134,9 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
   const stop = useCallback(() => {
     stopPreviewInternal(true);
     pauseAllTonePlayers(playersRef.current);
+    synthStopRef.current?.();
+    synthStopRef.current = null;
+    synthGainRef.current = null;
     setIsPlaying(false);
     persistPlayingFlag(false);
   }, [stopPreviewInternal]);
@@ -147,13 +168,44 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       if (!canPlay) return false;
       stopPreviewInternal(true);
       pauseAllTonePlayers(playersRef.current);
+      synthStopRef.current?.();
+      synthStopRef.current = null;
+      synthGainRef.current = null;
       const player = getPlayer(tone);
       player.volume = volume;
       try {
         await player.play();
       } catch {
-        setError("Could not play selected ambience.");
-        return false;
+        const ctx = createContextSafe(ctxRef);
+        if (!ctx) {
+          setError("Could not play selected ambience.");
+          return false;
+        }
+        const source = ctx.createBufferSource();
+        source.buffer = createNoiseBuffer(ctx);
+        source.loop = true;
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        const cfg = synthConfigForTone(tone);
+        filter.frequency.value = cfg.filterHz;
+        filter.Q.value = cfg.q;
+        const gain = ctx.createGain();
+        gain.gain.value = Math.max(0.01, Math.min(0.2, cfg.gain * (volume / 0.45)));
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        source.start();
+        synthGainRef.current = gain;
+        synthStopRef.current = () => {
+          try {
+            source.stop();
+          } catch {
+            /* ignore stop races */
+          }
+          source.disconnect();
+          filter.disconnect();
+          gain.disconnect();
+        };
       }
       setCurrentTone(tone);
       setIsPlaying(true);
@@ -202,6 +254,21 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       } catch {
         stopPreviewInternal(true);
         setIsPlaying(false);
+        // Fallback preview when asset files are unavailable in deployment.
+        const ctx = createContextSafe(ctxRef);
+        if (ctx) {
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = "triangle";
+          o.frequency.value = 440;
+          g.gain.value = 0.06;
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+          o.stop(ctx.currentTime + 0.25);
+          setError(null);
+          return;
+        }
         setError("Could not play this sample.");
         return;
       }
@@ -243,6 +310,9 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
     }
     const preview = previewAudioRef.current;
     if (preview) preview.volume = next;
+    if (synthGainRef.current) {
+      synthGainRef.current.gain.value = Math.max(0.01, Math.min(0.2, 0.08 * (next / 0.45)));
+    }
     if (typeof window !== "undefined") localStorage.setItem(VOLUME_KEY, String(next));
   }, []);
 
@@ -277,6 +347,9 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
         a.pause();
         a.src = "";
       }
+      synthStopRef.current?.();
+      synthStopRef.current = null;
+      synthGainRef.current = null;
       if (ctx && ctx.state !== "closed") {
         void ctx.close();
       }

@@ -34,7 +34,7 @@ const resolvedNextPublicSocket =
       ? process.env.NEXT_PUBLIC_SOCKET_TUNNEL_URL
       : process.env.NEXT_PUBLIC_SOCKET_URL_LOCAL,
   ) ||
-  (!useTunnel ? "http://localhost:4001" : "");
+  (process.env.NODE_ENV !== "production" && !useTunnel ? "http://localhost:4001" : "");
 
 const allowedDevOrigins = Array.from(
   new Set(
