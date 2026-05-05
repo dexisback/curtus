@@ -10,7 +10,12 @@ import {
   useState,
   type MutableRefObject,
 } from "react";
-import { TONE_SOUND_FILE, ambientUrl, type WhiteNoiseToneId } from "@/lib/ambient-sounds";
+import {
+  TONE_SOUND_FILE,
+  ambientUrl,
+  ambientUrlCandidates,
+  type WhiteNoiseToneId,
+} from "@/lib/ambient-sounds";
 
 type WhiteNoiseContextValue = {
   currentTone: WhiteNoiseToneId;
@@ -176,6 +181,27 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       try {
         await player.play();
       } catch {
+        // R2 paths are sometimes configured as bucket root vs /sounds prefix.
+        const candidates = ambientUrlCandidates(TONE_SOUND_FILE[tone]);
+        let playedFromFallbackPath = false;
+        for (const url of candidates.slice(1)) {
+          try {
+            player.src = url;
+            await player.play();
+            playedFromFallbackPath = true;
+            break;
+          } catch {
+            // Try next candidate.
+          }
+        }
+        if (playedFromFallbackPath) {
+          setCurrentTone(tone);
+          setIsPlaying(true);
+          localStorage.setItem(TONE_KEY, tone);
+          persistPlayingFlag(true);
+          setError(null);
+          return true;
+        }
         const ctx = createContextSafe(ctxRef);
         if (!ctx) {
           setError("Could not play selected ambience.");
@@ -233,7 +259,8 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       pauseAllTonePlayers(playersRef.current);
       stopPreviewInternal(false);
 
-      const el = new Audio(ambientUrl(fileName));
+      const candidates = ambientUrlCandidates(fileName);
+      const el = new Audio(candidates[0]!);
       el.loop = false;
       el.preload = "auto";
       el.volume = volume;
@@ -252,6 +279,23 @@ export function WhiteNoiseProvider({ children }: { children: React.ReactNode }) 
       try {
         await el.play();
       } catch {
+        let previewFallbackPlayed = false;
+        for (const url of candidates.slice(1)) {
+          try {
+            el.src = url;
+            await el.play();
+            previewFallbackPlayed = true;
+            break;
+          } catch {
+            // Try next candidate.
+          }
+        }
+        if (previewFallbackPlayed) {
+          setIsPlaying(true);
+          persistPlayingFlag(false);
+          setError(null);
+          return;
+        }
         stopPreviewInternal(true);
         setIsPlaying(false);
         // Fallback preview when asset files are unavailable in deployment.

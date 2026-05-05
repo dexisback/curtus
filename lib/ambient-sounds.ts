@@ -61,13 +61,23 @@ for (const s of FEATURED_AMBIENT) {
 export const TONE_SOUND_FILE = toneFiles as Record<WhiteNoiseToneId, string>;
 
 function normalizedSoundsBaseUrl() {
-  const fromEnv = (process.env.NEXT_PUBLIC_SOUNDS_BASE_URL ?? "").trim();
+  const fromEnv = (process.env.NEXT_PUBLIC_SOUNDS_BASE_URL ?? "")
+    .trim()
+    .replace(/^["']|["']$/g, "");
   const base = fromEnv.length > 0 ? fromEnv : "/sounds";
   return base.replace(/\/+$/, "");
 }
 
+export function ambientUrlCandidates(fileName: string): string[] {
+  const base = normalizedSoundsBaseUrl();
+  const encoded = encodeURIComponent(fileName);
+  const direct = `${base}/${encoded}`;
+  if (base.endsWith("/sounds") || base === "/sounds") return [direct];
+  return [direct, `${base}/sounds/${encoded}`];
+}
+
 export function ambientUrl(fileName: string) {
-  return `${normalizedSoundsBaseUrl()}/${encodeURIComponent(fileName)}`;
+  return ambientUrlCandidates(fileName)[0];
 }
 
 // — Ambient sound catalog for white-noise controls and library sound section.
