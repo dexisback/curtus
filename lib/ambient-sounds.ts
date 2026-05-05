@@ -60,8 +60,14 @@ for (const s of FEATURED_AMBIENT) {
 }
 export const TONE_SOUND_FILE = toneFiles as Record<WhiteNoiseToneId, string>;
 
+function normalizedSoundsBaseUrl() {
+  const fromEnv = (process.env.NEXT_PUBLIC_SOUNDS_BASE_URL ?? "").trim();
+  const base = fromEnv.length > 0 ? fromEnv : "/sounds";
+  return base.replace(/\/+$/, "");
+}
+
 export function ambientUrl(fileName: string) {
-  return `/api/sounds/${encodeURIComponent(fileName)}`;
+  return `${normalizedSoundsBaseUrl()}/${encodeURIComponent(fileName)}`;
 }
 
 // — Ambient sound catalog for white-noise controls and library sound section.

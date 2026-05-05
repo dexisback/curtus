@@ -164,6 +164,11 @@ io.use(async (socket, next) => {
       userName = user.name ?? user.email;
     }
 
+    if (!userId) {
+      next(new Error("Socket auth user missing after verification."));
+      return;
+    }
+
     socket.data.userId = userId;
     socket.data.userName = userName ?? "Unknown";
     socket.data.joinedRoomIds = [];

@@ -19,18 +19,22 @@ const useTunnel =
   process.env.AUTH_USE_TUNNEL?.trim().toLowerCase() === "true";
 
 const resolvedNextPublicApp =
+  stripOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
   stripOrigin(
     useTunnel
       ? process.env.NEXT_PUBLIC_APP_TUNNEL_URL
       : process.env.NEXT_PUBLIC_APP_URL_LOCAL,
-  ) || "http://localhost:3000";
+  ) ||
+  "http://localhost:3000";
 
 const resolvedNextPublicSocket =
+  stripOrigin(process.env.NEXT_PUBLIC_SOCKET_URL) ||
   stripOrigin(
     useTunnel
       ? process.env.NEXT_PUBLIC_SOCKET_TUNNEL_URL
       : process.env.NEXT_PUBLIC_SOCKET_URL_LOCAL,
-  ) || (!useTunnel ? "http://localhost:4001" : "");
+  ) ||
+  (!useTunnel ? "http://localhost:4001" : "");
 
 const allowedDevOrigins = Array.from(
   new Set(
