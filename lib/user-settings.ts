@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@generated/prisma";
+import type { PrismaClient } from "@prisma/client";
 
 export type SerializedUserSettings = {
   theme: "light" | "dark";
