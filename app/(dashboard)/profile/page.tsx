@@ -31,7 +31,13 @@ export default async function ProfilePage() {
   const nextDay = new Date(todayStart.getTime() + 86_400_000);
   const nextWeek = new Date(weekStart.getTime() + 7 * 86_400_000);
   const nextMonth = new Date(
-    Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1, 5),
+    monthStart.getFullYear(),
+    monthStart.getMonth() + 1,
+    1,
+    monthStart.getHours(),
+    0,
+    0,
+    0,
   );
 
   let user: {

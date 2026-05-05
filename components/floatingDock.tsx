@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useRef, type ComponentType } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { Focus, Library, Medal, Play, Square, SunMoon, Video } from "lucide-react";
@@ -96,60 +96,26 @@ function DockIcon({
 
 /** Running session: mm:ss under 1 hour, else show hours field. */
 function formatElapsed(seconds: number): string {
-  if (seconds >= 3600) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  }
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  const clamped = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = clamped % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/** Completed focus today (integer minutes): mm:ss style under 1 total hour, else hh:mm as hours:minutes. */
-function formatTodayClock(totalMinutes: number): string {
-  if (totalMinutes <= 0) return "00:00";
-  if (totalMinutes < 60) {
-    return `${String(totalMinutes).padStart(2, "0")}:00`;
-  }
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+/** Completed focus today in seconds (`HH:MM:SS`) to match card/leaderboard timers. */
+function formatTodayClock(totalSeconds: number): string {
+  return formatElapsed(totalSeconds);
 }
 
 function StudyTimerDockControl() {
-  const { active, elapsedSeconds, redisAvailable, busy, toggle } = useStudyTimer();
+  const { active, elapsedSeconds, todaySeconds, redisAvailable, busy, toggle } = useStudyTimer();
   const { play } = useSound();
-  const [todayMinutes, setTodayMinutes] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadToday() {
-      try {
-        const res = await fetch("/api/stats/me", { credentials: "include", cache: "no-store" });
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { today?: number };
-        setTodayMinutes(typeof data.today === "number" ? data.today : 0);
-      } catch {
-        /* ignore */
-      }
-    }
-    void loadToday();
-    const onStats = () => void loadToday();
-    window.addEventListener("study-stats-changed", onStats);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("study-stats-changed", onStats);
-    };
-  }, []);
-
-  const idleLabel =
-    todayMinutes === null ? "—" : formatTodayClock(todayMinutes);
+  const idleLabel = formatTodayClock(todaySeconds);
 
   /** Running: continue from today's logged minutes + current session (not a fresh 00:00 session). */
   const activeTotalSeconds =
-    active ? (todayMinutes ?? 0) * 60 + elapsedSeconds : 0;
+    active ? todaySeconds + elapsedSeconds : 0;
 
   return (
     <div className="mr-1 flex items-center gap-1.5 border-r border-border/50 pr-2">

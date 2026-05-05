@@ -7,6 +7,7 @@ type ServerToClientEvents = {
     studyingUserIds: string[];
     videoEnabledUserIds: string[];
     todayMinutes: Record<string, number>;
+    todaySeconds: Record<string, number>;
     sessionStartedAt: Record<string, string | null>;
   }) => void;
   "chat:message": (payload: {

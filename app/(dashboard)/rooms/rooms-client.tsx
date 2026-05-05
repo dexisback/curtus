@@ -104,7 +104,7 @@ export default function RoomsClient({
   boards: initialBoards,
   currentUserId,
 }: Props) {
-  const { active, startedAtMs } = useStudyTimer();
+  const { active, startedAtMs, todaySeconds } = useStudyTimer();
   const router = useRouter();
   const [boards, setBoards] = useState(initialBoards);
   const [joinCode, setJoinCode] = useState("");
@@ -117,8 +117,9 @@ export default function RoomsClient({
       mergeSelfStudyTimer(boards, currentUserId, {
         active,
         startedAtMs,
+        todaySeconds,
       }),
-    [boards, currentUserId, active, startedAtMs],
+    [boards, currentUserId, active, startedAtMs, todaySeconds],
   );
 
   useEffect(() => {

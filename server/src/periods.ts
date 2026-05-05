@@ -1,22 +1,14 @@
-export const STUDY_DAY_RESET_HOUR_UTC = 5;
+export const STUDY_DAY_RESET_HOUR_LOCAL = 5;
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
 export function getStudyDayStart(date: Date): Date {
-  const shifted = new Date(date.getTime() - STUDY_DAY_RESET_HOUR_UTC * 60 * 60 * 1_000);
-  return new Date(
-    Date.UTC(
-      shifted.getUTCFullYear(),
-      shifted.getUTCMonth(),
-      shifted.getUTCDate(),
-      STUDY_DAY_RESET_HOUR_UTC,
-      0,
-      0,
-      0,
-    ),
-  );
+  const start = new Date(date);
+  start.setHours(STUDY_DAY_RESET_HOUR_LOCAL, 0, 0, 0);
+  if (date < start) start.setDate(start.getDate() - 1);
+  return start;
 }
 
 export function getWeekStart(date: Date): Date {
@@ -29,33 +21,31 @@ export function getWeekStart(date: Date): Date {
 export function getMonthStart(date: Date): Date {
   const dayStart = getStudyDayStart(date);
   return new Date(
-    Date.UTC(
-      dayStart.getUTCFullYear(),
-      dayStart.getUTCMonth(),
+    dayStart.getFullYear(),
+    dayStart.getMonth(),
       1,
-      STUDY_DAY_RESET_HOUR_UTC,
+      STUDY_DAY_RESET_HOUR_LOCAL,
       0,
       0,
       0,
-    ),
   );
 }
 
 export function getDailyKey(date: Date): string {
   const d = getStudyDayStart(date);
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 export function getWeeklyKey(date: Date): string {
   const w = getWeekStart(date);
-  const jan4 = new Date(Date.UTC(w.getUTCFullYear(), 0, 4, STUDY_DAY_RESET_HOUR_UTC));
+  const jan4 = new Date(w.getFullYear(), 0, 4, STUDY_DAY_RESET_HOUR_LOCAL, 0, 0, 0);
   const weekNum = Math.ceil(((w.getTime() - jan4.getTime()) / 86_400_000 + 4) / 7);
-  return `${w.getUTCFullYear()}-W${pad(weekNum)}`;
+  return `${w.getFullYear()}-W${pad(weekNum)}`;
 }
 
 export function getMonthlyKey(date: Date): string {
   const m = getMonthStart(date);
-  return `${m.getUTCFullYear()}-${pad(m.getUTCMonth() + 1)}`;
+  return `${m.getFullYear()}-${pad(m.getMonth() + 1)}`;
 }
 
 export type Period = "daily" | "weekly" | "monthly";
@@ -76,15 +66,13 @@ export function getPeriodWindow(
     case "monthly": {
       const start = getMonthStart(now);
       const end = new Date(
-        Date.UTC(
-          start.getUTCFullYear(),
-          start.getUTCMonth() + 1,
+        start.getFullYear(),
+        start.getMonth() + 1,
           1,
-          STUDY_DAY_RESET_HOUR_UTC,
+          STUDY_DAY_RESET_HOUR_LOCAL,
           0,
           0,
           0,
-        ),
       );
       return { start, end };
     }
@@ -96,4 +84,4 @@ export function getPeriodTtlSeconds(period: Period, now: Date): number {
   return Math.max(60, Math.ceil((end.getTime() - now.getTime()) / 1_000));
 }
 
-// — periods.ts: Study-day calendar (05:00 UTC) and Redis key period helpers for the socket server.
+// — periods.ts: Study-day calendar (05:00 local) and Redis key period helpers for the socket server.

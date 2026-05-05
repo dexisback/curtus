@@ -48,7 +48,7 @@ export default function Leaderboard({
   boards: RoomTimerBoard[];
   currentUserId: string;
 }) {
-  const { active, startedAtMs } = useStudyTimer();
+  const { active, startedAtMs, todaySeconds } = useStudyTimer();
   const [boards, setBoards] = useState(initialBoards);
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
 
@@ -57,8 +57,9 @@ export default function Leaderboard({
       mergeSelfStudyTimer(boards, currentUserId, {
         active,
         startedAtMs,
+        todaySeconds,
       }),
-    [boards, currentUserId, active, startedAtMs],
+    [boards, currentUserId, active, startedAtMs, todaySeconds],
   );
 
   useEffect(() => {

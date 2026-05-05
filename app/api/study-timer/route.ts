@@ -4,32 +4,16 @@ import { requireApiSession, withApi } from "@/lib/api-session";
 import { parseRequestJson } from "@/lib/api";
 import { limiters, enforce } from "@/lib/ratelimit";
 import {
-  readLiveStudySession,
+  readTimerState,
   startLiveStudySession,
   stopLiveStudySession,
 } from "@/lib/study-live-session";
-import { redis } from "@/lib/redis";
 
 export const GET = withApi(async () => {
   const session = await requireApiSession();
   await enforce(limiters.sessionsRead, session.user.id);
-
-  if (!redis) {
-    return NextResponse.json({
-      active: false,
-      startedAt: null,
-      roomId: null,
-      redisAvailable: false,
-    });
-  }
-
-  const live = await readLiveStudySession(session.user.id);
-  return NextResponse.json({
-    active: live !== null,
-    startedAt: live?.startedAt ?? null,
-    roomId: live?.roomId ?? null,
-    redisAvailable: true,
-  });
+  const timer = await readTimerState(session.user.id);
+  return NextResponse.json({ timer });
 });
 
 const postSchema = z.object({
@@ -43,23 +27,15 @@ export const POST = withApi(async (request: Request) => {
   const parsed = await parseRequestJson(request, postSchema);
   if (!parsed.success) return parsed.response;
 
-  if (!redis) {
-    return NextResponse.json(
-      { error: "Study timer is unavailable (Redis not configured)." },
-      { status: 503 },
-    );
-  }
-
   if (parsed.data.action === "start") {
     const result = await startLiveStudySession(session.user.id);
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: 503 });
     }
+    const timer = await readTimerState(session.user.id);
     return NextResponse.json({
       ok: true,
-      active: true,
-      startedAt: result.startedAt,
-      roomId: null,
+      timer,
     });
   }
 
@@ -67,12 +43,16 @@ export const POST = withApi(async (request: Request) => {
   if ("error" in stopped) {
     return NextResponse.json({ error: stopped.error }, { status: 400 });
   }
+  const timer = await readTimerState(session.user.id);
 
   return NextResponse.json({
     ok: true,
-    active: false,
-    durationMin: stopped.durationMin,
-    lifetimeFocusMinutes: stopped.lifetimeFocusMinutes,
+    timer,
+    session: {
+      durationSec: stopped.durationSec,
+      durationMin: stopped.durationMin,
+      lifetimeFocusMinutes: stopped.lifetimeFocusMinutes,
+    },
   });
 });
 

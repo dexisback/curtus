@@ -8,7 +8,7 @@ import { bumpStreak } from "./streak.js";
 import { logger } from "./logger.js";
 import { socketLimiters, socketAllow } from "./ratelimit.js";
 
-const DAY_RESET_HOUR_UTC = 5;
+const DAY_RESET_HOUR_LOCAL = 5;
 const MAX_ACTIVE_VIDEO_USERS = 4;
 
 const roomEventSchema = z.object({
@@ -66,6 +66,7 @@ export type PresencePayload = {
   studyingUserIds: string[];
   videoEnabledUserIds: string[];
   todayMinutes: Record<string, number>;
+  todaySeconds: Record<string, number>;
   /** ISO start time of each member's live session, when any (same Redis key as studying). */
   sessionStartedAt: Record<string, string | null>;
 };
@@ -175,36 +176,33 @@ function getTodayMinutesKey(userId: string) {
   return `user:${userId}:todayMinutes`;
 }
 
+function getTodaySecondsKey(userId: string) {
+  return `user:${userId}:todaySeconds`;
+}
+
 function getLiveSessionKey(userId: string) {
   return `user:${userId}:liveSession`;
 }
 
 function getSecondsUntilNextFiveAm(now = new Date()) {
   const nextReset = new Date(now);
-  nextReset.setUTCHours(DAY_RESET_HOUR_UTC, 0, 0, 0);
-  if (now >= nextReset) nextReset.setUTCDate(nextReset.getUTCDate() + 1);
+  nextReset.setHours(DAY_RESET_HOUR_LOCAL, 0, 0, 0);
+  if (now >= nextReset) nextReset.setDate(nextReset.getDate() + 1);
   return Math.max(1, Math.ceil((nextReset.getTime() - now.getTime()) / 1_000));
 }
 
 function getStudyDayStart(date: Date) {
-  const shifted = new Date(date.getTime() - DAY_RESET_HOUR_UTC * 60 * 60 * 1_000);
-  return new Date(
-    Date.UTC(
-      shifted.getUTCFullYear(),
-      shifted.getUTCMonth(),
-      shifted.getUTCDate(),
-      DAY_RESET_HOUR_UTC,
-      0,
-      0,
-      0,
-    ),
-  );
+  const start = new Date(date);
+  start.setHours(DAY_RESET_HOUR_LOCAL, 0, 0, 0);
+  if (date < start) start.setDate(start.getDate() - 1);
+  return start;
 }
 
 async function syncKeyExpiry(userId: string, roomId?: string) {
   const ttl = getSecondsUntilNextFiveAm();
   await Promise.all([
     redis.expire(getTodayMinutesKey(userId), ttl),
+    redis.expire(getTodaySecondsKey(userId), ttl),
     roomId ? redis.expire(getRoomMembersKey(roomId), ttl) : Promise.resolve(1),
   ]);
 }
@@ -231,11 +229,17 @@ async function publishPresence(io: StudyServer, roomId: string) {
   const memberIds = await redis.smembers<string[]>(getRoomMembersKey(roomId));
   const uniqueMemberIds = Array.from(new Set(memberIds)).sort();
 
-  const [minutePairs, studyingUserIds, sessionStartedAt, videoEnabledIds] = await Promise.all([
+  const [minutePairs, secondPairs, studyingUserIds, sessionStartedAt, videoEnabledIds] = await Promise.all([
     Promise.all(
       uniqueMemberIds.map(async (id) => [
         id,
         (await redis.get<number>(getTodayMinutesKey(id))) ?? 0,
+      ]),
+    ),
+    Promise.all(
+      uniqueMemberIds.map(async (id) => [
+        id,
+        Number((await redis.get<unknown>(getTodaySecondsKey(id))) ?? 0) || 0,
       ]),
     ),
     getStudyingUserIds(uniqueMemberIds),
@@ -251,6 +255,7 @@ async function publishPresence(io: StudyServer, roomId: string) {
     studyingUserIds,
     videoEnabledUserIds,
     todayMinutes: Object.fromEntries(minutePairs),
+    todaySeconds: Object.fromEntries(secondPairs),
     sessionStartedAt,
   });
 }
@@ -279,6 +284,7 @@ async function finalizeSession(
 ) {
   const completedAt = new Date();
   const startedAt = new Date(liveSession.startedAt);
+  const durationSec = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000));
   const durationMin = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000));
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = liveSession.roomId ?? null;
@@ -304,6 +310,7 @@ async function finalizeSession(
   ]);
 
   await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
+  await redis.incrby(getTodaySecondsKey(socket.data.userId), durationSec);
   await syncKeyExpiry(socket.data.userId);
   await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
   await bumpStreak(socket.data.userId, completedAt);
@@ -683,6 +690,10 @@ export function registerSocketEvents(io: StudyServer) {
         try {
           const completedAt = new Date();
           const startedAt = new Date(liveSession.startedAt);
+          const durationSec = Math.max(
+            1,
+            Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000),
+          );
           const durationMin = Math.max(
             1,
             Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
@@ -706,6 +717,7 @@ export function registerSocketEvents(io: StudyServer) {
           ]);
 
           await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
+          await redis.incrby(getTodaySecondsKey(socket.data.userId), durationSec);
           await syncKeyExpiry(socket.data.userId);
           await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
           await bumpStreak(socket.data.userId, completedAt);

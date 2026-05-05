@@ -6,6 +6,7 @@ export const TIMER_POLL_INTERVAL_MS = 60_000;
 export type SelfStudyTimerSlice = {
   active: boolean;
   startedAtMs: number | null;
+  todaySeconds: number;
 };
 
 /** Overlay canonical study timer onto the current user's member rows so dock and miniboards match. */
@@ -28,6 +29,9 @@ export function mergeSelfStudyTimer(
         ...m,
         active: timer.active,
         startedAtIso,
+        // Keep this as completed/base seconds only; renderer adds active elapsed once.
+        todaySeconds: timer.todaySeconds,
+        todayMinutes: Math.floor(timer.todaySeconds / 60),
       };
     }),
   }));

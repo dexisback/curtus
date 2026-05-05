@@ -4,6 +4,7 @@ import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from "@/lib/dashboard-room";
 import { getStudyDayStart } from "@/lib/periods";
 import {
   liveSessionRedisKey,
+  todaySecondsRedisKey,
   type LiveSessionPayload,
 } from "@/lib/study-live-session";
 
@@ -18,7 +19,8 @@ export type RoomBoardsMode = "dashboard" | "rooms";
 
 /** Shared loader for dashboard + /rooms mini boards (Prisma today + Redis live session). */
 export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
-  const todayStart = getStudyDayStart(new Date());
+  const now = new Date();
+  const todayStart = getStudyDayStart(now);
 
   const membershipRooms =
     mode === "dashboard"
@@ -89,12 +91,14 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
   const todayMinutesByUserId = new Map(
     crossTodayRows.map((row) => [row.userId, row._sum.totalMinutes ?? 0]),
   );
+  const todaySecondsByUserId = new Map<string, number>();
 
   let liveByUserId: Map<string, LiveSessionPayload> | null = null;
-  if (redis && memberIds.length > 0) {
+  const redisClient = redis;
+  if (redisClient && memberIds.length > 0) {
     try {
       const keys = memberIds.map((id) => liveSessionRedisKey(id));
-      const vals = await Promise.all(keys.map((k) => redis.get<LiveSessionPayload>(k)));
+      const vals = await Promise.all(keys.map((k) => redisClient.get<LiveSessionPayload>(k)));
       liveByUserId = new Map();
       memberIds.forEach((id, i) => {
         const v = vals[i];
@@ -104,6 +108,19 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
       // Keep board APIs and RSC pages resilient when Upstash fetch throws (can surface as ErrorEvent).
       console.warn("[room-boards] live session read failed; continuing without live status", err);
       liveByUserId = null;
+    }
+  }
+
+  if (redisClient && memberIds.length > 0) {
+    try {
+      const keys = memberIds.map((id) => todaySecondsRedisKey(id));
+      const vals = await Promise.all(keys.map((k) => redisClient.get<unknown>(k)));
+      memberIds.forEach((id, i) => {
+        const parsed = Number(vals[i]);
+        if (Number.isFinite(parsed)) todaySecondsByUserId.set(id, Math.max(0, Math.floor(parsed)));
+      });
+    } catch (err) {
+      console.warn("[room-boards] todaySeconds read failed; using minutes fallback", err);
     }
   }
 
@@ -122,6 +139,7 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
         active: Boolean(live),
         startedAtIso: live?.startedAt ?? new Date(0).toISOString(),
         todayMinutes: todayMinutesByUserId.get(member.user.id) ?? 0,
+        todaySeconds: todaySecondsByUserId.get(member.user.id) ?? 0,
       };
     }),
   }));

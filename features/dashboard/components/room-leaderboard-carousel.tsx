@@ -13,6 +13,7 @@ export type RoomTimerMember = {
   active: boolean;
   startedAtIso: string;
   todayMinutes: number;
+  todaySeconds?: number;
 };
 
 export type RoomTimerBoard = {
@@ -154,10 +155,11 @@ export default function RoomLeaderboardCarousel({
           {sortedMembers.map((member, i) => {
             const sessionRunning =
               mounted && member.active ? elapsedSeconds(member.startedAtIso, nowMs) : 0;
-            /** Idle cards show today's logged focus (minutes→duration); active cards show live session elapsed. */
+            const completedTodaySeconds = Math.max(0, member.todaySeconds ?? 0);
+            /** Always show cumulative today time; while active, add current session elapsed to completed baseline. */
             const displaySeconds = member.active
-              ? sessionRunning
-              : Math.max(0, member.todayMinutes) * 60;
+              ? completedTodaySeconds + sessionRunning
+              : completedTodaySeconds;
             const hasVideo = hasVideoForMember?.(member.id) ?? false;
             const stream = streamForMember?.(member.id) ?? null;
             const showVideoTile = videoMode && hasVideo && stream;

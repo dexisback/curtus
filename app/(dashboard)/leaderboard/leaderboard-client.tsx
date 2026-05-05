@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Trophy } from "lucide-react";
+import { useStudyTimer } from "@/components/study-timer-provider";
 import type { LeaderboardEntry, Period } from "@/lib/leaderboard";
 import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
 import ProfileModal, {
@@ -36,6 +37,14 @@ function formatMin(min: number): string {
   return `${h}h ${m}m`;
 }
 
+function formatSeconds(totalSeconds: number): string {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  const hh = Math.floor(clamped / 3600);
+  const mm = Math.floor((clamped % 3600) / 60);
+  const ss = clamped % 60;
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+}
+
 type Props = {
   initialEntries: LeaderboardEntry[];
   initialMe: { rank: number; totalMinutes: number } | null;
@@ -65,6 +74,7 @@ export default function LeaderboardClient({
   currentUserImage,
   rooms,
 }: Props) {
+  const { active, elapsedSeconds, todaySeconds } = useStudyTimer();
   const [scope, setScope] = useState<"global" | "room">("global");
   const [period, setPeriod] = useState<Period>("daily");
   const [roomId, setRoomId] = useState<string>(rooms[0]?.id ?? "");
@@ -148,6 +158,7 @@ export default function LeaderboardClient({
           isSelf: true,
         }
       : null;
+  const liveSelfSeconds = Math.max(0, todaySeconds + (active ? elapsedSeconds : 0));
 
   return (
     <>
@@ -273,7 +284,7 @@ export default function LeaderboardClient({
                     {currentUserName ?? "You"}
                   </span>
                   <span className="shrink-0 tabular-nums text-[11px] text-muted-foreground">
-                    {formatMin(me?.totalMinutes ?? 0)}
+                    {active ? formatSeconds(liveSelfSeconds) : formatSeconds(todaySeconds)}
                   </span>
                 </div>
               </div>
@@ -360,7 +371,7 @@ export default function LeaderboardClient({
                           </span>
 
                           <span className="shrink-0 tabular-nums text-[11px] text-muted-foreground">
-                            {formatMin(entry.totalMinutes)}
+                            {isMe ? (active ? formatSeconds(liveSelfSeconds) : formatSeconds(todaySeconds)) : formatMin(entry.totalMinutes)}
                           </span>
                         </motion.button>
                       </motion.li>
@@ -402,7 +413,7 @@ export default function LeaderboardClient({
                     You
                   </span>
                   <span className="shrink-0 tabular-nums text-[11px] text-muted-foreground">
-                    {formatMin(meEntry.totalMinutes)}
+                    {active ? formatSeconds(liveSelfSeconds) : formatSeconds(todaySeconds)}
                   </span>
                 </div>
               </div>

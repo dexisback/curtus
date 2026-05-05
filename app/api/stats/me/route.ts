@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiSession, withApi } from "@/lib/api-session";
 import { limiters, enforce } from "@/lib/ratelimit";
 import { prisma } from "@/lib/db";
+import { readTodaySeconds } from "@/lib/study-live-session";
 import {
   getStudyDayStart,
   getWeekStart,
@@ -23,7 +24,13 @@ export const GET = withApi(async () => {
   const nextDay = new Date(todayStart.getTime() + 86_400_000);
   const nextWeek = new Date(weekStart.getTime() + 7 * 86_400_000);
   const nextMonth = new Date(
-    Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1, 5),
+    monthStart.getFullYear(),
+    monthStart.getMonth() + 1,
+    1,
+    monthStart.getHours(),
+    0,
+    0,
+    0,
   );
   let user: { lifetimeFocusMinutes: number; name: string | null; image: string | null } | null = null;
   let streak: { currentStreak: number; longestStreak: number; lastActiveDate: Date | null } | null = null;
@@ -98,6 +105,8 @@ export const GET = withApi(async () => {
     last7Days.push({ date: iso, totalMinutes: row?.totalMinutes ?? 0 });
   }
 
+  const todaySeconds = await readTodaySeconds(userId);
+
   return NextResponse.json({
     name: user?.name ?? null,
     image: user?.image ?? null,
@@ -110,6 +119,7 @@ export const GET = withApi(async () => {
         }
       : { currentStreak: 0, longestStreak: 0, lastActiveDate: null },
     today: todayAgg._sum.totalMinutes ?? 0,
+    todaySeconds,
     thisWeek: weekAgg._sum.totalMinutes ?? 0,
     thisMonth: monthAgg._sum.totalMinutes ?? 0,
     last7Days,

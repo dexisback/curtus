@@ -87,11 +87,16 @@ export default function RoomClient({
 }: Props) {
   const router = useRouter();
   const { play } = useSound();
-  const { active: selfTimerActive, startedAtMs: selfStartedAtMs } = useStudyTimer();
+  const {
+    active: selfTimerActive,
+    startedAtMs: selfStartedAtMs,
+    todaySeconds: selfTodaySeconds,
+  } = useStudyTimer();
   const [members] = useState<Member[]>(initialMembers);
   const [studyingUserIds, setStudyingUserIds] = useState<string[]>([]);
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
+  const [todaySeconds, setTodaySeconds] = useState<Record<string, number>>({});
   const [sessionStartedAt, setSessionStartedAt] = useState<Record<string, string | null>>({});
   const [leaving, setLeaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -132,12 +137,14 @@ export default function RoomClient({
       studyingUserIds: string[];
       videoEnabledUserIds: string[];
       todayMinutes: Record<string, number>;
+      todaySeconds: Record<string, number>;
       sessionStartedAt: Record<string, string | null>;
     }) => {
       if (payload.roomId !== roomId) return;
       setStudyingUserIds(payload.studyingUserIds);
       setVideoEnabledUserIds(payload.videoEnabledUserIds);
       setTodayMinutes(payload.todayMinutes);
+      setTodaySeconds(payload.todaySeconds);
       setSessionStartedAt(payload.sessionStartedAt);
     };
 
@@ -181,32 +188,41 @@ export default function RoomClient({
     }
   }
 
-  const board: RoomTimerBoard = {
-    id: roomId,
-    roomName: name,
-    roomCode: code,
-    members: members.map((m) => ({
-      id: m.id,
-      name: m.name,
-      image: m.image,
-      initials: m.name
-        .split(/\s+/)
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase(),
-      active: studyingUserIds.includes(m.id),
-      startedAtIso:
-        studyingUserIds.includes(m.id) && sessionStartedAt[m.id]
-          ? sessionStartedAt[m.id]!
-          : new Date(0).toISOString(),
-      todayMinutes: todayMinutes[m.id] ?? 0,
-    })),
-  };
+  const board = useMemo<RoomTimerBoard>(
+    () => ({
+      id: roomId,
+      roomName: name,
+      roomCode: code,
+      members: members.map((m) => ({
+        id: m.id,
+        name: m.name,
+        image: m.image,
+        initials: m.name
+          .split(/\s+/)
+          .map((p) => p[0])
+          .slice(0, 2)
+          .join("")
+          .toUpperCase(),
+        active: studyingUserIds.includes(m.id),
+        startedAtIso:
+          studyingUserIds.includes(m.id) && sessionStartedAt[m.id]
+            ? sessionStartedAt[m.id]!
+            : new Date(0).toISOString(),
+        todayMinutes: todayMinutes[m.id] ?? 0,
+        todaySeconds: todaySeconds[m.id] ?? 0,
+      })),
+    }),
+    [roomId, name, code, members, studyingUserIds, sessionStartedAt, todayMinutes, todaySeconds],
+  );
 
   const displayBoard = useMemo(
-    () => mergeSelfStudyTimer([board], currentUserId, { active: selfTimerActive, startedAtMs: selfStartedAtMs })[0]!,
-    [board, currentUserId, selfTimerActive, selfStartedAtMs],
+    () =>
+      mergeSelfStudyTimer([board], currentUserId, {
+        active: selfTimerActive,
+        startedAtMs: selfStartedAtMs,
+        todaySeconds: selfTodaySeconds,
+      })[0]!,
+    [board, currentUserId, selfTimerActive, selfStartedAtMs, selfTodaySeconds],
   );
 
   const focusHasVideo = focusedMember ? videoEnabledUserIds.includes(focusedMember.id) : false;

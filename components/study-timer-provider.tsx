@@ -14,6 +14,8 @@ import { TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
 type StudyTimerState = {
   active: boolean;
   startedAtMs: number | null;
+  todaySeconds: number;
+  dayKey: string | null;
   redisAvailable: boolean;
   elapsedSeconds: number;
   busy: boolean;
@@ -32,26 +34,43 @@ function parseStartedMs(iso: string | null): number | null {
 export function StudyTimerProvider({ children }: { children: React.ReactNode }) {
   const [active, setActive] = useState(false);
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
+  const [todaySeconds, setTodaySeconds] = useState(0);
+  const [dayKey, setDayKey] = useState<string | null>(null);
   const [redisAvailable, setRedisAvailable] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [clock, setClock] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/study-timer", { credentials: "include", cache: "no-store" });
+      const res = await fetch("/api/timer-state", { credentials: "include", cache: "no-store" });
       if (!res.ok) return;
       const data = (await res.json()) as {
-        active?: boolean;
-        startedAt?: string | null;
-        redisAvailable?: boolean;
+        timer?: {
+          active?: boolean;
+          startedAt?: string | null;
+          todaySeconds?: number;
+          dayKey?: string;
+          redisAvailable?: boolean;
+        };
       };
-      setRedisAvailable(data.redisAvailable !== false);
-      setActive(Boolean(data.active));
-      setStartedAtMs(parseStartedMs(data.startedAt ?? null));
+      const timer = data.timer;
+      setRedisAvailable(timer?.redisAvailable !== false);
+      setActive(Boolean(timer?.active));
+      setStartedAtMs(parseStartedMs(timer?.startedAt ?? null));
+      const incomingDayKey = timer?.dayKey ?? null;
+      const incomingTodaySeconds = Math.max(0, Math.floor(timer?.todaySeconds ?? 0));
+      setTodaySeconds((prev) => {
+        // Never allow same-day regressions from stale reads.
+        if (incomingDayKey && dayKey && incomingDayKey === dayKey) {
+          return Math.max(prev, incomingTodaySeconds);
+        }
+        return incomingTodaySeconds;
+      });
+      setDayKey(incomingDayKey);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [dayKey]);
 
   useEffect(() => {
     void refresh();
@@ -105,14 +124,14 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     if (!active || startedAtMs === null) return;
-    const id = setInterval(() => setClock((c) => c + 1), 1000);
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, [active, startedAtMs]);
 
   const elapsedSeconds = useMemo(() => {
     if (!active || startedAtMs === null) return 0;
-    return Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
-  }, [active, startedAtMs, clock]);
+    return Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
+  }, [active, startedAtMs, nowMs]);
 
   const toggle = useCallback(async () => {
     if (busy) return;
@@ -125,20 +144,41 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
       });
-      const data = (await res.json()) as { error?: string; startedAt?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        timer?: {
+          active?: boolean;
+          startedAt?: string | null;
+          todaySeconds?: number;
+          dayKey?: string;
+          redisAvailable?: boolean;
+        };
+        session?: {
+          durationSec?: number;
+        };
+      };
       if (!res.ok) {
         console.warn("[study-timer]", data.error ?? res.status);
         await refresh();
         return;
       }
-      if (action === "start") {
-        setActive(true);
-        setStartedAtMs(parseStartedMs(data.startedAt ?? null) ?? Date.now());
-      } else {
-        setActive(false);
-        setStartedAtMs(null);
+      const next = data.timer;
+      if (next) {
+        setActive(Boolean(next.active));
+        setStartedAtMs(parseStartedMs(next.startedAt ?? null));
+        const nextTodaySeconds = Math.max(0, Math.floor(next.todaySeconds ?? 0));
+        // Stop responses can occasionally race with redis read-after-write.
+        // Reconcile locally using authoritative returned durationSec so UI never regresses.
+        if (action === "stop") {
+          const durationSec = Math.max(0, Math.floor(data.session?.durationSec ?? 0));
+          setTodaySeconds((prev) => Math.max(nextTodaySeconds, prev + durationSec));
+        } else {
+          setTodaySeconds(nextTodaySeconds);
+        }
+        setDayKey(next.dayKey ?? null);
+        setRedisAvailable(next.redisAvailable !== false);
       }
-      await refresh();
+      // Avoid immediate re-read clobbering newer local state; periodic/focus refresh still converges.
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("study-stats-changed"));
       }
@@ -154,13 +194,15 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
       ({
         active,
         startedAtMs,
+        todaySeconds,
+        dayKey,
         redisAvailable,
         elapsedSeconds,
         busy,
         toggle,
         refresh,
       }) satisfies StudyTimerState,
-    [active, startedAtMs, redisAvailable, elapsedSeconds, busy, toggle, refresh],
+    [active, startedAtMs, todaySeconds, dayKey, redisAvailable, elapsedSeconds, busy, toggle, refresh],
   );
 
   return <StudyTimerContext.Provider value={value}>{children}</StudyTimerContext.Provider>;
