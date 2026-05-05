@@ -6,6 +6,7 @@ export type DashboardLecture = {
 };
 
 export const DASHBOARD_LECTURE_STORAGE_KEY = "swm:dashboard-lecture";
+export const DASHBOARD_LECTURE_CHANGED_EVENT = "dashboard-lecture-changed";
 
 export function readDashboardLecture(): DashboardLecture | null {
   if (typeof window === "undefined") return null;
@@ -28,12 +29,22 @@ export function readDashboardLecture(): DashboardLecture | null {
 
 export function writeDashboardLecture(value: DashboardLecture) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(DASHBOARD_LECTURE_STORAGE_KEY, JSON.stringify(value));
+  try {
+    localStorage.setItem(DASHBOARD_LECTURE_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(DASHBOARD_LECTURE_CHANGED_EVENT));
 }
 
 export function clearDashboardLecture() {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(DASHBOARD_LECTURE_STORAGE_KEY);
+  try {
+    localStorage.removeItem(DASHBOARD_LECTURE_STORAGE_KEY);
+  } catch {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(DASHBOARD_LECTURE_CHANGED_EVENT));
 }
 
 // — LocalStorage helpers for explicitly selected dashboard lecture state.

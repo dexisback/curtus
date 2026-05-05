@@ -26,7 +26,7 @@ function readInitialTheme(): Theme {
   if (typeof window === "undefined") return "light";
   const stored = localStorage.getItem(STORAGE) as Theme | null;
   if (stored === "light" || stored === "dark") return stored;
-  // App default is always light; do not follow system/browser color scheme.
+  // App default is always light(because i dont know how to make dark themes pretty)
   return "light";
 }
 

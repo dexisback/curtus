@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import YouTubeEmbedPanel from "./youtube-embed-panel";
-import { clearDashboardLecture, readDashboardLecture } from "@/lib/dashboard-lecture";
+import {
+  DASHBOARD_LECTURE_CHANGED_EVENT,
+  clearDashboardLecture,
+  readDashboardLecture,
+} from "@/lib/dashboard-lecture";
 
 export default function VideoPlayerWrapper() {
   const router = useRouter();
@@ -12,7 +16,14 @@ export default function VideoPlayerWrapper() {
   const embedUrl = selection?.embedUrl ?? null;
 
   useEffect(() => {
-    setSelection(readDashboardLecture());
+    const sync = () => setSelection(readDashboardLecture());
+    sync();
+    window.addEventListener(DASHBOARD_LECTURE_CHANGED_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(DASHBOARD_LECTURE_CHANGED_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
 
   return (

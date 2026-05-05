@@ -7,6 +7,7 @@ import { UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react"
 import { signOut } from "@/lib/auth-client";
 import { useSound } from "@/components/sound-provider";
 import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
+import { clearDashboardLecture } from "@/lib/dashboard-lecture";
 
 type UserLite = { name?: string | null; image?: string | null; email?: string | null };
 
@@ -28,6 +29,7 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
 
   async function handleSignOut() {
     play("modalClose");
+    clearDashboardLecture();
     await signOut({
       fetchOptions: {
         onSuccess: () => router.replace("/login"),
