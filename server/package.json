@@ -6,7 +6,7 @@
     "start": "DOTENV_CONFIG_PATH=../.env tsx src/index.ts",
     "build": "npm run prisma:generate && npm run typecheck",
     "typecheck": "tsc --noEmit",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma"
+    "prisma:generate": "cp ../prisma/schema.prisma ./schema.render.prisma && prisma generate --schema ./schema.render.prisma && rm -f ./schema.render.prisma"
   },
   "type": "module",
   "private": true,
