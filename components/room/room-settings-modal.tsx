@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
-import { Copy, Settings, Trash2, X } from "lucide-react";
-import { useSound } from "@/components/sound-provider";
+import { useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { Copy, Settings, Trash2, X } from 'lucide-react';
+import { useSound } from '@/components/sound-provider';
 
 type Props = {
   open: boolean;
@@ -26,12 +26,8 @@ export default function RoomSettingsModal({
   const { play } = useSound();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  useEffect(() => {
-    if (!open) setConfirmDelete(false);
-  }, [open]);
-
   const copyCode = useCallback(() => {
-    void navigator.clipboard.writeText(roomCode).then(() => play("tap"));
+    void navigator.clipboard.writeText(roomCode).then(() => play('tap'));
   }, [play, roomCode]);
 
   const handleDelete = useCallback(async () => {
@@ -42,7 +38,7 @@ export default function RoomSettingsModal({
     await onDeleteRoom();
   }, [confirmDelete, onDeleteRoom]);
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === 'undefined') return null;
 
   return createPortal(
     <AnimatePresence>
@@ -56,7 +52,8 @@ export default function RoomSettingsModal({
           transition={{ duration: 0.18, ease: [0, 0, 0.58, 1] }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              play("modalClose");
+              play('modalClose');
+              setConfirmDelete(false);
               onClose();
             }
           }}
@@ -75,7 +72,7 @@ export default function RoomSettingsModal({
             initial={{ y: 10, opacity: 0, scale: 0.985 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 8, opacity: 0, scale: 0.985 }}
-            transition={{ type: "spring", duration: 0.28, bounce: 0 }}
+            transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
             className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-[0_12px_48px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
               dark:bg-card/90 dark:shadow-[0_12px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
           >
@@ -85,16 +82,21 @@ export default function RoomSettingsModal({
                   <Settings size={18} strokeWidth={1.6} />
                 </div>
                 <div className="min-w-0 pt-0.5">
-                  <h2 id="room-settings-title" className="text-[14px] font-semibold tracking-tight text-foreground">
+                  <h2
+                    id="room-settings-title"
+                    className="text-[14px] font-semibold tracking-tight text-foreground"
+                  >
                     Room settings
                   </h2>
-                  <p className="mt-0.5 truncate text-[12px] text-muted-foreground">{roomName}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+                    {roomName}
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  play("modalClose");
+                  play('modalClose');
                   setConfirmDelete(false);
                   onClose();
                 }}
@@ -107,7 +109,9 @@ export default function RoomSettingsModal({
 
             <div className="space-y-4 px-5 py-4">
               <div>
-                <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">Room code</p>
+                <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  Room code
+                </p>
                 <div className="mt-1.5 flex items-center gap-2">
                   <code className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 font-mono text-[13px] font-medium tabular-nums text-foreground">
                     {roomCode}
@@ -125,9 +129,12 @@ export default function RoomSettingsModal({
             </div>
 
             <div className="border-t border-border/50 bg-muted/15 px-5 py-4">
-              <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-destructive/90">Danger zone</p>
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-destructive/90">
+                Danger zone
+              </p>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                Permanently delete this room and remove all members. This cannot be undone.
+                Permanently delete this room and remove all members. This cannot
+                be undone.
               </p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
                 {confirmDelete && (
@@ -144,14 +151,18 @@ export default function RoomSettingsModal({
                   disabled={deleteBusy}
                   onClick={() => void handleDelete()}
                   className={
-                    "order-1 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[11.5px] font-medium transition-[transform,opacity] duration-150 sm:order-2 " +
+                    'order-1 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[11.5px] font-medium transition-[transform,opacity] duration-150 sm:order-2 ' +
                     (confirmDelete
-                      ? "bg-destructive text-destructive-foreground shadow-[0_1px_3px_rgba(127,29,29,0.25)] hover:bg-destructive/90 active:scale-[0.98] disabled:opacity-50"
-                      : "border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15 active:scale-[0.98] disabled:opacity-50")
+                      ? 'bg-destructive text-destructive-foreground shadow-[0_1px_3px_rgba(127,29,29,0.25)] hover:bg-destructive/90 active:scale-[0.98] disabled:opacity-50'
+                      : 'border border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15 active:scale-[0.98] disabled:opacity-50')
                   }
                 >
                   <Trash2 size={14} strokeWidth={1.7} />
-                  {confirmDelete ? (deleteBusy ? "Deleting…" : "Confirm delete room") : "Delete room"}
+                  {confirmDelete
+                    ? deleteBusy
+                      ? 'Deleting…'
+                      : 'Confirm delete room'
+                    : 'Delete room'}
                 </button>
               </div>
             </div>
