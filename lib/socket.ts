@@ -124,10 +124,7 @@ async function getSocketToken() {
       credentials: "include",
       cache: "no-store",
     });
-    if (!res.ok) {
-      console.error("[realtime] socket token fetch failed", { status: res.status });
-      return null;
-    }
+    if (!res.ok) return null;
     const data = (await res.json()) as { token?: string };
     if (!data.token) return null;
     socketTokenCache = {
@@ -161,23 +158,10 @@ export function getSocket() {
     });
 
     socketSingleton.on("connect", () => {
-      console.info("[realtime] socket connected", {
-        id: socketSingleton?.id,
-        url: socketUrl,
-      });
       if (pendingPresenceRefresh && socketSingleton?.connected) {
         socketSingleton.emit("presence:refresh");
         pendingPresenceRefresh = false;
       }
-    });
-    socketSingleton.on("disconnect", (reason) => {
-      console.warn("[realtime] socket disconnected", { reason });
-    });
-    socketSingleton.on("connect_error", (error) => {
-      console.error("[realtime] socket connect_error", {
-        message: error.message,
-        name: error.name,
-      });
     });
   }
 

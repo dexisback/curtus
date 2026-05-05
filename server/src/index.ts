@@ -89,33 +89,6 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
-  if (request.url === "/diag") {
-    const body = JSON.stringify({
-      ok: true,
-      service: "studywithme-socket-server",
-      origins: socketCorsOrigins,
-      env: {
-        hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-        hasRedisUrl: Boolean(process.env.UPSTASH_REDIS_URL),
-        hasRedisToken: Boolean(process.env.UPSTASH_REDIS_TOKEN),
-        hasBetterAuthSecret: Boolean(process.env.BETTER_AUTH_SECRET),
-        betterAuthUrl: process.env.BETTER_AUTH_URL ?? null,
-        nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
-      },
-      uptime: process.uptime(),
-      now: new Date().toISOString(),
-    });
-    response.writeHead(200, {
-      "content-type": "application/json; charset=utf-8",
-      "content-length": Buffer.byteLength(body),
-      ...(allowedOrigin ? { "access-control-allow-origin": allowedOrigin } : {}),
-      ...(allowedOrigin ? { "access-control-allow-credentials": "true" } : {}),
-      vary: "Origin",
-    });
-    response.end(body);
-    return;
-  }
-
   response.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
   response.end("Not found");
 });
@@ -277,15 +250,6 @@ process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 httpServer.listen(port, () => {
-  logger.info("Socket runtime config", {
-    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-    hasRedisUrl: Boolean(process.env.UPSTASH_REDIS_URL),
-    hasRedisToken: Boolean(process.env.UPSTASH_REDIS_TOKEN),
-    hasBetterAuthSecret: Boolean(process.env.BETTER_AUTH_SECRET),
-    betterAuthUrl: process.env.BETTER_AUTH_URL ?? null,
-    nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL ?? null,
-    allowedOriginsCount: socketCorsOrigins.length,
-  });
   logger.info("StudyWithMe socket server listening", { port });
 });
 
