@@ -1,12 +1,12 @@
-import type { Server, Socket } from "socket.io";
-import { z } from "zod";
+import type { RemoteSocket, Server, Socket } from 'socket.io';
+import { z } from 'zod';
 
-import { prisma } from "./db.js";
-import { redis } from "./redis.js";
-import { bumpLeaderboards } from "./leaderboard.js";
-import { bumpStreak } from "./streak.js";
-import { logger } from "./logger.js";
-import { socketLimiters, socketAllow } from "./ratelimit.js";
+import { prisma } from './db.js';
+import { redis } from './redis.js';
+import { bumpLeaderboards } from './leaderboard.js';
+import { bumpStreak } from './streak.js';
+import { logger } from './logger.js';
+import { socketLimiters, socketAllow } from './ratelimit.js';
 
 const DAY_RESET_HOUR_LOCAL = 5;
 const MAX_ACTIVE_VIDEO_USERS = 4;
@@ -40,19 +40,23 @@ const mediaTargetSchema = z.object({
 });
 
 const mediaDescriptionSchema = mediaTargetSchema.extend({
-  description: z.object({
-    type: z.enum(["offer", "answer", "pranswer", "rollback"]),
-    sdp: z.string().optional(),
-  }).passthrough(),
+  description: z
+    .object({
+      type: z.enum(['offer', 'answer', 'pranswer', 'rollback']),
+      sdp: z.string().optional(),
+    })
+    .passthrough(),
 });
 
 const mediaIceCandidateSchema = mediaTargetSchema.extend({
-  candidate: z.object({
-    candidate: z.string(),
-    sdpMid: z.string().nullable().optional(),
-    sdpMLineIndex: z.number().nullable().optional(),
-    usernameFragment: z.string().nullable().optional(),
-  }).passthrough(),
+  candidate: z
+    .object({
+      candidate: z.string(),
+      sdpMid: z.string().nullable().optional(),
+      sdpMLineIndex: z.number().nullable().optional(),
+      usernameFragment: z.string().nullable().optional(),
+    })
+    .passthrough(),
 });
 
 type LiveSession = {
@@ -78,30 +82,35 @@ export type SocketData = {
 };
 
 export type ClientToServerEvents = {
-  "room:join": (payload: z.infer<typeof roomEventSchema>) => void;
-  "room:leave": (payload: z.infer<typeof roomEventSchema>) => void;
-  "chat:send": (payload: z.infer<typeof chatEventSchema>, ack?: ChatAck) => void;
-  "room:video-state": (
+  'room:join': (payload: z.infer<typeof roomEventSchema>) => void;
+  'room:leave': (payload: z.infer<typeof roomEventSchema>) => void;
+  'chat:send': (
+    payload: z.infer<typeof chatEventSchema>,
+    ack?: ChatAck,
+  ) => void;
+  'room:video-state': (
     payload: z.infer<typeof roomVideoStateSchema>,
     ack?: (response: { ok: boolean; error?: string }) => void,
   ) => void;
-  "media:join": (
+  'media:join': (
     payload: z.infer<typeof roomEventSchema>,
     ack?: (response: { ok: boolean; peers?: string[]; error?: string }) => void,
   ) => void;
-  "media:leave": (payload: z.infer<typeof roomEventSchema>) => void;
-  "media:offer": (payload: z.infer<typeof mediaDescriptionSchema>) => void;
-  "media:answer": (payload: z.infer<typeof mediaDescriptionSchema>) => void;
-  "media:ice-candidate": (payload: z.infer<typeof mediaIceCandidateSchema>) => void;
-  "session:started": (payload: z.infer<typeof sessionStartedSchema>) => void;
-  "session:stopped": () => void;
-  "ping:send": (payload: z.infer<typeof pingEventSchema>) => void;
-  "presence:refresh": () => void;
+  'media:leave': (payload: z.infer<typeof roomEventSchema>) => void;
+  'media:offer': (payload: z.infer<typeof mediaDescriptionSchema>) => void;
+  'media:answer': (payload: z.infer<typeof mediaDescriptionSchema>) => void;
+  'media:ice-candidate': (
+    payload: z.infer<typeof mediaIceCandidateSchema>,
+  ) => void;
+  'session:started': (payload: z.infer<typeof sessionStartedSchema>) => void;
+  'session:stopped': () => void;
+  'ping:send': (payload: z.infer<typeof pingEventSchema>) => void;
+  'presence:refresh': () => void;
 };
 
 export type ServerToClientEvents = {
   presence: (payload: PresencePayload) => void;
-  "chat:message": (payload: {
+  'chat:message': (payload: {
     id: string;
     roomId: string;
     content: string;
@@ -110,40 +119,30 @@ export type ServerToClientEvents = {
     userName: string;
     createdAt: string;
   }) => void;
-  "session:logged": (payload: {
+  'session:logged': (payload: {
     durationMin: number;
     lifetimeFocusMinutes: number;
     roomId: string | null;
   }) => void;
-  "ping:received": (payload: {
-    fromUserId: string;
-    createdAt: string;
-  }) => void;
-  "room:error": (payload: {
-    message: string;
-  }) => void;
-  "room:kicked": (payload: {
-    roomId: string;
-  }) => void;
-  "media:offer": (payload: {
+  'ping:received': (payload: { fromUserId: string; createdAt: string }) => void;
+  'room:error': (payload: { message: string }) => void;
+  'room:kicked': (payload: { roomId: string }) => void;
+  'media:offer': (payload: {
     roomId: string;
     fromUserId: string;
-    description: z.infer<typeof mediaDescriptionSchema>["description"];
+    description: z.infer<typeof mediaDescriptionSchema>['description'];
   }) => void;
-  "media:answer": (payload: {
+  'media:answer': (payload: {
     roomId: string;
     fromUserId: string;
-    description: z.infer<typeof mediaDescriptionSchema>["description"];
+    description: z.infer<typeof mediaDescriptionSchema>['description'];
   }) => void;
-  "media:ice-candidate": (payload: {
+  'media:ice-candidate': (payload: {
     roomId: string;
     fromUserId: string;
-    candidate: z.infer<typeof mediaIceCandidateSchema>["candidate"];
+    candidate: z.infer<typeof mediaIceCandidateSchema>['candidate'];
   }) => void;
-  "media:peer-left": (payload: {
-    roomId: string;
-    userId: string;
-  }) => void;
+  'media:peer-left': (payload: { roomId: string; userId: string }) => void;
 };
 
 type StudySocket = Socket<
@@ -159,6 +158,8 @@ type StudyServer = Server<
   Record<string, never>,
   SocketData
 >;
+
+type StudyRemoteSocket = RemoteSocket<ServerToClientEvents, SocketData>;
 
 function getKickKey(userId: string, roomId: string) {
   return `kick:${userId}:${roomId}`;
@@ -204,7 +205,9 @@ async function syncKeyExpiry(userId: string, roomId?: string) {
     redis.expire(getTodayMinutesKey(userId), ttl),
     redis.expire(getTodaySecondsKey(userId), ttl),
     roomId ? redis.expire(getRoomMembersKey(roomId), ttl) : Promise.resolve(1),
-    roomId ? redis.expire(getRoomVideoEnabledKey(roomId), ttl) : Promise.resolve(1),
+    roomId
+      ? redis.expire(getRoomVideoEnabledKey(roomId), ttl)
+      : Promise.resolve(1),
   ]);
 }
 
@@ -215,7 +218,9 @@ async function getStudyingUserIds(memberIds: string[]): Promise<string[]> {
   return memberIds.filter((_, i) => values[i] !== null);
 }
 
-async function getSessionStartedAtMap(memberIds: string[]): Promise<Record<string, string | null>> {
+async function getSessionStartedAtMap(
+  memberIds: string[],
+): Promise<Record<string, string | null>> {
   if (!memberIds.length) return {};
   const keys = memberIds.map(getLiveSessionKey);
   const values = await Promise.all(keys.map((k) => redis.get<LiveSession>(k)));
@@ -230,7 +235,13 @@ async function publishPresence(io: StudyServer, roomId: string) {
   const memberIds = await redis.smembers<string[]>(getRoomMembersKey(roomId));
   const uniqueMemberIds = Array.from(new Set(memberIds)).sort();
 
-  const [minutePairs, secondPairs, studyingUserIds, sessionStartedAt, videoEnabledIds] = await Promise.all([
+  const [
+    minutePairs,
+    secondPairs,
+    studyingUserIds,
+    sessionStartedAt,
+    videoEnabledIds,
+  ] = await Promise.all([
     Promise.all(
       uniqueMemberIds.map(async (id) => [
         id,
@@ -248,9 +259,11 @@ async function publishPresence(io: StudyServer, roomId: string) {
     redis.smembers<string[]>(getRoomVideoEnabledKey(roomId)),
   ]);
   const enabledSet = new Set(videoEnabledIds);
-  const videoEnabledUserIds = uniqueMemberIds.filter((id) => enabledSet.has(id));
+  const videoEnabledUserIds = uniqueMemberIds.filter((id) =>
+    enabledSet.has(id),
+  );
 
-  io.to(roomId).emit("presence", {
+  io.to(roomId).emit('presence', {
     roomId,
     memberIds: uniqueMemberIds,
     studyingUserIds,
@@ -268,12 +281,14 @@ async function maybeRemovePresenceMember(
 ) {
   const socketsStillInRoom = await io.in(roomId).fetchSockets();
   const userStillPresent = socketsStillInRoom.some(
-    (s) => s.data.userId === socket.data.userId,
+    (s: StudyRemoteSocket) => s.data.userId === socket.data.userId,
   );
   if (!userStillPresent) {
     await redis.srem(getRoomMembersKey(roomId), socket.data.userId);
     await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
-    socket.to(roomId).emit("media:peer-left", { roomId, userId: socket.data.userId });
+    socket
+      .to(roomId)
+      .emit('media:peer-left', { roomId, userId: socket.data.userId });
   }
   await publishPresence(io, roomId);
 }
@@ -285,8 +300,14 @@ async function finalizeSession(
 ) {
   const completedAt = new Date();
   const startedAt = new Date(liveSession.startedAt);
-  const durationSec = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000));
-  const durationMin = Math.max(1, Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000));
+  const durationSec = Math.max(
+    1,
+    Math.floor((completedAt.getTime() - startedAt.getTime()) / 1_000),
+  );
+  const durationMin = Math.max(
+    1,
+    Math.floor((completedAt.getTime() - startedAt.getTime()) / 60_000),
+  );
   const studyDayStart = getStudyDayStart(completedAt);
   const roomId = liveSession.roomId ?? null;
 
@@ -304,9 +325,15 @@ async function finalizeSession(
       data: { lifetimeFocusMinutes: { increment: durationMin } },
     }),
     prisma.dailyStats.upsert({
-      where: { userId_date: { userId: socket.data.userId, date: studyDayStart } },
+      where: {
+        userId_date: { userId: socket.data.userId, date: studyDayStart },
+      },
       update: { totalMinutes: { increment: durationMin } },
-      create: { userId: socket.data.userId, date: studyDayStart, totalMinutes: durationMin },
+      create: {
+        userId: socket.data.userId,
+        date: studyDayStart,
+        totalMinutes: durationMin,
+      },
     }),
   ]);
 
@@ -316,15 +343,17 @@ async function finalizeSession(
   await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
   await bumpStreak(socket.data.userId, completedAt);
 
-  socket.emit("session:logged", {
+  socket.emit('session:logged', {
     durationMin,
     lifetimeFocusMinutes: updatedUser.lifetimeFocusMinutes,
     roomId,
   });
 
-  const roomsToRefresh = new Set(socket.data.joinedRoomIds);
+  const roomsToRefresh = new Set<string>(socket.data.joinedRoomIds);
   if (roomId) roomsToRefresh.add(roomId);
-  await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
+  await Promise.all(
+    [...roomsToRefresh].map((rid: string) => publishPresence(io, rid)),
+  );
 }
 
 function toRoomError(message: string) {
@@ -358,7 +387,7 @@ async function checkAndEvictIfKicked(
   removeJoinedRoom(socket, roomId);
   await maybeRemovePresenceMember(io, socket, roomId);
 
-  io.to(`user:${socket.data.userId}`).emit("room:kicked", { roomId });
+  io.to(`user:${socket.data.userId}`).emit('room:kicked', { roomId });
   return true;
 }
 
@@ -369,7 +398,9 @@ function addJoinedRoom(socket: StudySocket, roomId: string) {
 }
 
 function removeJoinedRoom(socket: StudySocket, roomId: string) {
-  socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter((id) => id !== roomId);
+  socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter(
+    (id: string) => id !== roomId,
+  );
 }
 
 function isJoined(socket: StudySocket, roomId: string) {
@@ -384,7 +415,11 @@ async function isCurrentRoomMember(userId: string, roomId: string) {
   return Boolean(membership);
 }
 
-async function evictFromRoom(io: StudyServer, socket: StudySocket, roomId: string) {
+async function evictFromRoom(
+  io: StudyServer,
+  socket: StudySocket,
+  roomId: string,
+) {
   socket.leave(roomId);
   removeJoinedRoom(socket, roomId);
   await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
@@ -398,13 +433,14 @@ async function enforceRoomAccess(
   opts?: { emitRoomError?: boolean; evictWhenInvalid?: boolean },
 ) {
   if (!isJoined(socket, roomId)) {
-    if (opts?.emitRoomError) socket.emit("room:error", toRoomError("Join room before continuing."));
-    return { ok: false as const, reason: "not_joined" };
+    if (opts?.emitRoomError)
+      socket.emit('room:error', toRoomError('Join room before continuing.'));
+    return { ok: false as const, reason: 'not_joined' };
   }
 
   const wasKicked = await checkAndEvictIfKicked(io, socket, roomId);
   if (wasKicked) {
-    return { ok: false as const, reason: "kicked" };
+    return { ok: false as const, reason: 'kicked' };
   }
 
   const stillMember = await isCurrentRoomMember(socket.data.userId, roomId);
@@ -412,9 +448,13 @@ async function enforceRoomAccess(
     if (opts?.evictWhenInvalid !== false) {
       await evictFromRoom(io, socket, roomId);
     }
-    io.to(`user:${socket.data.userId}`).emit("room:kicked", { roomId });
-    if (opts?.emitRoomError) socket.emit("room:error", toRoomError("You are no longer a member of this room."));
-    return { ok: false as const, reason: "not_member" };
+    io.to(`user:${socket.data.userId}`).emit('room:kicked', { roomId });
+    if (opts?.emitRoomError)
+      socket.emit(
+        'room:error',
+        toRoomError('You are no longer a member of this room.'),
+      );
+    return { ok: false as const, reason: 'not_member' };
   }
 
   return { ok: true as const };
@@ -426,7 +466,9 @@ async function validateMediaTarget(
   roomId: string,
   toUserId: string,
 ) {
-  const access = await enforceRoomAccess(io, socket, roomId, { emitRoomError: true });
+  const access = await enforceRoomAccess(io, socket, roomId, {
+    emitRoomError: true,
+  });
   if (!access.ok) return false;
   const [toMember, fromEnabled, toEnabled, socketsInRoom] = await Promise.all([
     isCurrentRoomMember(toUserId, roomId),
@@ -434,53 +476,72 @@ async function validateMediaTarget(
     redis.sismember(getRoomVideoEnabledKey(roomId), toUserId),
     io.in(roomId).fetchSockets(),
   ]);
-  const toActiveInRoom = socketsInRoom.some((s) => s.data.userId === toUserId);
+  const toActiveInRoom = socketsInRoom.some(
+    (s: StudyRemoteSocket) => s.data.userId === toUserId,
+  );
   return Boolean(toMember && fromEnabled && toEnabled && toActiveInRoom);
 }
 
 export function registerSocketEvents(io: StudyServer) {
-  io.on("connection", (socket) => {
-
-    socket.on("room:join", async (payload) => {
+  io.on('connection', (socket: StudySocket) => {
+    socket.on('room:join', async (payload: unknown) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid room join payload."));
+        socket.emit('room:error', toRoomError('Invalid room join payload.'));
         return;
       }
 
-      if (!await socketAllow(socketLimiters.roomJoin, `room:join:${socket.data.userId}`)) {
-        socket.emit("room:error", { message: "rate_limited" });
+      if (
+        !(await socketAllow(
+          socketLimiters.roomJoin,
+          `room:join:${socket.data.userId}`,
+        ))
+      ) {
+        socket.emit('room:error', { message: 'rate_limited' });
         return;
       }
 
       const membership = await prisma.roomMember.findUnique({
         where: {
-          userId_roomId: { userId: socket.data.userId, roomId: parsed.data.roomId },
+          userId_roomId: {
+            userId: socket.data.userId,
+            roomId: parsed.data.roomId,
+          },
         },
         select: { userId: true },
       });
 
       if (!membership) {
-        socket.emit("room:error", toRoomError("Join the room first via the app."));
+        socket.emit(
+          'room:error',
+          toRoomError('Join the room first via the app.'),
+        );
         return;
       }
 
       // Check if user was kicked since last connect
-      const wasKicked = await checkAndEvictIfKicked(io, socket, parsed.data.roomId);
+      const wasKicked = await checkAndEvictIfKicked(
+        io,
+        socket,
+        parsed.data.roomId,
+      );
       if (wasKicked) return;
 
       socket.join(parsed.data.roomId);
       addJoinedRoom(socket, parsed.data.roomId);
 
-      await redis.sadd(getRoomMembersKey(parsed.data.roomId), socket.data.userId);
+      await redis.sadd(
+        getRoomMembersKey(parsed.data.roomId),
+        socket.data.userId,
+      );
       await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
       await publishPresence(io, parsed.data.roomId);
     });
 
-    socket.on("room:leave", async (payload) => {
+    socket.on('room:leave', async (payload: unknown) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid room leave payload."));
+        socket.emit('room:error', toRoomError('Invalid room leave payload.'));
         return;
       }
 
@@ -489,10 +550,15 @@ export function registerSocketEvents(io: StudyServer) {
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
     });
 
-    socket.on("presence:refresh", async () => {
+    socket.on('presence:refresh', async () => {
       const rooms = socket.data.joinedRoomIds ?? [];
       if (!rooms.length) return;
-      if (!await socketAllow(socketLimiters.presenceRefresh, `presence:refresh:${socket.data.userId}`)) {
+      if (
+        !(await socketAllow(
+          socketLimiters.presenceRefresh,
+          `presence:refresh:${socket.data.userId}`,
+        ))
+      ) {
         return;
       }
       const validRooms: string[] = [];
@@ -500,132 +566,189 @@ export function registerSocketEvents(io: StudyServer) {
         const access = await enforceRoomAccess(io, socket, rid);
         if (access.ok) validRooms.push(rid);
       }
-      await Promise.all(validRooms.map((rid) => publishPresence(io, rid)));
+      await Promise.all(
+        validRooms.map((rid: string) => publishPresence(io, rid)),
+      );
     });
 
-    socket.on("room:video-state", async (payload, ack?: (response: { ok: boolean; error?: string }) => void) => {
-      const parsed = roomVideoStateSchema.safeParse(payload);
-      if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid room video state payload."));
-        ack?.({ ok: false, error: "invalid_payload" });
-        return;
-      }
-      const access = await enforceRoomAccess(io, socket, parsed.data.roomId, { emitRoomError: true });
-      if (!access.ok) {
-        ack?.({ ok: false, error: "not_in_room" });
-        return;
-      }
-
-      const key = getRoomVideoEnabledKey(parsed.data.roomId);
-      if (parsed.data.enabled) {
-        const alreadyEnabled = await redis.sismember(key, socket.data.userId);
-        const activeCount = await redis.scard(key);
-        if (!alreadyEnabled && activeCount >= MAX_ACTIVE_VIDEO_USERS) {
-          socket.emit("room:error", toRoomError("Room video is full."));
-          ack?.({ ok: false, error: "video_room_full" });
+    socket.on(
+      'room:video-state',
+      async (
+        payload: unknown,
+        ack?: (response: { ok: boolean; error?: string }) => void,
+      ) => {
+        const parsed = roomVideoStateSchema.safeParse(payload);
+        if (!parsed.success) {
+          socket.emit(
+            'room:error',
+            toRoomError('Invalid room video state payload.'),
+          );
+          ack?.({ ok: false, error: 'invalid_payload' });
           return;
         }
-        await redis.sadd(key, socket.data.userId);
-        await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
-      } else {
-        await redis.srem(key, socket.data.userId);
-        socket.to(parsed.data.roomId).emit("media:peer-left", {
-          roomId: parsed.data.roomId,
-          userId: socket.data.userId,
+        const access = await enforceRoomAccess(io, socket, parsed.data.roomId, {
+          emitRoomError: true,
         });
-      }
-      await publishPresence(io, parsed.data.roomId);
-      ack?.({ ok: true });
-    });
+        if (!access.ok) {
+          ack?.({ ok: false, error: 'not_in_room' });
+          return;
+        }
 
-    socket.on("media:join", async (payload, ack) => {
-      const parsed = roomEventSchema.safeParse(payload);
-      if (!parsed.success) {
-        ack?.({ ok: false, error: "not_in_room" });
-        return;
-      }
-      const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
-      if (!access.ok) {
-        ack?.({ ok: false, error: "not_in_room" });
-        return;
-      }
+        const key = getRoomVideoEnabledKey(parsed.data.roomId);
+        if (parsed.data.enabled) {
+          const alreadyEnabled = await redis.sismember(key, socket.data.userId);
+          const activeCount = await redis.scard(key);
+          if (!alreadyEnabled && activeCount >= MAX_ACTIVE_VIDEO_USERS) {
+            socket.emit('room:error', toRoomError('Room video is full.'));
+            ack?.({ ok: false, error: 'video_room_full' });
+            return;
+          }
+          await redis.sadd(key, socket.data.userId);
+          await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
+        } else {
+          await redis.srem(key, socket.data.userId);
+          socket.to(parsed.data.roomId).emit('media:peer-left', {
+            roomId: parsed.data.roomId,
+            userId: socket.data.userId,
+          });
+        }
+        await publishPresence(io, parsed.data.roomId);
+        ack?.({ ok: true });
+      },
+    );
 
-      const key = getRoomVideoEnabledKey(parsed.data.roomId);
-      const enabled = await redis.sismember(key, socket.data.userId);
-      if (!enabled) {
-        ack?.({ ok: false, error: "video_not_enabled" });
-        return;
-      }
+    socket.on(
+      'media:join',
+      async (
+        payload: unknown,
+        ack?: (response: {
+          ok: boolean;
+          peers?: string[];
+          error?: string;
+        }) => void,
+      ) => {
+        const parsed = roomEventSchema.safeParse(payload);
+        if (!parsed.success) {
+          ack?.({ ok: false, error: 'not_in_room' });
+          return;
+        }
+        const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
+        if (!access.ok) {
+          ack?.({ ok: false, error: 'not_in_room' });
+          return;
+        }
 
-      const peers = (await redis.smembers<string[]>(key))
-        .filter((userId) => userId !== socket.data.userId)
-        .sort();
-      ack?.({ ok: true, peers });
-    });
+        const key = getRoomVideoEnabledKey(parsed.data.roomId);
+        const enabled = await redis.sismember(key, socket.data.userId);
+        if (!enabled) {
+          ack?.({ ok: false, error: 'video_not_enabled' });
+          return;
+        }
 
-    socket.on("media:leave", async (payload) => {
+        const peers = (await redis.smembers<string[]>(key))
+          .filter((userId: string) => userId !== socket.data.userId)
+          .sort();
+        ack?.({ ok: true, peers });
+      },
+    );
+
+    socket.on('media:leave', async (payload: unknown) => {
       const parsed = roomEventSchema.safeParse(payload);
       if (!parsed.success) return;
       const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
       if (!access.ok) return;
-      await redis.srem(getRoomVideoEnabledKey(parsed.data.roomId), socket.data.userId);
-      socket.to(parsed.data.roomId).emit("media:peer-left", {
+      await redis.srem(
+        getRoomVideoEnabledKey(parsed.data.roomId),
+        socket.data.userId,
+      );
+      socket.to(parsed.data.roomId).emit('media:peer-left', {
         roomId: parsed.data.roomId,
         userId: socket.data.userId,
       });
       await publishPresence(io, parsed.data.roomId);
     });
 
-    socket.on("media:offer", async (payload) => {
+    socket.on('media:offer', async (payload: unknown) => {
       const parsed = mediaDescriptionSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
-      io.to(`user:${parsed.data.toUserId}`).emit("media:offer", {
+      if (
+        !(await validateMediaTarget(
+          io,
+          socket,
+          parsed.data.roomId,
+          parsed.data.toUserId,
+        ))
+      )
+        return;
+      io.to(`user:${parsed.data.toUserId}`).emit('media:offer', {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
         description: parsed.data.description,
       });
     });
 
-    socket.on("media:answer", async (payload) => {
+    socket.on('media:answer', async (payload: unknown) => {
       const parsed = mediaDescriptionSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
-      io.to(`user:${parsed.data.toUserId}`).emit("media:answer", {
+      if (
+        !(await validateMediaTarget(
+          io,
+          socket,
+          parsed.data.roomId,
+          parsed.data.toUserId,
+        ))
+      )
+        return;
+      io.to(`user:${parsed.data.toUserId}`).emit('media:answer', {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
         description: parsed.data.description,
       });
     });
 
-    socket.on("media:ice-candidate", async (payload) => {
+    socket.on('media:ice-candidate', async (payload: unknown) => {
       const parsed = mediaIceCandidateSchema.safeParse(payload);
       if (!parsed.success) return;
-      if (!await validateMediaTarget(io, socket, parsed.data.roomId, parsed.data.toUserId)) return;
-      io.to(`user:${parsed.data.toUserId}`).emit("media:ice-candidate", {
+      if (
+        !(await validateMediaTarget(
+          io,
+          socket,
+          parsed.data.roomId,
+          parsed.data.toUserId,
+        ))
+      )
+        return;
+      io.to(`user:${parsed.data.toUserId}`).emit('media:ice-candidate', {
         roomId: parsed.data.roomId,
         fromUserId: socket.data.userId,
         candidate: parsed.data.candidate,
       });
     });
 
-    socket.on("chat:send", async (payload, ack?: ChatAck) => {
+    socket.on('chat:send', async (payload: unknown, ack?: ChatAck) => {
       const parsed = chatEventSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid chat payload."));
-        ack?.({ ok: false, error: "invalid_payload" });
+        socket.emit('room:error', toRoomError('Invalid chat payload.'));
+        ack?.({ ok: false, error: 'invalid_payload' });
         return;
       }
 
-      const access = await enforceRoomAccess(io, socket, parsed.data.roomId, { emitRoomError: true });
+      const access = await enforceRoomAccess(io, socket, parsed.data.roomId, {
+        emitRoomError: true,
+      });
       if (!access.ok) {
-        ack?.({ ok: false, error: "not_in_room" });
+        ack?.({ ok: false, error: 'not_in_room' });
         return;
       }
 
-      if (!await socketAllow(socketLimiters.chatSend, `chat:send:${socket.data.userId}`)) {
-        socket.emit("room:error", { message: "rate_limited" });
-        ack?.({ ok: false, error: "rate_limited" });
+      if (
+        !(await socketAllow(
+          socketLimiters.chatSend,
+          `chat:send:${socket.data.userId}`,
+        ))
+      ) {
+        socket.emit('room:error', { message: 'rate_limited' });
+        ack?.({ ok: false, error: 'rate_limited' });
         return;
       }
 
@@ -657,18 +780,26 @@ export function registerSocketEvents(io: StudyServer) {
       };
 
       ack?.({ ok: true, message: chatPayload });
-      io.to(parsed.data.roomId).emit("chat:message", chatPayload);
+      io.to(parsed.data.roomId).emit('chat:message', chatPayload);
     });
 
-    socket.on("session:started", async (payload) => {
+    socket.on('session:started', async (payload: unknown) => {
       const parsed = sessionStartedSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid session:started payload."));
+        socket.emit(
+          'room:error',
+          toRoomError('Invalid session:started payload.'),
+        );
         return;
       }
 
-      if (!await socketAllow(socketLimiters.sessionStarted, `session:started:${socket.data.userId}`)) {
-        socket.emit("room:error", { message: "rate_limited" });
+      if (
+        !(await socketAllow(
+          socketLimiters.sessionStarted,
+          `session:started:${socket.data.userId}`,
+        ))
+      ) {
+        socket.emit('room:error', { message: 'rate_limited' });
         return;
       }
 
@@ -681,19 +812,21 @@ export function registerSocketEvents(io: StudyServer) {
           select: { userId: true },
         });
         if (!membership) {
-          socket.emit("room:error", toRoomError("Not a member of that room."));
+          socket.emit('room:error', toRoomError('Not a member of that room.'));
           return;
         }
       }
 
       // Atomically grab any existing liveSession and finalize it first
       // (handles "tab1 stop emit lost, tab2 starts new session" race)
-      const staleLive = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
+      const staleLive = await redis.getdel<LiveSession>(
+        getLiveSessionKey(socket.data.userId),
+      );
       if (staleLive) {
         try {
           await finalizeSession(io, socket, staleLive);
         } catch (err) {
-          logger.error("Failed to finalize stale session on session:started", {
+          logger.error('Failed to finalize stale session on session:started', {
             userId: socket.data.userId,
             error: err instanceof Error ? err.message : String(err),
           });
@@ -709,41 +842,55 @@ export function registerSocketEvents(io: StudyServer) {
       });
 
       // Broadcast updated presence to all joined rooms
-      const roomsToRefresh = new Set(socket.data.joinedRoomIds);
+      const roomsToRefresh = new Set<string>(socket.data.joinedRoomIds);
       if (roomId) roomsToRefresh.add(roomId);
-      await Promise.all(Array.from(roomsToRefresh).map((id) => publishPresence(io, id)));
+      await Promise.all(
+        [...roomsToRefresh].map((rid: string) => publishPresence(io, rid)),
+      );
     });
 
-    socket.on("session:stopped", async () => {
-      const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
+    socket.on('session:stopped', async () => {
+      const liveSession = await redis.getdel<LiveSession>(
+        getLiveSessionKey(socket.data.userId),
+      );
       if (!liveSession) return; // Nothing to finalize (or disconnect already claimed it)
       await finalizeSession(io, socket, liveSession);
     });
 
-    socket.on("ping:send", async (payload) => {
+    socket.on('ping:send', async (payload: unknown) => {
       const parsed = pingEventSchema.safeParse(payload);
       if (!parsed.success) {
-        socket.emit("room:error", toRoomError("Invalid ping payload."));
+        socket.emit('room:error', toRoomError('Invalid ping payload.'));
         return;
       }
 
-      if (!await socketAllow(socketLimiters.pingSend, `ping:send:${socket.data.userId}`)) {
-        socket.emit("room:error", { message: "rate_limited" });
+      if (
+        !(await socketAllow(
+          socketLimiters.pingSend,
+          `ping:send:${socket.data.userId}`,
+        ))
+      ) {
+        socket.emit('room:error', { message: 'rate_limited' });
         return;
       }
 
       const ping = await prisma.ping.create({
-        data: { fromUserId: socket.data.userId, toUserId: parsed.data.toUserId },
+        data: {
+          fromUserId: socket.data.userId,
+          toUserId: parsed.data.toUserId,
+        },
       });
 
-      io.to(`user:${parsed.data.toUserId}`).emit("ping:received", {
+      io.to(`user:${parsed.data.toUserId}`).emit('ping:received', {
         fromUserId: ping.fromUserId,
         createdAt: ping.createdAt.toISOString(),
       });
     });
 
-    socket.on("disconnect", async () => {
-      const liveSession = await redis.getdel<LiveSession>(getLiveSessionKey(socket.data.userId));
+    socket.on('disconnect', async () => {
+      const liveSession = await redis.getdel<LiveSession>(
+        getLiveSessionKey(socket.data.userId),
+      );
       if (liveSession) {
         // Finalize quietly — no `session:logged` emit since socket is gone
         try {
@@ -762,30 +909,49 @@ export function registerSocketEvents(io: StudyServer) {
 
           await prisma.$transaction([
             prisma.focusSession.create({
-              data: { userId: socket.data.userId, roomId, durationMin, completedAt },
+              data: {
+                userId: socket.data.userId,
+                roomId,
+                durationMin,
+                completedAt,
+              },
             }),
             prisma.user.update({
               where: { id: socket.data.userId },
               data: { lifetimeFocusMinutes: { increment: durationMin } },
             }),
             prisma.dailyStats.upsert({
-              where: { userId_date: { userId: socket.data.userId, date: studyDayStart } },
+              where: {
+                userId_date: {
+                  userId: socket.data.userId,
+                  date: studyDayStart,
+                },
+              },
               update: { totalMinutes: { increment: durationMin } },
-              create: { userId: socket.data.userId, date: studyDayStart, totalMinutes: durationMin },
+              create: {
+                userId: socket.data.userId,
+                date: studyDayStart,
+                totalMinutes: durationMin,
+              },
             }),
           ]);
 
-          await redis.incrby(getTodayMinutesKey(socket.data.userId), durationMin);
-          await redis.incrby(getTodaySecondsKey(socket.data.userId), durationSec);
+          await redis.incrby(
+            getTodayMinutesKey(socket.data.userId),
+            durationMin,
+          );
+          await redis.incrby(
+            getTodaySecondsKey(socket.data.userId),
+            durationSec,
+          );
           await syncKeyExpiry(socket.data.userId);
           await bumpLeaderboards(socket.data.userId, durationMin, completedAt);
           await bumpStreak(socket.data.userId, completedAt);
-        } catch {
-        }
+        } catch {}
       }
 
       await Promise.all(
-        socket.data.joinedRoomIds.map((roomId) =>
+        socket.data.joinedRoomIds.map((roomId: string) =>
           maybeRemovePresenceMember(io, socket, roomId),
         ),
       );
@@ -794,4 +960,3 @@ export function registerSocketEvents(io: StudyServer) {
 }
 
 // — events.ts: Socket.IO handlers — rooms, chat, WebRTC signaling, focus sessions, presence in Redis, rate limits.
-

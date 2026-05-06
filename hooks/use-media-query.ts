@@ -1,19 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 /**
- * Subscribes to `window.matchMedia`. Falls back gracefully before mount.
+ * Subscribes to `window.matchMedia`.
+ *
+ * The initial value matches SSR and the first client paint (both assume
+ * {@link initialMatches}) so hydration never differs. The real breakpoint is applied
+ * in `useLayoutEffect` before browser paint when possible.
  */
-export function useMediaQuery(query: string, initialValue = false): boolean {
-  const getMatches = useCallback(() => {
-    if (typeof window === 'undefined') return initialValue;
-    return window.matchMedia(query).matches;
-  }, [query, initialValue]);
+export function useMediaQuery(query: string, initialMatches = false): boolean {
+  const [matches, setMatches] = useState(initialMatches);
 
-  const [matches, setMatches] = useState(getMatches);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mq = window.matchMedia(query);
     const apply = () => setMatches(mq.matches);
     apply();
@@ -21,5 +20,5 @@ export function useMediaQuery(query: string, initialValue = false): boolean {
     return () => mq.removeEventListener('change', apply);
   }, [query]);
 
-  return useMemo(() => matches, [matches]);
+  return matches;
 }
