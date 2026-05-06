@@ -1,21 +1,21 @@
-import { prisma } from "@/lib/db";
-import { redis } from "@/lib/redis";
-import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from "@/lib/dashboard-room";
-import { getStudyDayStart } from "@/lib/periods";
+import { prisma } from '@/lib/db';
+import { redis } from '@/lib/redis';
+import { ROOM_BOARD_MEMBER_PREVIEW_LIMIT } from '@/lib/dashboard-room';
+import { getStudyDayStart } from '@/lib/periods';
 import {
   liveSessionRedisKey,
   todaySecondsRedisKey,
   type LiveSessionPayload,
-} from "@/lib/study-live-session";
+} from '@/lib/study-live-session';
 
 function initialsFromName(displayName: string) {
   const parts = displayName.trim().split(/\s+/);
-  if (parts.length === 0) return "??";
+  if (parts.length === 0) return '??';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export type RoomBoardsMode = "dashboard" | "rooms";
+export type RoomBoardsMode = 'dashboard' | 'rooms';
 
 /** Shared loader for dashboard + /rooms mini boards (Prisma today + Redis live session). */
 export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
@@ -23,10 +23,10 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
   const todayStart = getStudyDayStart(now);
 
   const membershipRooms =
-    mode === "dashboard"
+    mode === 'dashboard'
       ? await prisma.roomMember.findMany({
           where: { userId },
-          orderBy: { joinedAt: "desc" },
+          orderBy: { joinedAt: 'desc' },
           take: 6,
           select: {
             room: {
@@ -39,7 +39,7 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
                   select: {
                     user: { select: { id: true, name: true, image: true } },
                   },
-                  orderBy: { joinedAt: "asc" },
+                  orderBy: { joinedAt: 'asc' },
                 },
               },
             },
@@ -48,12 +48,12 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
       : [];
 
   const boardRooms =
-    mode === "rooms"
+    mode === 'rooms'
       ? await prisma.room.findMany({
           where: {
             OR: [{ isPublic: true }, { members: { some: { userId } } }],
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
           take: 6,
           select: {
             id: true,
@@ -64,16 +64,14 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
               select: {
                 user: { select: { id: true, name: true, image: true } },
               },
-              orderBy: { joinedAt: "asc" },
+              orderBy: { joinedAt: 'asc' },
             },
           },
         })
       : [];
 
   const rooms =
-    mode === "dashboard"
-      ? membershipRooms.map((m) => m.room)
-      : boardRooms;
+    mode === 'dashboard' ? membershipRooms.map((m) => m.room) : boardRooms;
 
   const memberIds = Array.from(
     new Set(rooms.flatMap((room) => room.members.map((mem) => mem.user.id))),
@@ -83,7 +81,7 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
     memberIds.length === 0
       ? []
       : await prisma.dailyStats.groupBy({
-          by: ["userId"],
+          by: ['userId'],
           where: { userId: { in: memberIds }, date: todayStart },
           _sum: { totalMinutes: true },
         });
@@ -98,7 +96,9 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
   if (redisClient && memberIds.length > 0) {
     try {
       const keys = memberIds.map((id) => liveSessionRedisKey(id));
-      const vals = await Promise.all(keys.map((k) => redisClient.get<LiveSessionPayload>(k)));
+      const vals = await Promise.all(
+        keys.map((k) => redisClient.get<LiveSessionPayload>(k)),
+      );
       liveByUserId = new Map();
       memberIds.forEach((id, i) => {
         const v = vals[i];
@@ -106,7 +106,10 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
       });
     } catch (err) {
       // Keep board APIs and RSC pages resilient when Upstash fetch throws (can surface as ErrorEvent).
-      console.warn("[room-boards] live session read failed; continuing without live status", err);
+      console.warn(
+        '[room-boards] live session read failed; continuing without live status',
+        err,
+      );
       liveByUserId = null;
     }
   }
@@ -114,13 +117,19 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
   if (redisClient && memberIds.length > 0) {
     try {
       const keys = memberIds.map((id) => todaySecondsRedisKey(id));
-      const vals = await Promise.all(keys.map((k) => redisClient.get<unknown>(k)));
+      const vals = await Promise.all(
+        keys.map((k) => redisClient.get<unknown>(k)),
+      );
       memberIds.forEach((id, i) => {
         const parsed = Number(vals[i]);
-        if (Number.isFinite(parsed)) todaySecondsByUserId.set(id, Math.max(0, Math.floor(parsed)));
+        if (Number.isFinite(parsed))
+          todaySecondsByUserId.set(id, Math.max(0, Math.floor(parsed)));
       });
     } catch (err) {
-      console.warn("[room-boards] todaySeconds read failed; using minutes fallback", err);
+      console.warn(
+        '[room-boards] todaySeconds read failed; using minutes fallback',
+        err,
+      );
     }
   }
 
@@ -129,7 +138,7 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
     roomName: room.name,
     roomCode: room.code,
     members: room.members.map((member) => {
-      const displayName = member.user.name ?? "Unknown";
+      const displayName = member.user.name ?? 'Unknown';
       const live = liveByUserId?.get(member.user.id);
       return {
         id: member.user.id,
@@ -139,7 +148,10 @@ export async function getRoomTimerBoards(userId: string, mode: RoomBoardsMode) {
         active: Boolean(live),
         startedAtIso: live?.startedAt ?? new Date(0).toISOString(),
         todayMinutes: todayMinutesByUserId.get(member.user.id) ?? 0,
-        todaySeconds: todaySecondsByUserId.get(member.user.id) ?? 0,
+        // Source priority: Redis second counter first; DB minutes fallback bridges cache misses.
+        todaySeconds:
+          todaySecondsByUserId.get(member.user.id) ??
+          Math.max(0, (todayMinutesByUserId.get(member.user.id) ?? 0) * 60),
       };
     }),
   }));

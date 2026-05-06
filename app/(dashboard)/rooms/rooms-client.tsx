@@ -1,14 +1,21 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, ChevronDown, Hash, Lock, Users, Video } from "lucide-react";
-import { useStudyTimer } from "@/components/study-timer-provider";
-import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  ArrowRight,
+  ChevronDown,
+  Hash,
+  Lock,
+  Users,
+  Video,
+} from 'lucide-react';
+import { useStudyTimer } from '@/components/study-timer-provider';
+import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
-} from "@/features/dashboard/components/room-leaderboard-carousel";
+} from '@/features/dashboard/components/room-leaderboard-carousel';
 
 type PublicRoom = {
   code: string;
@@ -52,14 +59,20 @@ function RoomCard({
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.22, ease: [0, 0, 0.58, 1] }}
+      transition={{
+        delay: index * 0.04,
+        duration: 0.22,
+        ease: [0, 0, 0.58, 1],
+      }}
       className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] group relative flex flex-col gap-3 rounded-lg border border-border/50 p-4
         shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_12px_rgba(17,24,39,0.06)]
         transition-shadow duration-200 hover:shadow-[0_1px_2px_rgba(17,24,39,0.06),0_8px_20px_rgba(17,24,39,0.10)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-foreground">{name}</p>
+          <p className="truncate text-[13px] font-semibold text-foreground">
+            {name}
+          </p>
           {hostName && (
             <p className="mt-0.5 truncate text-[10.5px] text-muted-foreground">
               by {hostName}
@@ -67,9 +80,7 @@ function RoomCard({
           )}
         </div>
         {role && (
-          <span
-            className="shrink-0 rounded-[6px] border border-border/60 bg-card/80 px-2 py-0.5 text-[9.5px] font-medium text-muted-foreground capitalize"
-          >
+          <span className="shrink-0 rounded-[6px] border border-border/60 bg-card/80 px-2 py-0.5 text-[9.5px] font-medium text-muted-foreground capitalize">
             {role.toLowerCase()}
           </span>
         )}
@@ -79,7 +90,9 @@ function RoomCard({
         <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground">
           <Users size={11} strokeWidth={1.6} />
           <span className="tabular-nums">
-            {memberCount === 1 ? `${memberCount} member` : `${memberCount} members`}
+            {memberCount === 1
+              ? `${memberCount} member`
+              : `${memberCount} members`}
           </span>
         </div>
         <motion.button
@@ -107,10 +120,10 @@ export default function RoomsClient({
   const { active, startedAtMs, todaySeconds } = useStudyTimer();
   const router = useRouter();
   const [boards, setBoards] = useState(initialBoards);
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [roomListView, setRoomListView] = useState<"my" | "public">("public");
+  const [roomListView, setRoomListView] = useState<'my' | 'public'>('public');
 
   const displayBoards = useMemo(
     () =>
@@ -129,18 +142,31 @@ export default function RoomsClient({
   useEffect(() => {
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | undefined;
+    let inFlight = false;
+    let queued = false;
 
     async function pull() {
+      if (inFlight) {
+        queued = true;
+        return;
+      }
+      inFlight = true;
       try {
-        const res = await fetch("/api/room-boards?mode=rooms", {
-          credentials: "include",
-          cache: "no-store",
+        const res = await fetch('/api/room-boards?mode=rooms', {
+          credentials: 'include',
+          cache: 'no-store',
         });
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { boards?: typeof initialBoards };
         if (data.boards) setBoards(data.boards);
       } catch {
         /* ignore */
+      } finally {
+        inFlight = false;
+        if (!cancelled && queued) {
+          queued = false;
+          void pull();
+        }
       }
     }
 
@@ -153,13 +179,17 @@ export default function RoomsClient({
 
     function startPollIfVisible() {
       clearPoll();
-      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      if (
+        typeof document === 'undefined' ||
+        document.visibilityState !== 'visible'
+      )
+        return;
       intervalId = setInterval(() => void pull(), TIMER_POLL_INTERVAL_MS);
     }
 
     const onStats = () => void pull();
     const onVis = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         void pull();
         startPollIfVisible();
       } else {
@@ -169,13 +199,13 @@ export default function RoomsClient({
 
     void pull();
     startPollIfVisible();
-    window.addEventListener("study-stats-changed", onStats);
-    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener('study-stats-changed', onStats);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
       cancelled = true;
       clearPoll();
-      window.removeEventListener("study-stats-changed", onStats);
-      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener('study-stats-changed', onStats);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 
@@ -185,14 +215,14 @@ export default function RoomsClient({
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/rooms/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/rooms/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: joinCode.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Failed to join room.");
+        setError(data.error ?? 'Failed to join room.');
         return;
       }
       router.push(`/room/${data.code}`);
@@ -207,8 +237,14 @@ export default function RoomsClient({
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-6 pt-2 sm:px-6">
       {/* Page header */}
       <div className="mb-4 flex shrink-0 items-center gap-2 pt-2">
-        <Video size={15} strokeWidth={1.6} className="text-muted-foreground opacity-70" />
-        <h1 className="text-[14px] font-semibold tracking-tight text-foreground">Rooms</h1>
+        <Video
+          size={15}
+          strokeWidth={1.6}
+          className="text-muted-foreground opacity-70"
+        />
+        <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
+          Rooms
+        </h1>
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(24rem,1.28fr)_minmax(22rem,1.12fr)]">
@@ -275,7 +311,7 @@ export default function RoomsClient({
               className="min-h-0 overflow-y-auto rounded-lg border border-border/50 bg-background p-3
                 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
                 shadow-[0_1px_2px_rgba(17,24,39,0.03)]"
-              style={{ msOverflowStyle: "none" }}
+              style={{ msOverflowStyle: 'none' }}
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-2 pb-0.5">
@@ -286,13 +322,14 @@ export default function RoomsClient({
                     <span className="sr-only">Choose room list</span>
                     <select
                       value={roomListView}
-                      onChange={(e) => setRoomListView(e.target.value as "my" | "public")}
+                      onChange={(e) =>
+                        setRoomListView(e.target.value as 'my' | 'public')
+                      }
                       className="appearance-none rounded-[6px] border border-border/70 bg-background py-1 pl-2.5 pr-7 text-[10.5px] font-medium text-foreground
                         focus:outline-none focus:ring-2 focus:ring-ring/40"
                     >
                       <option value="public">Public Rooms</option>
                       <option value="my">My Rooms</option>
-
                     </select>
                     <ChevronDown
                       size={11}
@@ -301,10 +338,14 @@ export default function RoomsClient({
                   </label>
                 </div>
 
-                {roomListView === "my" && myRooms.length > 0 && (
+                {roomListView === 'my' && myRooms.length > 0 && (
                   <section>
                     <div className="mb-2 flex items-center gap-2">
-                      <Lock size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
+                      <Lock
+                        size={11}
+                        strokeWidth={1.7}
+                        className="text-muted-foreground/60"
+                      />
                       <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                         My Rooms
                       </h2>
@@ -324,10 +365,14 @@ export default function RoomsClient({
                     </div>
                   </section>
                 )}
-                {roomListView === "public" && publicRooms.length > 0 && (
+                {roomListView === 'public' && publicRooms.length > 0 && (
                   <section>
                     <div className="mb-2 flex items-center gap-2">
-                      <Users size={11} strokeWidth={1.7} className="text-muted-foreground/60" />
+                      <Users
+                        size={11}
+                        strokeWidth={1.7}
+                        className="text-muted-foreground/60"
+                      />
                       <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                         Browse Public Rooms
                       </h2>
@@ -346,22 +391,40 @@ export default function RoomsClient({
                     </div>
                   </section>
                 )}
-                {roomListView === "my" && myRooms.length === 0 && hasAnyRoom && (
-                  <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
-                    <p className="text-[12px] text-muted-foreground">No joined rooms yet.</p>
-                    <p className="text-[11px] text-muted-foreground/70">Switch to Public Rooms to explore.</p>
-                  </div>
-                )}
-                {roomListView === "public" && publicRooms.length === 0 && hasAnyRoom && (
-                  <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
-                    <p className="text-[12px] text-muted-foreground">No public rooms available.</p>
-                    <p className="text-[11px] text-muted-foreground/70">Try creating a new room from sidebar.</p>
-                  </div>
-                )}
+                {roomListView === 'my' &&
+                  myRooms.length === 0 &&
+                  hasAnyRoom && (
+                    <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
+                      <p className="text-[12px] text-muted-foreground">
+                        No joined rooms yet.
+                      </p>
+                      <p className="text-[11px] text-muted-foreground/70">
+                        Switch to Public Rooms to explore.
+                      </p>
+                    </div>
+                  )}
+                {roomListView === 'public' &&
+                  publicRooms.length === 0 &&
+                  hasAnyRoom && (
+                    <div className="flex min-h-[7rem] flex-col items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-muted/20">
+                      <p className="text-[12px] text-muted-foreground">
+                        No public rooms available.
+                      </p>
+                      <p className="text-[11px] text-muted-foreground/70">
+                        Try creating a new room from sidebar.
+                      </p>
+                    </div>
+                  )}
                 {!hasAnyRoom && (
                   <div className="flex min-h-[10rem] flex-col items-center justify-center gap-2 rounded-lg border border-border/50 bg-muted/20">
-                    <Video size={18} strokeWidth={1.4} className="text-muted-foreground/60" />
-                    <p className="text-[12px] text-muted-foreground">No rooms yet.</p>
+                    <Video
+                      size={18}
+                      strokeWidth={1.4}
+                      className="text-muted-foreground/60"
+                    />
+                    <p className="text-[12px] text-muted-foreground">
+                      No rooms yet.
+                    </p>
                     <p className="text-[11px] text-muted-foreground/70">
                       Create one from the sidebar or join with a code above.
                     </p>
@@ -379,7 +442,10 @@ export default function RoomsClient({
         >
           {displayBoards.length > 0 ? (
             <div className="h-full rounded-xl bg-background">
-              <RoomLeaderboardCarousel boards={displayBoards} currentUserId={currentUserId} />
+              <RoomLeaderboardCarousel
+                boards={displayBoards}
+                currentUserId={currentUserId}
+              />
             </div>
           ) : (
             <div className="flex h-full items-center justify-center text-[12px] text-muted-foreground">

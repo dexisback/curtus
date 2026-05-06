@@ -1,26 +1,27 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { motion } from "motion/react";
-import { useStudyTimer } from "@/components/study-timer-provider";
-import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
-import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
-import ProfileModal, { type ProfileModalUser } from "./profile-modal";
-import RoomLeaderboardCarousel, { type RoomTimerBoard } from "./room-leaderboard-carousel";
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { motion } from 'motion/react';
+import { useStudyTimer } from '@/components/study-timer-provider';
+import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
+import ProfileModal, { type ProfileModalUser } from './profile-modal';
+import RoomLeaderboardCarousel, {
+  type RoomTimerBoard,
+} from './room-leaderboard-carousel';
 
 const LB_OUTER = 22;
 const LB_GAP = 14;
 const LB_INNER = LB_OUTER - LB_GAP;
 const LB_SHADOW = [
-  "0 1px 2px rgba(17,24,39,0.04)",
-  "0 4px 14px rgba(17,24,39,0.05)",
-].join(",");
-
+  '0 1px 2px rgba(17,24,39,0.04)',
+  '0 4px 14px rgba(17,24,39,0.05)',
+].join(',');
 
 const RANK_COLORS: Record<number, string> = {
-  1: "oklch(0.65 0.12 55)",
-  2: "oklch(0.62 0.04 200)",
-  3: "oklch(0.60 0.09 45)",
+  1: 'oklch(0.65 0.12 55)',
+  2: 'oklch(0.62 0.04 200)',
+  3: 'oklch(0.60 0.09 45)',
 };
 
 function pseudoRankFromMinutes(minutes: number): number {
@@ -29,7 +30,7 @@ function pseudoRankFromMinutes(minutes: number): number {
   return 3;
 }
 
-function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
+function toProfileUser(u: RoomTimerBoard['members'][number]): ProfileModalUser {
   const pseudoRank = pseudoRankFromMinutes(u.todayMinutes);
   return {
     id: u.id,
@@ -37,7 +38,7 @@ function toProfileUser(u: RoomTimerBoard["members"][number]): ProfileModalUser {
     initials: u.initials,
     rank: pseudoRank,
     hours: u.todayMinutes / 60,
-    accentColor: RANK_COLORS[pseudoRank] ?? "oklch(0.62 0.06 75)",
+    accentColor: RANK_COLORS[pseudoRank] ?? 'oklch(0.62 0.06 75)',
   };
 }
 
@@ -69,18 +70,31 @@ export default function Leaderboard({
   useEffect(() => {
     let cancelled = false;
     let intervalId: ReturnType<typeof setInterval> | undefined;
+    let inFlight = false;
+    let queued = false;
 
     async function pull() {
+      if (inFlight) {
+        queued = true;
+        return;
+      }
+      inFlight = true;
       try {
-        const res = await fetch("/api/room-boards?mode=dashboard", {
-          credentials: "include",
-          cache: "no-store",
+        const res = await fetch('/api/room-boards?mode=dashboard', {
+          credentials: 'include',
+          cache: 'no-store',
         });
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { boards?: RoomTimerBoard[] };
         if (data.boards) setBoards(data.boards);
       } catch {
         /* ignore */
+      } finally {
+        inFlight = false;
+        if (!cancelled && queued) {
+          queued = false;
+          void pull();
+        }
       }
     }
 
@@ -93,13 +107,17 @@ export default function Leaderboard({
 
     function startPollIfVisible() {
       clearPoll();
-      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      if (
+        typeof document === 'undefined' ||
+        document.visibilityState !== 'visible'
+      )
+        return;
       intervalId = setInterval(() => void pull(), TIMER_POLL_INTERVAL_MS);
     }
 
     const onStats = () => void pull();
     const onVis = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         void pull();
         startPollIfVisible();
       } else {
@@ -109,17 +127,17 @@ export default function Leaderboard({
 
     void pull();
     startPollIfVisible();
-    window.addEventListener("study-stats-changed", onStats);
-    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener('study-stats-changed', onStats);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
       cancelled = true;
       clearPoll();
-      window.removeEventListener("study-stats-changed", onStats);
-      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener('study-stats-changed', onStats);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 
-  const openProfile = useCallback((u: RoomTimerBoard["members"][number]) => {
+  const openProfile = useCallback((u: RoomTimerBoard['members'][number]) => {
     setSelected(toProfileUser(u));
   }, []);
 

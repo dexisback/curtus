@@ -1,4 +1,4 @@
-import type { RoomTimerBoard } from "@/features/dashboard/components/room-leaderboard-carousel";
+import type { RoomTimerBoard } from '@/features/dashboard/components/room-leaderboard-carousel';
 
 /** Room-board / study-timer snapshot poll interval (dashboard miniboard, rooms index, provider resync). */
 export const TIMER_POLL_INTERVAL_MS = 60_000;
@@ -8,6 +8,16 @@ export type SelfStudyTimerSlice = {
   startedAtMs: number | null;
   todaySeconds: number;
 };
+
+export function computeSelfTimerTotalSeconds(params: {
+  active: boolean;
+  todaySeconds: number;
+  elapsedSeconds: number;
+}): number {
+  const base = Math.max(0, Math.floor(params.todaySeconds));
+  if (!params.active) return base;
+  return base + Math.max(0, Math.floor(params.elapsedSeconds));
+}
 
 /** Overlay canonical study timer onto the current user's member rows so dock and miniboards match. */
 export function mergeSelfStudyTimer(

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -7,9 +7,14 @@ import {
   useEffect,
   useMemo,
   useState,
-} from "react";
-import { requestPresenceRefresh } from "@/lib/socket";
-import { TIMER_POLL_INTERVAL_MS } from "@/lib/timer-sync";
+} from 'react';
+import { requestPresenceRefresh } from '@/lib/socket';
+import { TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
+import {
+  normalizeTimerPayload,
+  reconcileTodaySeconds,
+  type TimerPayload,
+} from '@/lib/timer-client-state';
 
 type StudyTimerState = {
   active: boolean;
@@ -25,13 +30,11 @@ type StudyTimerState = {
 
 const StudyTimerContext = createContext<StudyTimerState | null>(null);
 
-function parseStartedMs(iso: string | null): number | null {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  return Number.isFinite(t) ? t : null;
-}
-
-export function StudyTimerProvider({ children }: { children: React.ReactNode }) {
+export function StudyTimerProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [active, setActive] = useState(false);
   const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
   const [todaySeconds, setTodaySeconds] = useState(0);
@@ -42,35 +45,33 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/timer-state", { credentials: "include", cache: "no-store" });
+      const res = await fetch('/api/timer-state', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       if (!res.ok) return;
       const data = (await res.json()) as {
-        timer?: {
-          active?: boolean;
-          startedAt?: string | null;
-          todaySeconds?: number;
-          dayKey?: string;
-          redisAvailable?: boolean;
-        };
+        timer?: TimerPayload;
       };
-      const timer = data.timer;
-      setRedisAvailable(timer?.redisAvailable !== false);
-      setActive(Boolean(timer?.active));
-      setStartedAtMs(parseStartedMs(timer?.startedAt ?? null));
-      const incomingDayKey = timer?.dayKey ?? null;
-      const incomingTodaySeconds = Math.max(0, Math.floor(timer?.todaySeconds ?? 0));
-      setTodaySeconds((prev) => {
-        // Never allow same-day regressions from stale reads.
-        if (incomingDayKey && dayKey && incomingDayKey === dayKey) {
-          return Math.max(prev, incomingTodaySeconds);
-        }
-        return incomingTodaySeconds;
+      const next = normalizeTimerPayload(data.timer);
+      setRedisAvailable(next.redisAvailable);
+      setActive(next.active);
+      setStartedAtMs(next.startedAtMs);
+      setDayKey((prevDayKey) => {
+        setTodaySeconds((prevSeconds) =>
+          reconcileTodaySeconds({
+            previousDayKey: prevDayKey,
+            previousTodaySeconds: prevSeconds,
+            incomingDayKey: next.dayKey,
+            incomingTodaySeconds: next.todaySeconds,
+          }),
+        );
+        return next.dayKey;
       });
-      setDayKey(incomingDayKey);
     } catch {
       /* ignore */
     }
-  }, [dayKey]);
+  }, []);
 
   useEffect(() => {
     void refresh();
@@ -78,14 +79,14 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
 
   useEffect(() => {
     const onFocus = () => void refresh();
-    window.addEventListener("focus", onFocus);
+    window.addEventListener('focus', onFocus);
     const onVis = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === 'visible') void refresh();
     };
-    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
     };
   }, [refresh]);
 
@@ -101,23 +102,27 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
 
     function startPollIfVisible() {
       clearPoll();
-      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+      if (
+        typeof document === 'undefined' ||
+        document.visibilityState !== 'visible'
+      )
+        return;
       id = setInterval(() => void refresh(), TIMER_POLL_INTERVAL_MS);
     }
 
     startPollIfVisible();
 
     const onVis = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === 'visible') {
         void refresh();
         startPollIfVisible();
       } else {
         clearPoll();
       }
     };
-    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener('visibilitychange', onVis);
     return () => {
-      document.removeEventListener("visibilitychange", onVis);
+      document.removeEventListener('visibilitychange', onVis);
       clearPoll();
     };
   }, [refresh]);
@@ -137,50 +142,48 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
     if (busy) return;
     setBusy(true);
     try {
-      const action = active ? "stop" : "start";
-      const res = await fetch("/api/study-timer", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+      const action = active ? 'stop' : 'start';
+      const res = await fetch('/api/study-timer', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
       const data = (await res.json()) as {
         error?: string;
-        timer?: {
-          active?: boolean;
-          startedAt?: string | null;
-          todaySeconds?: number;
-          dayKey?: string;
-          redisAvailable?: boolean;
-        };
+        timer?: TimerPayload;
         session?: {
           durationSec?: number;
         };
       };
       if (!res.ok) {
-        console.warn("[study-timer]", data.error ?? res.status);
+        console.warn('[study-timer]', data.error ?? res.status);
         await refresh();
         return;
       }
-      const next = data.timer;
-      if (next) {
-        setActive(Boolean(next.active));
-        setStartedAtMs(parseStartedMs(next.startedAt ?? null));
-        const nextTodaySeconds = Math.max(0, Math.floor(next.todaySeconds ?? 0));
+      const next = normalizeTimerPayload(data.timer);
+      if (data.timer) {
+        setActive(next.active);
+        setStartedAtMs(next.startedAtMs);
         // Stop responses can occasionally race with redis read-after-write.
         // Reconcile locally using authoritative returned durationSec so UI never regresses.
-        if (action === "stop") {
-          const durationSec = Math.max(0, Math.floor(data.session?.durationSec ?? 0));
-          setTodaySeconds((prev) => Math.max(nextTodaySeconds, prev + durationSec));
+        if (action === 'stop') {
+          const durationSec = Math.max(
+            0,
+            Math.floor(data.session?.durationSec ?? 0),
+          );
+          setTodaySeconds((prev) =>
+            Math.max(next.todaySeconds, prev + durationSec),
+          );
         } else {
-          setTodaySeconds(nextTodaySeconds);
+          setTodaySeconds(next.todaySeconds);
         }
-        setDayKey(next.dayKey ?? null);
-        setRedisAvailable(next.redisAvailable !== false);
+        setDayKey(next.dayKey);
+        setRedisAvailable(next.redisAvailable);
       }
       // Avoid immediate re-read clobbering newer local state; periodic/focus refresh still converges.
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("study-stats-changed"));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('study-stats-changed'));
       }
       requestPresenceRefresh();
     } finally {
@@ -201,14 +204,29 @@ export function StudyTimerProvider({ children }: { children: React.ReactNode }) 
         toggle,
         refresh,
       }) satisfies StudyTimerState,
-    [active, startedAtMs, todaySeconds, dayKey, redisAvailable, elapsedSeconds, busy, toggle, refresh],
+    [
+      active,
+      startedAtMs,
+      todaySeconds,
+      dayKey,
+      redisAvailable,
+      elapsedSeconds,
+      busy,
+      toggle,
+      refresh,
+    ],
   );
 
-  return <StudyTimerContext.Provider value={value}>{children}</StudyTimerContext.Provider>;
+  return (
+    <StudyTimerContext.Provider value={value}>
+      {children}
+    </StudyTimerContext.Provider>
+  );
 }
 
 export function useStudyTimer() {
   const ctx = useContext(StudyTimerContext);
-  if (!ctx) throw new Error("useStudyTimer must be used within StudyTimerProvider");
+  if (!ctx)
+    throw new Error('useStudyTimer must be used within StudyTimerProvider');
   return ctx;
 }
