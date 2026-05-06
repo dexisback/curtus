@@ -96,7 +96,7 @@ export default function TestimonialAnimatedTooltip() {
               className="pointer-events-none absolute bottom-[calc(100%+0.45rem)] z-50 -translate-x-1/2 text-white"
               style={{ left: tooltipX }}
             >
-              <div className="w-64 rounded-xl border border-white/10 bg-neutral-950/95 px-4 py-3 shadow-[0_8px_20px_rgba(0,0,0,0.34)] backdrop-blur-sm">
+              <div className="w-64 rounded-xl border border-white/10 bg-[#161925]/95 px-4 py-3 shadow-[0_8px_20px_rgba(22,25,37,0.32)] backdrop-blur-sm">
                 <p className="text-[17px] font-semibold leading-tight text-white">
                   {people[hoveredIndex]?.name}
                 </p>
@@ -108,7 +108,7 @@ export default function TestimonialAnimatedTooltip() {
           ) : null}
         </AnimatePresence>
 
-        <div className="inline-flex rounded-2xl border border-white/10 bg-neutral-900/68 px-4 py-3 shadow-[0_6px_14px_rgba(0,0,0,0.2)] backdrop-blur-md">
+        <div className="inline-flex rounded-2xl border border-white/10 bg-[#161925]/68 px-4 py-3 shadow-[0_6px_14px_rgba(22,25,37,0.22)] backdrop-blur-md">
           <div className="flex flex-row items-center">
             {people.map((person, index) => (
               <motion.button
@@ -122,7 +122,7 @@ export default function TestimonialAnimatedTooltip() {
                 onBlur={() => setHovered(null)}
                 whileHover={{ y: -3, scale: 1.03 }}
                 whileTap={{ scale: 0.96 }}
-                className={`relative h-14 w-14 rounded-full border-2 border-white/75 bg-neutral-900 shadow-[0_3px_8px_rgba(0,0,0,0.28)] ${
+                className={`relative h-14 w-14 rounded-full border-2 border-white/75 bg-[#161925] shadow-[0_3px_8px_rgba(22,25,37,0.28)] ${
                   index === 0 ? '' : '-ml-2.5'
                 }`}
                 style={{

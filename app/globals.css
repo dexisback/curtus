@@ -176,6 +176,8 @@
   }
   body {
     @apply h-full w-full bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   /* ---- Cursor semantics (links, buttons, inputs, disabled, precision) ---- */
@@ -231,5 +233,9 @@
   h2,
   h3 {
     text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }

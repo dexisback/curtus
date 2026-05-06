@@ -77,6 +77,13 @@ function LoginPageContent() {
                 <div className="w-full grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-12 items-center">
                   {/* Left: Auth */}
                   <div className="flex flex-col gap-5 max-w-sm">
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] text-neutral-600 shadow-[0_4px_14px_rgba(22,25,37,0.08)] backdrop-blur-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#C79A7A]" />
+                      Focused live rooms
+                    </div>
+                    <p className="text-[13px] font-medium text-neutral-700">
+                      Study together in calm, real-time sessions
+                    </p>
                     <p className="text-sm text-neutral-400 leading-relaxed">
                       Continue with your provider to access rooms, timers, and
                       live study sessions.
@@ -108,7 +115,7 @@ function LoginPageContent() {
                           disabled={isPending}
                           className="flex items-center justify-center gap-3 w-full rounded-lg border border-border
                     bg-background hover:bg-accent text-foreground text-sm font-medium h-10 px-4
-                    transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    transition-transform transition-colors duration-150 active:scale-[0.96] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <svg
                             width="16"
@@ -144,7 +151,7 @@ function LoginPageContent() {
                           disabled={isPending}
                           className="flex items-center justify-center gap-3 w-full rounded-lg border border-border
                     bg-background hover:bg-accent text-foreground text-sm font-medium h-10 px-4
-                    transition-colors duration-150 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                    transition-transform transition-colors duration-150 active:scale-[0.96] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <svg
                             width="16"
@@ -183,9 +190,9 @@ function LoginPageContent() {
               target="_blank"
               rel="noreferrer"
               aria-label="please"
-              className="group absolute bottom-5 right-5 z-20 inline-flex items-center gap-2 rounded-full border border-black/10 bg-neutral-900/70 px-3 py-1.5 text-[11px] text-white/85 shadow-[0_6px_16px_rgba(0,0,0,0.2)] backdrop-blur-md transition-colors hover:bg-neutral-900/80"
+              className="group absolute bottom-5 right-5 z-20 inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#161925]/72 px-3 py-1.5 text-[11px] text-white/85 shadow-[0_6px_16px_rgba(22,25,37,0.22)] backdrop-blur-md transition-colors hover:bg-[#161925]/82"
             >
-              <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-black/85 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity duration-75 group-hover:opacity-100 group-focus-visible:opacity-100">
+              <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-[#161925]/90 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity duration-75 group-hover:opacity-100 group-focus-visible:opacity-100">
                 please
               </span>
               <svg

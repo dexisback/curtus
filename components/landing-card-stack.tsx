@@ -211,7 +211,7 @@ export default function LandingCardStack({
               },
             }}
             style={{ zIndex: isCurrentActive(index) ? 20 : card.config.zIndex }}
-            className={`absolute inset-0 flex cursor-pointer flex-col items-start justify-between overflow-hidden rounded-2xl p-5 ${card.className}`}
+            className={`absolute inset-0 flex cursor-pointer flex-col items-start justify-between overflow-hidden rounded-2xl border border-black/10 p-5 shadow-[0_8px_24px_rgba(22,25,37,0.13)] will-change-transform ${card.className}`}
           >
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/14 via-white/5 to-transparent" />
             <div className="h-20 w-full rounded-xl bg-black/10" />
