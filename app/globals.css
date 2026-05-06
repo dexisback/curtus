@@ -289,10 +289,10 @@
     @apply border-border outline-ring/50;
   }
   html {
-    @apply h-full w-full;
+    @apply h-full w-full overflow-x-hidden;
   }
   body {
-    @apply h-full w-full text-foreground font-sans;
+    @apply h-full w-full overflow-x-hidden text-foreground font-sans;
     background-color: var(--background);
     background-image: var(--app-hatch), var(--panel-texture-image);
     background-size: auto, 360px 360px;

@@ -59,22 +59,22 @@ function LoginPageContent() {
   const isPending = pendingProvider !== null;
 
   return (
-    <div className="box-border h-screen w-full overflow-hidden bg-neutral-100 p-3 sm:p-4">
-      <div className="h-full w-full max-w-full rounded-[30px] border border-black/10 bg-[#ececec] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_0_0_1px_rgba(0,0,0,0.03),0_18px_45px_rgba(0,0,0,0.08)]">
+    <div className="box-border flex min-h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-auto bg-neutral-100 p-3 sm:p-4">
+      <div className="min-h-0 w-full max-w-full flex-1 rounded-[30px] border border-black/10 bg-[#ececec] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_0_0_1px_rgba(0,0,0,0.03),0_18px_45px_rgba(0,0,0,0.08)] md:min-h-0 md:h-[calc(100dvh-24px)]">
         <div
-          className="h-full rounded-[22px] border border-black/5 p-3 sm:p-4"
+          className="min-h-[min(100%,48rem)] w-full rounded-[22px] border border-black/5 p-3 sm:p-4 md:h-full md:min-h-0"
           style={{
             backgroundImage:
               'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 5px)',
           }}
         >
-          <div className="relative h-full overflow-hidden rounded-[18px] border border-black/5 bg-white/95 p-2 shadow-xl shadow-black/10">
+          <div className="relative min-h-[min(100%,44rem)] w-full overflow-x-hidden overflow-y-visible rounded-[18px] border border-black/5 bg-white/95 p-2 shadow-xl shadow-black/10 md:h-full md:min-h-0 md:overflow-hidden">
             <div className="pointer-events-none absolute inset-0 rounded-[18px] bg-gradient-to-b from-white/35 via-transparent to-transparent" />
             <div className="pointer-events-none absolute inset-[1px] rounded-[17px] ring-1 ring-black/5" />
-            <div className="flex h-full w-[125%] origin-top-left scale-[0.8] flex-col">
+            <div className="flex w-full flex-col md:h-full md:w-[125%] md:origin-top-left md:scale-[0.8]">
               {/* ── Upper: two-column area ── */}
-              <div className="flex items-center px-10 md:px-16 pt-14 pb-2">
-                <div className="w-full grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-12 items-center">
+              <div className="flex items-center px-4 pt-8 pb-2 sm:px-8 md:px-16 md:pt-14">
+                <div className="w-full grid grid-cols-1 gap-10 md:grid-cols-[2fr_3fr] md:gap-12 items-center">
                   {/* Left: Auth */}
                   <div className="flex flex-col gap-5 max-w-sm">
                     <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] text-neutral-600 shadow-[0_4px_14px_rgba(22,25,37,0.08)] backdrop-blur-sm">
@@ -177,9 +177,9 @@ function LoginPageContent() {
                   </div>
 
                   {/* Right: Card stack */}
-                  <div className="min-w-0">
-                    <div className="mx-auto w-full max-w-[58rem] min-w-0 rounded-2xl px-8 py-4">
-                      <LandingCardStack className="h-[36rem]" />
+                  <div className="min-w-0 max-w-[100%] pb-8 md:pb-0">
+                    <div className="mx-auto w-full max-w-[58rem] min-w-0 rounded-2xl px-2 py-4 sm:px-6 md:px-8">
+                      <LandingCardStack className="h-[min(24rem,calc(100vw+4rem))] sm:h-[min(30rem,calc(100vw))] md:h-[36rem]" />
                     </div>
                   </div>
                 </div>

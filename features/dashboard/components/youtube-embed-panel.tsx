@@ -48,7 +48,7 @@ export default function YouTubeEmbedPanel({
       className={
         isLibraryLayout
           ? 'flex w-full min-w-0 flex-col items-stretch'
-          : 'flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4'
+          : 'flex h-full w-full min-h-0 min-w-0 max-w-[100vw] items-stretch justify-center pl-0 pr-0 pt-1.5 pb-3 sm:pl-2 sm:pr-1 sm:pt-2 sm:pb-4 lg:justify-end lg:pr-0.5'
       }
     >
       <motion.div
@@ -56,7 +56,7 @@ export default function YouTubeEmbedPanel({
           'relative flex w-full flex-col border border-black/[0.035] bg-[color:var(--panel-texture-bg)] ring-1 ring-inset ring-black/[0.035] ' +
           (isLibraryLayout
             ? 'min-w-0 shrink-0'
-            : 'h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0')
+            : 'h-full min-h-0 min-w-0 max-h-full w-full shrink-0 sm:max-w-[min(100%,94vw)] lg:w-[min(100%,90%)]')
         }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,

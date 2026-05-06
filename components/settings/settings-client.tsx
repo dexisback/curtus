@@ -50,7 +50,7 @@ function SettingRow({
   control: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
+    <div className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div>
         <p className="text-[12.5px] font-medium text-foreground">{label}</p>
         {description && (

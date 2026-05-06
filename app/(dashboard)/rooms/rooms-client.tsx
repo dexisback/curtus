@@ -97,7 +97,7 @@ function RoomCard({
           type="button"
           whileTap={{ scale: 0.96 }}
           onClick={() => router.push(`/room/${code}`)}
-          className="app-cta-surface flex items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground
+          className="app-cta-surface flex min-h-[40px] items-center gap-1.5 rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground
             transition-opacity duration-150"
         >
           Enter
@@ -231,7 +231,7 @@ export default function RoomsClient({
   const hasAnyRoom = myRooms.length > 0 || publicRooms.length > 0;
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-6 pt-2 sm:px-6">
+    <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-hidden px-3 pb-5 pt-2 sm:px-5 sm:pb-6 md:px-6">
       {/* Page header */}
       <div className="mb-4 flex shrink-0 items-center gap-2 pt-2">
         <Video
@@ -244,15 +244,18 @@ export default function RoomsClient({
         </h1>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(24rem,1.28fr)_minmax(22rem,1.12fr)]">
-        <section className="shadow-float order-2 min-h-0 overflow-hidden rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.028] xl:order-1 dark:ring-white/[0.045]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(17rem,1fr)] lg:gap-5">
+        <section className="shadow-float order-1 min-h-0 overflow-hidden rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.028] dark:ring-white/[0.045]">
           <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3">
             <div className="rounded-lg border border-border/45 bg-card/95 p-4 shadow-ambient-sm">
               <p className="mb-3 flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
                 <Hash size={12} strokeWidth={1.7} />
                 Join by code
               </p>
-              <form onSubmit={handleJoin} className="flex gap-2">
+              <form
+                onSubmit={handleJoin}
+                className="flex flex-col gap-2 sm:flex-row sm:items-center"
+              >
                 <div className="relative flex min-w-0 flex-1 items-center">
                   <Hash
                     size={12}
@@ -266,7 +269,7 @@ export default function RoomsClient({
                     onChange={(e) => setJoinCode(e.target.value)}
                     maxLength={12}
                     required
-                    className="w-full rounded-md border border-border/70 bg-background py-2 pl-8 pr-3 text-[12px]
+                    className="min-h-[42px] w-full rounded-md border border-border/70 bg-background py-2 pl-8 pr-3 text-[12px]
                       text-foreground placeholder:text-muted-foreground/50
                       focus:outline-none focus:ring-2 focus:ring-ring/40 transition-shadow duration-150"
                   />
@@ -275,8 +278,8 @@ export default function RoomsClient({
                   type="submit"
                   whileTap={{ scale: 0.96 }}
                   disabled={busy || !joinCode.trim()}
-                  className="app-cta-surface shrink-0 rounded-[6px] px-4 py-2 text-[11.5px] font-medium text-cta-foreground
-                    disabled:pointer-events-none disabled:opacity-50"
+                  className="app-cta-surface min-h-[42px] w-full shrink-0 rounded-[6px] px-4 py-2 text-[11.5px] font-medium text-cta-foreground
+                    disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
                 >
                   Join
                 </motion.button>
@@ -313,7 +316,7 @@ export default function RoomsClient({
                       onChange={(e) =>
                         setRoomListView(e.target.value as 'my' | 'public')
                       }
-                      className="appearance-none rounded-[6px] border border-border/70 bg-background py-1 pl-2.5 pr-7 text-[10.5px] font-medium text-foreground
+                      className="min-h-[40px] appearance-none rounded-[6px] border border-border/70 bg-background py-2 pl-2.5 pr-7 text-[10.5px] font-medium text-foreground
                         focus:outline-none focus:ring-2 focus:ring-ring/40"
                     >
                       <option value="public">Public Rooms</option>
@@ -423,7 +426,7 @@ export default function RoomsClient({
           </div>
         </section>
 
-        <section className="shadow-float order-1 min-h-0 rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.028] xl:order-2 xl:h-[88%] xl:self-center dark:ring-white/[0.045]">
+        <section className="shadow-float order-2 min-h-0 rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.028] lg:h-[88%] lg:self-center dark:ring-white/[0.045]">
           {displayBoards.length > 0 ? (
             <div className="h-full rounded-xl border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/[0.05]">
               <RoomLeaderboardCarousel

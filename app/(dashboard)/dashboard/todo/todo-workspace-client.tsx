@@ -539,7 +539,7 @@ export default function TodoWorkspaceClient({
       <AnimatePresence>
         {modalMode && (
           <motion.div
-            className="fixed inset-0 z-[120] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[120] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -559,7 +559,7 @@ export default function TodoWorkspaceClient({
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 8, opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
-              className="relative z-10 w-full max-w-md rounded-xl border border-border/60 bg-card p-4
+              className="relative z-10 my-auto w-full max-w-md rounded-xl border border-border/60 bg-card p-4 sm:my-0
                 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_18px_40px_rgba(17,24,39,0.12)]"
             >
               <div className="mb-3 flex items-center justify-between">

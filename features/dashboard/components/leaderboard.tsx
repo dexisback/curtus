@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { useStudyTimer } from '@/components/study-timer-provider';
 import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
 import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
@@ -50,6 +51,7 @@ export default function Leaderboard({
   boards: RoomTimerBoard[];
   currentUserId: string;
 }) {
+  const allowPanelDrag = useMediaQuery('(min-width: 1024px)');
   const { active, startedAtMs, todaySeconds } = useStudyTimer();
   const [boards, setBoards] = useState(initialBoards);
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
@@ -148,19 +150,24 @@ export default function Leaderboard({
 
   return (
     <>
-      <div className="flex h-full min-h-0 w-full min-w-0 items-stretch justify-start pl-0.5 pr-0 pt-1 pb-2">
+      <div className="flex h-full min-h-0 w-full min-w-0 max-w-[100vw] items-stretch justify-start pl-0.5 pr-0 pt-1 pb-2">
         <motion.div
-          className="app-cursor-drag relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]"
+          className={
+            (allowPanelDrag ? 'app-cursor-drag ' : '') +
+            'relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]'
+          }
           style={{
             borderRadius: `${LB_OUTER}px`,
             padding: `${LB_GAP}px`,
             boxShadow: LB_SHADOW,
           }}
-          whileHover={{ y: -1, scale: 1.002 }}
-          drag
-          dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
-          dragElastic={0.08}
-          dragTransition={SPRING_DRAG_RELEASE}
+          whileHover={allowPanelDrag ? { y: -1, scale: 1.002 } : undefined}
+          drag={allowPanelDrag}
+          dragConstraints={
+            allowPanelDrag ? { top: -4, left: -4, right: 4, bottom: 4 } : false
+          }
+          dragElastic={allowPanelDrag ? 0.08 : 0}
+          dragTransition={allowPanelDrag ? SPRING_DRAG_RELEASE : undefined}
           transition={SPRING_HOVER}
         >
           <div

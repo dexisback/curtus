@@ -13,8 +13,10 @@ import {
   Screw,
 } from './panel-primitives';
 import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 export default function VideoPlayer() {
+  const allowPanelDrag = useMediaQuery('(min-width: 1024px)');
   const screwInset = SCREW_INSET;
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -73,23 +75,26 @@ export default function VideoPlayer() {
   }, [isPlaying, scheduleHide]);
 
   return (
-    <div
-      className="flex h-full w-full min-h-0 min-w-0 items-start justify-end pl-2 pr-0.5 pt-1.5
-        pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
-    >
+    <div className="flex h-full w-full min-h-0 min-w-0 max-w-[100vw] items-start justify-center pl-0 pr-0 pt-1.5 pb-3 sm:pl-2 sm:pr-1 sm:pt-2 sm:pb-4 lg:justify-end lg:pr-0.5">
       <motion.div
-        className="app-cursor-drag relative flex h-[100%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
-          border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.035]"
+        className={
+          (allowPanelDrag ? 'app-cursor-drag ' : '') +
+          'relative flex h-[100%] w-full min-h-0 min-w-0 max-h-full shrink-0 flex-col border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.035] sm:max-w-[min(100%,90vw)] lg:w-[min(100%,90%)]'
+        }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={{ y: -1, rotate: 0.06, scale: 1.002 }}
-        drag
-        dragConstraints={{ top: -4, left: -4, right: 4, bottom: 4 }}
-        dragElastic={0.08}
-        dragTransition={SPRING_DRAG_RELEASE}
+        whileHover={
+          allowPanelDrag ? { y: -1, rotate: 0.06, scale: 1.002 } : undefined
+        }
+        drag={allowPanelDrag}
+        dragConstraints={
+          allowPanelDrag ? { top: -4, left: -4, right: 4, bottom: 4 } : false
+        }
+        dragElastic={allowPanelDrag ? 0.08 : 0}
+        dragTransition={allowPanelDrag ? SPRING_DRAG_RELEASE : undefined}
         transition={SPRING_HOVER}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => isPlaying && setShowControls(false)}

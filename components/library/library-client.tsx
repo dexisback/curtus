@@ -268,7 +268,7 @@ export default function LibraryClient({
         ) : null}
       </section>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.4fr)_minmax(20rem,1fr)] xl:items-start">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2.2fr)_minmax(18rem,1fr)] lg:items-start lg:gap-5">
         <div className="min-w-0 antialiased">
           <YouTubeEmbedPanel
             embedUrl={active?.embedUrl ?? null}
@@ -543,7 +543,7 @@ export default function LibraryClient({
       <AnimatePresence>
         {previewOpen ? (
           <motion.div
-            className="fixed inset-0 z-[140] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[140] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -558,7 +558,7 @@ export default function LibraryClient({
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 8, opacity: 0, scale: 0.985 }}
               transition={{ duration: 0.2, ease: [0, 0, 0.58, 1] }}
-              className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-3 shadow-[0_12px_40px_rgba(17,24,39,0.14)]"
+              className="relative z-10 my-auto w-full max-w-4xl max-h-[min(92vh,calc(100dvh-3rem))] overflow-y-auto overflow-x-hidden rounded-2xl border border-border/50 bg-card/95 p-3 shadow-[0_12px_40px_rgba(17,24,39,0.14)] sm:my-0"
             >
               <p className="mb-2 text-sm font-medium leading-snug tracking-tight text-foreground antialiased">
                 Preview before saving

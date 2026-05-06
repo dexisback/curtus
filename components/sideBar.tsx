@@ -26,9 +26,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useServerUserSettings } from '@/components/server-user-settings';
+import { useMobileNav } from '@/components/mobile-nav-context';
 import { useSound } from '@/components/sound-provider';
 import WhiteNoiseSidebarSection from '@/components/white-noise-sidebar-section';
 import { DURATION, EASE_IN, EASE_OUT, SPRING_SNAP } from '@/lib/ui-motion';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
@@ -144,7 +146,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
       {open && (
         <motion.div
           key="create-room-overlay"
-          className="fixed inset-0 z-[210] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[210] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{
@@ -167,7 +169,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="relative z-10 w-full max-w-sm"
+            className="relative z-10 my-auto w-full max-w-sm sm:my-0"
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
@@ -306,6 +308,8 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
   });
   const [createMounted, setCreateMounted] = useState(false);
   const pathname = usePathname();
+  const lgUp = useMediaQuery('(min-width: 1024px)');
+  const { mobileNavOpen, closeMobileNav } = useMobileNav();
   const { play } = useSound();
   const isOpenRef = useRef(isOpen);
   useLayoutEffect(() => {
@@ -369,68 +373,141 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
     setCreateMounted(true);
   }, [play]);
 
+  useEffect(() => {
+    closeMobileNav();
+  }, [pathname, closeMobileNav]);
+
+  useEffect(() => {
+    if (!lgUp) return;
+    closeMobileNav();
+  }, [lgUp, closeMobileNav]);
+
+  useEffect(() => {
+    if (lgUp || !mobileNavOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [lgUp, mobileNavOpen]);
+
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   }
 
+  const revealNavLinks = lgUp ? isOpen : mobileNavOpen;
+
+  function handleNavHeaderTap() {
+    play('tap');
+    if (!lgUp) {
+      closeMobileNav();
+      return;
+    }
+    toggleSidebarWidth();
+  }
+
   return (
     <>
+      <AnimatePresence>
+        {!lgUp && mobileNavOpen && (
+          <motion.button
+            key="mobile-sidebar-backdrop"
+            type="button"
+            aria-label="Close navigation"
+            title="Close"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: DURATION.fast, ease: EASE_OUT }}
+            className="fixed inset-0 z-[132] bg-background/48 backdrop-blur-[5px]
+              dark:bg-background/52 lg:hidden"
+            onClick={closeMobileNav}
+          />
+        )}
+      </AnimatePresence>
+
       <motion.aside
+        id="dashboard-sidebar"
         initial={false}
-        animate={{ width: isOpen ? '13rem' : '3.5rem' }}
-        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border/35 bg-muted/50 bg-[image:var(--panel-texture-image)] bg-[length:340px_340px]
-          shadow-[inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
-          dark:border-border/50 dark:bg-[color:var(--panel-texture-bg)] dark:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]"
+        animate={
+          lgUp
+            ? { x: 0, width: isOpen ? '13rem' : '3.5rem' }
+            : { x: mobileNavOpen ? 0 : '-100%', width: '13rem' }
+        }
+        transition={
+          lgUp
+            ? { type: 'spring', stiffness: 380, damping: 32 }
+            : { type: 'spring', stiffness: 400, damping: 34 }
+        }
+        className="fixed inset-y-0 left-0 z-[140] flex h-[100dvh] max-h-[100dvh] w-[min(17rem,calc(100vw-2.75rem))]
+          shrink-0 flex-col overflow-hidden border-r border-border/35 bg-muted/50 bg-[image:var(--panel-texture-image)] bg-[length:340px_340px]
+          shadow-[0_14px_40px_rgb(22_25_37/0.1),inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
+          dark:border-border/50 dark:bg-[color:var(--panel-texture-bg)] dark:shadow-[0_16px_44px_rgb(0_0_0/0.38),inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]
+          lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-auto lg:max-h-none lg:shadow-[inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
+          dark:lg:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]"
       >
-        <motion.button
-          type="button"
-          onClick={toggleSidebarWidth}
-          whileTap={{ scale: 0.96 }}
-          className="m-0.5 flex h-[3.5rem] w-[3.5rem] shrink-0 cursor-pointer items-center justify-center
+        {(lgUp || mobileNavOpen) && (
+          <motion.button
+            type="button"
+            onClick={handleNavHeaderTap}
+            whileTap={{ scale: 0.96 }}
+            className="m-0.5 flex min-h-[44px] min-w-[44px] h-[3.5rem] w-[3.5rem] shrink-0 cursor-pointer items-center justify-center
             rounded-lg transition-colors duration-150 hover:bg-accent/60"
-          aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {isOpen ? (
-              <motion.span
-                key="close"
-                className="flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.25,
-                  filter: 'blur(4px)',
-                  transition: { duration: DURATION.fast, ease: EASE_IN },
-                }}
-                transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
-              >
-                <X size={16} strokeWidth={1.5} />
-              </motion.span>
+            aria-label={
+              lgUp
+                ? isOpen
+                  ? 'Collapse sidebar'
+                  : 'Expand sidebar'
+                : 'Close menu'
+            }
+          >
+            {lgUp ? (
+              <AnimatePresence mode="wait" initial={false}>
+                {isOpen ? (
+                  <motion.span
+                    key="close"
+                    className="flex items-center justify-center"
+                    initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.25,
+                      filter: 'blur(4px)',
+                      transition: { duration: DURATION.fast, ease: EASE_IN },
+                    }}
+                    transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                  >
+                    <X size={16} strokeWidth={1.5} />
+                  </motion.span>
+                ) : (
+                  <motion.span
+                    key="menu"
+                    className="flex items-center justify-center"
+                    initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                    exit={{
+                      opacity: 0,
+                      scale: 0.25,
+                      filter: 'blur(4px)',
+                      transition: { duration: DURATION.fast, ease: EASE_IN },
+                    }}
+                    transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                  >
+                    <Menu size={16} strokeWidth={1.5} />
+                  </motion.span>
+                )}
+              </AnimatePresence>
             ) : (
-              <motion.span
-                key="menu"
-                className="flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
-                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.25,
-                  filter: 'blur(4px)',
-                  transition: { duration: DURATION.fast, ease: EASE_IN },
-                }}
-                transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
-              >
-                <Menu size={16} strokeWidth={1.5} />
-              </motion.span>
+              <span className="flex items-center justify-center">
+                <X size={16} strokeWidth={1.5} />
+              </span>
             )}
-          </AnimatePresence>
-        </motion.button>
+          </motion.button>
+        )}
 
         <AnimatePresence>
-          {isOpen && (
+          {revealNavLinks && (
             <motion.div
               initial="hidden"
               animate="visible"
@@ -458,9 +535,12 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                     >
                       <Link
                         href={item.href}
-                        onClick={() => play('tap')}
+                        onClick={() => {
+                          play('tap');
+                          if (!lgUp) closeMobileNav();
+                        }}
                         className={
-                          'flex items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 py-[7.5px] ' +
+                          'flex min-h-[42px] items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 py-[9px] ' +
                           'text-[11.5px] font-medium transition-[background-color,color] duration-150 ' +
                           (active
                             ? 'bg-[color:color-mix(in_oklch,var(--color-cta)_14%,white)] text-foreground shadow-[inset_0_0_0_1px_rgba(199,154,122,0.28)] dark:text-[#161925] dark:shadow-[inset_0_0_0_1px_rgba(22,25,37,0.08)]'
@@ -497,8 +577,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 exit={itemExit}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
-                onClick={openCreate}
-                className="app-cta-surface mt-2 flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-cta/20
+                onClick={() => {
+                  if (!lgUp) closeMobileNav();
+                  openCreate();
+                }}
+                className="app-cta-surface mt-2 flex h-11 min-h-[44px] w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-cta/20
                   px-4 py-2.5 text-[11.5px] font-medium text-cta-foreground
                   whitespace-nowrap transition-transform duration-150"
               >

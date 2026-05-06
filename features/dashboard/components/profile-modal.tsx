@@ -210,7 +210,7 @@ export default function ProfileModal({
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descId}
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[200] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.2, ease: EASE_IN } }}
@@ -232,7 +232,7 @@ export default function ProfileModal({
           />
 
           <motion.div
-            className="relative z-10 w-full max-w-md"
+            className="relative z-10 my-auto w-full max-w-md sm:my-0"
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: EASE_OUT }}

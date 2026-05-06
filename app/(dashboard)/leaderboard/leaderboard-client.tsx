@@ -191,17 +191,17 @@ export default function LeaderboardClient({
 
   return (
     <>
-      <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-2 sm:px-6 sm:pb-6">
+      <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-hidden px-3 pb-4 pt-2 sm:px-5 sm:pb-5 md:px-6 md:pb-6">
         {/* Outer panel */}
         <div
           className="shadow-float flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.028] dark:ring-white/[0.045]
             dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.26),0_18px_48px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.045)]"
-          style={{ padding: '16px' }}
+          style={{ padding: 'clamp(12px,3vw,16px)' }}
         >
           {/* Inner canvas — brightest tier */}
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             {/* Header */}
-            <div className="flex shrink-0 flex-col gap-3 border-b border-border/50 px-4 pb-3 pt-4">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-border/50 px-3 pb-3 pt-4 sm:px-4">
               <div className="flex items-center gap-2.5">
                 <Trophy
                   size={14}
@@ -213,7 +213,7 @@ export default function LeaderboardClient({
                 </h1>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-2.5">
                 <div className="inline-flex items-center rounded-full border border-border/70 bg-muted/35 p-0.5">
                   <motion.button
                     type="button"
@@ -221,7 +221,7 @@ export default function LeaderboardClient({
                     onClick={() => switchScope('global')}
                     disabled={isPending}
                     className={
-                      'rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
+                      'min-h-[40px] rounded-full px-3 py-1.5 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
                       (scope === 'global'
                         ? 'app-cta-surface text-cta-foreground'
                         : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')
@@ -235,7 +235,7 @@ export default function LeaderboardClient({
                     onClick={() => switchScope('room')}
                     disabled={isPending || rooms.length === 0}
                     className={
-                      'rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
+                      'min-h-[40px] rounded-full px-3 py-1.5 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
                       (scope === 'room'
                         ? 'app-cta-surface text-cta-foreground'
                         : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')
@@ -251,7 +251,7 @@ export default function LeaderboardClient({
                     value={period}
                     onChange={(e) => switchPeriod(e.target.value as Period)}
                     disabled={isPending}
-                    className="appearance-none rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
+                    className="min-h-[40px] appearance-none rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
                       focus:outline-none focus:ring-2 focus:ring-ring/40"
                   >
                     {PERIODS.map(({ value, label }) => (
@@ -273,7 +273,7 @@ export default function LeaderboardClient({
                       value={roomId}
                       onChange={(e) => switchRoom(e.target.value)}
                       disabled={isPending}
-                      className="max-w-[14rem] appearance-none truncate rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
+                      className="max-w-[min(14rem,calc(100vw-10rem))] min-h-[40px] appearance-none truncate rounded-full border border-border/70 bg-background pl-3 pr-8 py-1 text-[11px] font-medium text-foreground
                         focus:outline-none focus:ring-2 focus:ring-ring/40"
                     >
                       {rooms.map((room) => (

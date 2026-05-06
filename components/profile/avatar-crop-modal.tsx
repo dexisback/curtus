@@ -71,7 +71,7 @@ export default function AvatarCropModal({
       {open && imageSrc && (
         <motion.div
           key="avatar-crop"
-          className="fixed inset-0 z-[130] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[130] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -95,7 +95,7 @@ export default function AvatarCropModal({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 6, opacity: 0, scale: 0.985 }}
             transition={SPRING_SNAP}
-            className="shadow-float relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border/40 bg-card/97 ring-1 ring-inset ring-black/[0.035] dark:border-border/50 dark:bg-card/94 dark:ring-white/[0.065]
+            className="shadow-float relative z-10 my-auto max-h-[min(92dvh,calc(100dvh-2.5rem))] w-full max-w-lg overflow-y-auto overflow-x-hidden rounded-2xl border border-border/40 bg-card/97 ring-1 ring-inset ring-black/[0.035] sm:my-0 dark:border-border/50 dark:bg-card/94 dark:ring-white/[0.065]
               dark:shadow-[0_2px_6px_rgb(0_0_0/0.28),0_24px_56px_rgb(0_0_0/0.34),inset_0_1px_0_rgb(255_255_255/0.05)]"
             onClick={(e) => e.stopPropagation()}
           >

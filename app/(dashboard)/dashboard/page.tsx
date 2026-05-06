@@ -14,14 +14,14 @@ async function DashboardHomeContent() {
     <div
       id="focus"
       tabIndex={-1}
-      className="relative flex h-full min-h-0 w-full flex-col gap-6 overflow-hidden px-5 pb-5 pt-10 sm:gap-8 sm:px-6 sm:pb-6 sm:pt-12 md:gap-10 scroll-mt-6 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_92%_72%_at_50%_40%,color-mix(in_oklch,var(--color-muted)_62%,transparent)_0%,transparent_70%)] before:content-['']"
+      className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col gap-4 overflow-x-hidden overflow-y-hidden px-4 pb-4 pt-8 sm:gap-6 sm:px-5 sm:pb-5 sm:pt-10 md:gap-8 md:px-6 md:pb-6 md:pt-12 lg:gap-10 scroll-mt-6 before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_92%_72%_at_50%_40%,color-mix(in_oklch,var(--color-muted)_62%,transparent)_0%,transparent_70%)] before:content-['']"
     >
-      <div className="relative z-10 grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.9fr)_minmax(0,3.1fr)] gap-6 sm:gap-7 md:gap-8">
+      <div className="relative z-10 grid min-h-0 min-w-0 flex-1 grid-cols-1 gap-4 overflow-x-hidden sm:gap-6 md:gap-7 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,3.1fr)] xl:gap-8">
         <Leaderboard boards={boards} currentUserId={session.user.id} />
         <VideoPlayerWrapper />
       </div>
 
-      <div className="relative z-10 h-[25%] min-h-[9.5rem] shrink-0">
+      <div className="relative z-10 min-h-[10rem] shrink-0 max-xl:flex-1 max-xl:basis-auto xl:h-[25%] xl:min-h-[9.5rem] xl:flex-none xl:max-h-[42vh]">
         <TodoComponent
           initialTasks={tasks.map((task) => ({
             id: task.id,
