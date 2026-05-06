@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
-import Cropper, { type Area, type Point } from "react-easy-crop";
-import { X } from "lucide-react";
-import { renderCroppedAvatarDataUrl } from "@/lib/avatar-crop";
-import { DURATION, EASE_OUT_SMOOTH, SPRING_SNAP } from "@/lib/ui-motion";
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import Cropper, { type Area, type Point } from 'react-easy-crop';
+import { X } from 'lucide-react';
+import { renderCroppedAvatarDataUrl } from '@/lib/avatar-crop';
+import { DURATION, EASE_OUT_SMOOTH, SPRING_SNAP } from '@/lib/ui-motion';
 
 type Props = {
   open: boolean;
@@ -19,7 +19,13 @@ type Props = {
 
 export const MAX_AVATAR_SOURCE_BYTES = 15 * 1024 * 1024;
 
-export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onClose, onApply }: Props) {
+export default function AvatarCropModal({
+  open,
+  imageSrc,
+  suggestedFileName,
+  onClose,
+  onApply,
+}: Props) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -45,17 +51,20 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
     setBusy(true);
     setError(null);
     try {
-      const dataUrl = await renderCroppedAvatarDataUrl(imageSrc, croppedAreaPixels);
-      const base = suggestedFileName?.replace(/\.[^.]+$/, "") || "avatar";
+      const dataUrl = await renderCroppedAvatarDataUrl(
+        imageSrc,
+        croppedAreaPixels,
+      );
+      const base = suggestedFileName?.replace(/\.[^.]+$/, '') || 'avatar';
       onApply(dataUrl, `${base}.jpg`);
     } catch {
-      setError("Could not process this image. Try another file.");
+      setError('Could not process this image. Try another file.');
     } finally {
       setBusy(false);
     }
   }
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === 'undefined') return null;
 
   return createPortal(
     <AnimatePresence>
@@ -86,12 +95,15 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 6, opacity: 0, scale: 0.985 }}
             transition={SPRING_SNAP}
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-[0_12px_48px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
-              dark:bg-card/90 dark:shadow-[0_12px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
+            className="shadow-float relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border/40 bg-card/97 ring-1 ring-inset ring-black/[0.035] dark:border-border/50 dark:bg-card/94 dark:ring-white/[0.065]
+              dark:shadow-[0_2px_6px_rgb(0_0_0/0.28),0_24px_56px_rgb(0_0_0/0.34),inset_0_1px_0_rgb(255_255_255/0.05)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3 sm:px-5">
-              <h2 id="avatar-crop-title" className="text-[14px] font-semibold tracking-tight text-foreground">
+              <h2
+                id="avatar-crop-title"
+                className="text-[14px] font-semibold tracking-tight text-foreground"
+              >
                 Crop profile photo
               </h2>
               <button
@@ -108,7 +120,8 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
 
             <div className="px-4 py-3 sm:px-5">
               <p className="text-[11px] leading-relaxed text-muted-foreground">
-                Drag to reposition. Use the slider to zoom. The preview is a square crop.
+                Drag to reposition. Use the slider to zoom. The preview is a
+                square crop.
               </p>
               <div className="app-cursor-precision relative mt-3 h-[min(52vh,22rem)] w-full overflow-hidden rounded-xl bg-neutral-950">
                 <Cropper
@@ -139,7 +152,9 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
                   aria-label="Zoom"
                 />
               </div>
-              {error && <p className="mt-2 text-[11px] text-destructive">{error}</p>}
+              {error && (
+                <p className="mt-2 text-[11px] text-destructive">{error}</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-2 border-t border-border/50 bg-muted/10 px-4 py-3 sm:px-5">
@@ -156,9 +171,9 @@ export default function AvatarCropModal({ open, imageSrc, suggestedFileName, onC
                 type="button"
                 disabled={busy || !croppedAreaPixels}
                 onClick={() => void handleApply()}
-                className="rounded-lg bg-cta px-3 py-2 text-[11px] font-medium text-cta-foreground shadow-[0_1px_2px_rgba(17,24,39,0.08)] transition-opacity hover:opacity-95 disabled:opacity-50"
+                className="app-cta-surface rounded-lg px-3 py-2 text-[11px] font-medium text-cta-foreground disabled:opacity-50"
               >
-                {busy ? "Saving…" : "Use photo"}
+                {busy ? 'Saving…' : 'Use photo'}
               </button>
             </div>
           </motion.div>

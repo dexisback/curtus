@@ -50,70 +50,105 @@
 }
 
 :root {
-  --background: oklch(0.97 0.006 75);
-  --foreground: oklch(0.13 0 0);
-  --card: oklch(0.955 0.005 75);
-  --card-foreground: oklch(0.13 0 0);
-  --popover: oklch(0.965 0.005 75);
-  --popover-foreground: oklch(0.13 0 0);
-  --primary: oklch(0.17 0 0);
-  --primary-foreground: oklch(0.97 0.006 75);
-  --secondary: oklch(0.935 0.005 75);
-  --secondary-foreground: oklch(0.17 0 0);
-  --muted: oklch(0.935 0.005 75);
-  --muted-foreground: oklch(0.50 0 0);
-  --accent: oklch(0.935 0.005 75);
-  --accent-foreground: oklch(0.17 0 0);
+  /* L0 — app canvas (~#F6F4F0): darker than panels for clearer falloff */
+  --background: oklch(0.962 0.008 78);
+  --foreground: oklch(0.205 0.0085 78);
+  /* L2 — brightest inset content (~#FDFCFA) */
+  --card: oklch(0.997 0.0032 78);
+  --card-foreground: oklch(0.205 0.0085 78);
+  --popover: oklch(0.994 0.0035 78);
+  --popover-foreground: oklch(0.205 0.0085 78);
+  --primary: oklch(0.215 0.01 78);
+  --primary-foreground: oklch(0.982 0.005 78);
+  /* L1 — panels between canvas and cards */
+  --secondary: oklch(0.978 0.0062 78);
+  --secondary-foreground: oklch(0.205 0.0085 78);
+  --muted: oklch(0.977 0.0066 78);
+  --muted-foreground: oklch(0.485 0.012 75);
+  --accent: oklch(0.981 0.0058 78);
+  --accent-foreground: oklch(0.205 0.0085 78);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.89 0.006 75);
-  --input: oklch(0.89 0.006 75);
-  --ring: oklch(0.65 0 0);
-  --cta: oklch(0.58 0.11 45);
-  --cta-foreground: oklch(0.98 0.005 75);
+  --border: oklch(0.898 0.008 78);
+  --input: oklch(0.904 0.008 78);
+  --ring: oklch(0.62 0.04 55);
+  /* Warm clay accent — restrained; tiny desat vs prior for quieter CTAs */
+  --cta: oklch(0.633 0.068 54);
+  --cta-foreground: oklch(0.986 0.014 82);
   --radius: 0.625rem;
-  --sidebar: oklch(0.96 0.005 75);
-  --sidebar-foreground: oklch(0.13 0 0);
-  --sidebar-primary: oklch(0.17 0 0);
-  --sidebar-primary-foreground: oklch(0.97 0.006 75);
-  --sidebar-accent: oklch(0.935 0.005 75);
-  --sidebar-accent-foreground: oklch(0.17 0 0);
-  --sidebar-border: oklch(0.89 0.006 75);
-  --sidebar-ring: oklch(0.65 0 0);
-  --panel-texture-bg: oklch(0.945 0.005 75);
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  --sidebar: oklch(0.973 0.0068 78);
+  --sidebar-foreground: oklch(0.205 0.0085 78);
+  --sidebar-primary: oklch(0.215 0.01 78);
+  --sidebar-primary-foreground: oklch(0.982 0.005 78);
+  --sidebar-accent: oklch(0.979 0.006 78);
+  --sidebar-accent-foreground: oklch(0.205 0.0085 78);
+  --sidebar-border: oklch(0.904 0.008 78);
+  --sidebar-ring: oklch(0.62 0.04 55);
+  /* L1 — large chrome panels (rooms/dashboard shells) */
+  --panel-texture-bg: oklch(0.979 0.0068 78);
+  /* Paper grain only — keep ≤ 0.04 for subconscious read */
+  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.032'/%3E%3C/svg%3E");
+  /* Softer lift — diffused, not template-y */
+  --shadow-ambient-sm: 0 1px 2px rgb(22 25 37 / 0.034),
+    0 16px 42px rgb(112 82 62 / 0.048);
+  --shadow-ambient-md: 0 2px 5px rgb(22 25 37 / 0.032),
+    0 26px 58px rgb(118 88 66 / 0.058);
+  --shadow-float: 0 1px 2px rgb(22 25 37 / 0.038),
+    0 18px 48px rgb(108 82 62 / 0.062),
+    inset 0 1px 0 rgb(255 255 255 / 0.36);
+  --app-hatch: repeating-linear-gradient(
+    -48deg,
+    rgb(22 25 37 / 0.016) 0px,
+    rgb(22 25 37 / 0.016) 1px,
+    transparent 1px,
+    transparent 11px
+  );
 }
 
 .dark {
-  --background: oklch(0.16 0.006 75);
-  --foreground: oklch(0.97 0.005 75);
-  --card: oklch(0.2 0.006 75);
-  --card-foreground: oklch(0.97 0.005 75);
-  --popover: oklch(0.22 0.006 75);
-  --popover-foreground: oklch(0.97 0.005 75);
-  --primary: oklch(0.97 0.005 75);
-  --primary-foreground: oklch(0.16 0.006 75);
-  --secondary: oklch(0.25 0.006 75);
-  --secondary-foreground: oklch(0.97 0.005 75);
-  --muted: oklch(0.25 0.006 75);
-  --muted-foreground: oklch(0.65 0.01 75);
-  --accent: oklch(0.28 0.008 75);
-  --accent-foreground: oklch(0.97 0.005 75);
+  /* Deep neutral canvas (~#161925 family) */
+  --background: oklch(0.21 0.022 265);
+  --foreground: oklch(0.962 0.006 78);
+  --card: oklch(0.238 0.018 268);
+  --card-foreground: oklch(0.962 0.006 78);
+  --popover: oklch(0.255 0.019 268);
+  --popover-foreground: oklch(0.962 0.006 78);
+  --primary: oklch(0.962 0.006 78);
+  --primary-foreground: oklch(0.185 0.016 265);
+  --secondary: oklch(0.27 0.018 268);
+  --secondary-foreground: oklch(0.962 0.006 78);
+  --muted: oklch(0.268 0.017 268);
+  --muted-foreground: oklch(0.68 0.014 78);
+  --accent: oklch(0.3 0.02 268);
+  --accent-foreground: oklch(0.962 0.006 78);
   --destructive: oklch(0.5 0.2 25);
-  --border: oklch(0.32 0.008 75);
-  --input: oklch(0.32 0.008 75);
-  --ring: oklch(0.55 0.02 75);
-  --cta: oklch(0.62 0.12 45);
-  --cta-foreground: oklch(0.98 0.005 75);
-  --sidebar: oklch(0.19 0.006 75);
-  --sidebar-foreground: oklch(0.97 0.005 75);
-  --sidebar-primary: oklch(0.97 0.005 75);
-  --sidebar-primary-foreground: oklch(0.16 0.006 75);
-  --sidebar-accent: oklch(0.25 0.006 75);
-  --sidebar-accent-foreground: oklch(0.97 0.005 75);
-  --sidebar-border: oklch(0.32 0.008 75);
-  --sidebar-ring: oklch(0.55 0.02 75);
-  --panel-texture-bg: oklch(0.24 0.008 75);
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  --border: oklch(0.35 0.02 268);
+  --input: oklch(0.35 0.02 268);
+  --ring: oklch(0.58 0.05 54);
+  --cta: oklch(0.652 0.072 54);
+  --cta-foreground: oklch(0.98 0.012 82);
+  --sidebar: oklch(0.205 0.017 265);
+  --sidebar-foreground: oklch(0.962 0.006 78);
+  --sidebar-primary: oklch(0.962 0.006 78);
+  --sidebar-primary-foreground: oklch(0.185 0.016 265);
+  --sidebar-accent: oklch(0.28 0.02 268);
+  --sidebar-accent-foreground: oklch(0.962 0.006 78);
+  --sidebar-border: oklch(0.35 0.02 268);
+  --sidebar-ring: oklch(0.58 0.05 54);
+  --panel-texture-bg: oklch(0.248 0.019 268);
+  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  --shadow-ambient-sm: 0 1px 3px rgb(0 0 0 / 0.2),
+    0 16px 44px rgb(0 0 0 / 0.2);
+  --shadow-ambient-md: 0 2px 6px rgb(0 0 0 / 0.24),
+    0 26px 60px rgb(0 0 0 / 0.26);
+  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.24),
+    inset 0 1px 0 rgb(255 255 255 / 0.045);
+  --app-hatch: repeating-linear-gradient(
+    -48deg,
+    rgb(255 255 255 / 0.018) 0px,
+    rgb(255 255 255 / 0.018) 1px,
+    transparent 1px,
+    transparent 11px
+  );
 }
 
 @keyframes app-shimmer-sweep {
@@ -126,6 +161,88 @@
 }
 
 @layer utilities {
+  .shadow-ambient-sm {
+    box-shadow: var(--shadow-ambient-sm);
+  }
+  .shadow-ambient-md {
+    box-shadow: var(--shadow-ambient-md);
+  }
+  .shadow-float {
+    box-shadow: var(--shadow-float);
+  }
+  /**
+   * Primary CTA — soft ceramic: tonal gradient + warm inner highlight.
+   * Pair with text-cta-foreground; omit flat bg-cta on the same element.
+   */
+  .app-cta-surface {
+    color: var(--cta-foreground);
+    background-color: color-mix(in oklch, var(--cta) 90%, white 10%);
+    background-image: none;
+    box-shadow: 0 1px 2px rgb(22 25 37 / 0.05),
+      0 8px 22px color-mix(in oklch, var(--cta) 11%, transparent),
+      inset 0 1px 0 rgb(255 255 255 / 0.16);
+    transition: box-shadow 0.22s ease, background-color 0.22s ease,
+      opacity 0.2s ease;
+  }
+  .app-cta-surface:hover:not(:disabled) {
+    background-color: color-mix(in oklch, var(--cta) 86%, white 14%);
+    box-shadow: 0 1px 3px rgb(22 25 37 / 0.045),
+      0 12px 32px color-mix(in oklch, var(--cta) 13%, transparent),
+      inset 0 1px 0 rgb(255 255 255 / 0.22);
+  }
+  .app-cta-surface:active:not(:disabled) {
+    background-color: color-mix(in oklch, var(--cta) 92%, black 8%);
+    box-shadow: 0 1px 2px rgb(22 25 37 / 0.04),
+      0 6px 16px color-mix(in oklch, var(--cta) 8%, transparent),
+      inset 0 1px 0 rgb(255 255 255 / 0.12);
+  }
+  /**
+   * Intentional empty / low-data regions — faint radial bloom + hatch,
+   * compositional “breathing room” without illustrations.
+   */
+  .app-empty-atmosphere {
+    position: relative;
+    isolation: isolate;
+  }
+  .app-empty-atmosphere::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background-image: radial-gradient(
+        ellipse 78% 60% at 50% 48%,
+        color-mix(in oklch, var(--cta) 10%, transparent) 0%,
+        transparent 64%
+      ),
+      var(--app-hatch),
+      var(--panel-texture-image);
+    background-size: auto, auto, 320px 320px;
+    opacity: 0.55;
+  }
+  /** Stronger layering for leaderboard-sized voids — still subliminal. */
+  .app-empty-atmosphere--dense::before {
+    background-image: radial-gradient(
+        ellipse 64% 50% at 50% 46%,
+        color-mix(in oklch, var(--cta) 11%, transparent) 0%,
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 120% 90% at 50% 50%,
+        transparent 52%,
+        color-mix(in oklch, var(--foreground) 2.2%, transparent) 100%
+      ),
+      var(--app-hatch),
+      var(--panel-texture-image);
+    background-size: auto, auto, auto, 300px 300px;
+    opacity: 0.68;
+  }
+  .app-empty-atmosphere > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .app-shimmer-block {
     position: relative;
     overflow: hidden;
@@ -175,7 +292,11 @@
     @apply h-full w-full;
   }
   body {
-    @apply h-full w-full bg-background text-foreground font-sans;
+    @apply h-full w-full text-foreground font-sans;
+    background-color: var(--background);
+    background-image: var(--app-hatch), var(--panel-texture-image);
+    background-size: auto, 360px 360px;
+    line-height: 1.52;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }

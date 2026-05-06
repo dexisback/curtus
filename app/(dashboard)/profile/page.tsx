@@ -266,7 +266,7 @@ export default async function ProfilePage() {
 
         {/* ── User stats (single surface) ── */}
         <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
           <p className="mb-4 text-[12px] font-semibold tracking-tight text-foreground">
@@ -287,7 +287,7 @@ export default async function ProfilePage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.2fr_1fr]">
           {/* ── Calendar-style heatmap ── */}
           <div
-            className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
+            className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
               shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
           >
             <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
@@ -363,7 +363,7 @@ export default async function ProfilePage() {
               initialFriends={initialFriends}
               fallbackNames={collaborators}
             />
-            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
+            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
                 <Video size={13} />
                 Rooms
@@ -378,7 +378,10 @@ export default async function ProfilePage() {
                       <span className="text-[11.5px] text-foreground">
                         {roomName}
                       </span>
-                      <button className="rounded-[6px] bg-cta px-2 py-1 text-[10px] font-medium text-cta-foreground">
+                      <button
+                        type="button"
+                        className="app-cta-surface rounded-[6px] px-2 py-1 text-[10px] font-medium text-cta-foreground"
+                      >
                         Manage
                       </button>
                     </div>
@@ -395,7 +398,7 @@ export default async function ProfilePage() {
 
         {/* ── Recent sessions ── */}
         <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
             shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
         >
           <p className="mb-4 text-[12px] font-semibold text-foreground">

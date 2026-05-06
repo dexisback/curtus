@@ -1,19 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import ThemeToggle from "@/components/theme-toggle";
-import { Bell, Pencil, Settings, User } from "lucide-react";
-import { useRouter } from "next/navigation";
-import type { SerializedUserSettings } from "@/lib/user-settings";
-import AvatarCropModal, { MAX_AVATAR_SOURCE_BYTES } from "@/components/profile/avatar-crop-modal";
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import ThemeToggle from '@/components/theme-toggle';
+import { Bell, Pencil, Settings, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import type { SerializedUserSettings } from '@/lib/user-settings';
+import AvatarCropModal, {
+  MAX_AVATAR_SOURCE_BYTES,
+} from '@/components/profile/avatar-crop-modal';
 
 function SectionHeader({
   icon: Icon,
   title,
   description,
 }: {
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  icon: React.ComponentType<{
+    size?: number;
+    strokeWidth?: number;
+    className?: string;
+  }>;
   title: string;
   description?: string;
 }) {
@@ -24,7 +30,11 @@ function SectionHeader({
       </div>
       <div>
         <p className="text-[13px] font-semibold text-foreground">{title}</p>
-        {description && <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -43,7 +53,11 @@ function SettingRow({
     <div className="flex items-center justify-between gap-4 py-3">
       <div>
         <p className="text-[12.5px] font-medium text-foreground">{label}</p>
-        {description && <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {description}
+          </p>
+        )}
       </div>
       <div className="shrink-0">{control}</div>
     </div>
@@ -67,12 +81,14 @@ function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className="relative h-5 w-9 rounded-full transition-colors duration-200 disabled:opacity-60"
-      style={{ background: checked ? "var(--color-cta)" : "oklch(0.82 0.005 75)" }}
+      style={{
+        background: checked ? 'var(--color-cta)' : 'oklch(0.82 0.005 75)',
+      }}
     >
       <motion.span
         className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm"
-        animate={{ left: checked ? "calc(100% - 1.125rem)" : "0.125rem" }}
-        transition={{ type: "spring", stiffness: 420, damping: 28 }}
+        animate={{ left: checked ? 'calc(100% - 1.125rem)' : '0.125rem' }}
+        transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       />
     </button>
   );
@@ -92,67 +108,94 @@ export default function SettingsClient({
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
-  const [image, setImage] = useState(initialImage ?? "");
+  const [image, setImage] = useState(initialImage ?? '');
   const [saveBusy, setSaveBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
-  const [pickedFileName, setPickedFileName] = useState("");
+  const [pickedFileName, setPickedFileName] = useState('');
   const [editingAccount, setEditingAccount] = useState(false);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [pendingCropName, setPendingCropName] = useState("");
+  const [pendingCropName, setPendingCropName] = useState('');
   const cropBlobUrlRef = useRef<string | null>(null);
 
-  const [compactSidebar, setCompactSidebar] = useState(initialSettings.compactSidebar);
-  const [leaderboardUpdates, setLeaderboardUpdates] = useState(initialSettings.leaderboardUpdates);
-  const [sessionReminders, setSessionReminders] = useState(initialSettings.sessionReminders);
-  const [friendActivity, setFriendActivity] = useState(initialSettings.friendActivity);
+  const [compactSidebar, setCompactSidebar] = useState(
+    initialSettings.compactSidebar,
+  );
+  const [leaderboardUpdates, setLeaderboardUpdates] = useState(
+    initialSettings.leaderboardUpdates,
+  );
+  const [sessionReminders, setSessionReminders] = useState(
+    initialSettings.sessionReminders,
+  );
+  const [friendActivity, setFriendActivity] = useState(
+    initialSettings.friendActivity,
+  );
   const [roomInvites, setRoomInvites] = useState(initialSettings.roomInvites);
   const [showMotionMessage, setShowMotionMessage] = useState(false);
 
   function revokeCropBlob() {
     const u = cropBlobUrlRef.current;
-    if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+    if (u?.startsWith('blob:')) URL.revokeObjectURL(u);
     cropBlobUrlRef.current = null;
   }
 
   useEffect(() => {
     return () => {
       const u = cropBlobUrlRef.current;
-      if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+      if (u?.startsWith('blob:')) URL.revokeObjectURL(u);
       cropBlobUrlRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     try {
-      localStorage.setItem("swm:compact-sidebar", initialSettings.compactSidebar ? "1" : "0");
-      localStorage.setItem("swm:leaderboard-updates", initialSettings.leaderboardUpdates ? "1" : "0");
-      localStorage.setItem("swm:session-reminders", initialSettings.sessionReminders ? "1" : "0");
-      localStorage.setItem("swm:friend-activity", initialSettings.friendActivity ? "1" : "0");
-      localStorage.setItem("swm:room-invites", initialSettings.roomInvites ? "1" : "0");
+      localStorage.setItem(
+        'swm:compact-sidebar',
+        initialSettings.compactSidebar ? '1' : '0',
+      );
+      localStorage.setItem(
+        'swm:leaderboard-updates',
+        initialSettings.leaderboardUpdates ? '1' : '0',
+      );
+      localStorage.setItem(
+        'swm:session-reminders',
+        initialSettings.sessionReminders ? '1' : '0',
+      );
+      localStorage.setItem(
+        'swm:friend-activity',
+        initialSettings.friendActivity ? '1' : '0',
+      );
+      localStorage.setItem(
+        'swm:room-invites',
+        initialSettings.roomInvites ? '1' : '0',
+      );
     } catch {}
   }, [initialSettings]);
 
-  function persistFlag(key: string, settingKey: keyof SerializedUserSettings, next: boolean) {
+  function persistFlag(
+    key: string,
+    settingKey: keyof SerializedUserSettings,
+    next: boolean,
+  ) {
     try {
-      localStorage.setItem(key, next ? "1" : "0");
+      localStorage.setItem(key, next ? '1' : '0');
     } catch {}
-    void fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    void fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [settingKey]: next }),
     }).catch(() => {});
   }
 
   async function onAvatarPicked(file: File | null) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setSaveError("Please choose an image file.");
+    if (!file.type.startsWith('image/')) {
+      setSaveError('Please choose an image file.');
       return;
     }
     if (file.size > MAX_AVATAR_SOURCE_BYTES) {
-      setSaveError("Image is too large. Please use a file under 15MB.");
+      setSaveError('Image is too large. Please use a file under 15MB.');
       return;
     }
     revokeCropBlob();
@@ -184,9 +227,9 @@ export default function SettingsClient({
     setSaveError(null);
     setSaveSuccess(null);
     try {
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
@@ -195,13 +238,13 @@ export default function SettingsClient({
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setSaveError(data.error ?? "Failed to save account settings.");
+        setSaveError(data.error ?? 'Failed to save account settings.');
         return;
       }
-      setSaveSuccess("Saved.");
+      setSaveSuccess('Saved.');
       router.refresh();
     } catch {
-      setSaveError("Something went wrong while saving.");
+      setSaveError('Something went wrong while saving.');
     } finally {
       setSaveBusy(false);
     }
@@ -211,20 +254,36 @@ export default function SettingsClient({
     <div className="flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-2 sm:px-6">
       <div className="mx-auto w-full max-w-2xl space-y-5 pt-2">
         <div className="flex items-center gap-2 pt-1">
-          <Settings size={14} strokeWidth={1.6} className="text-muted-foreground opacity-70" />
-          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">Settings</h1>
+          <Settings
+            size={14}
+            strokeWidth={1.6}
+            className="text-muted-foreground opacity-70"
+          />
+          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
+            Settings
+          </h1>
         </div>
 
-        <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]">
+        <div
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
+          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
           <div className="flex items-start justify-between gap-3 border-b border-border/50 pb-4">
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/50">
-                <User size={14} strokeWidth={1.6} className="text-muted-foreground" />
+                <User
+                  size={14}
+                  strokeWidth={1.6}
+                  className="text-muted-foreground"
+                />
               </div>
               <div>
-                <p className="text-[13px] font-semibold text-foreground">Account</p>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">Manage your profile and account details</p>
+                <p className="text-[13px] font-semibold text-foreground">
+                  Account
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  Manage your profile and account details
+                </p>
               </div>
             </div>
             <motion.button
@@ -232,7 +291,9 @@ export default function SettingsClient({
               whileTap={{ scale: 0.96 }}
               onClick={() => setEditingAccount((v) => !v)}
               className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-border/70 bg-background text-muted-foreground transition-colors hover:text-foreground"
-              aria-label={editingAccount ? "Close account editing" : "Edit account"}
+              aria-label={
+                editingAccount ? 'Close account editing' : 'Edit account'
+              }
             >
               <Pencil size={14} />
             </motion.button>
@@ -242,10 +303,10 @@ export default function SettingsClient({
             {editingAccount ? (
               <motion.div
                 key="account-edit"
-                initial={{ opacity: 0, x: 28, filter: "blur(2px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, x: -14, filter: "blur(2px)" }}
-                transition={{ type: "spring", duration: 0.28, bounce: 0 }}
+                initial={{ opacity: 0, x: 28, filter: 'blur(2px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: -14, filter: 'blur(2px)' }}
+                transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
                 className="will-change-[transform,opacity,filter]"
               >
                 <div className="divide-y divide-border/40">
@@ -284,18 +345,25 @@ export default function SettingsClient({
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => void onAvatarPicked(e.target.files?.[0] ?? null)}
+                            onChange={(e) =>
+                              void onAvatarPicked(e.target.files?.[0] ?? null)
+                            }
                           />
                         </label>
                         <span className="max-w-24 truncate text-[10px] text-muted-foreground">
-                          {pickedFileName || (image ? "Selected" : "No file")}
+                          {pickedFileName || (image ? 'Selected' : 'No file')}
                         </span>
                       </div>
                     }
                   />
                 </div>
                 {(saveError || saveSuccess) && (
-                  <p className={"mt-3 text-[11px] " + (saveError ? "text-destructive" : "text-muted-foreground")}>
+                  <p
+                    className={
+                      'mt-3 text-[11px] ' +
+                      (saveError ? 'text-destructive' : 'text-muted-foreground')
+                    }
+                  >
                     {saveError ?? saveSuccess}
                   </p>
                 )}
@@ -305,36 +373,46 @@ export default function SettingsClient({
                     whileTap={{ scale: 0.96 }}
                     disabled={saveBusy || !name.trim() || !email.trim()}
                     onClick={() => void saveAccount()}
-                    className="rounded-[6px] bg-cta px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
+                    className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
                   >
-                    {saveBusy ? "Saving..." : "Save account"}
+                    {saveBusy ? 'Saving...' : 'Save account'}
                   </motion.button>
                 </div>
               </motion.div>
             ) : (
               <motion.div
                 key="account-read"
-                initial={{ opacity: 0, x: 28, filter: "blur(2px)" }}
-                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-                exit={{ opacity: 0, x: -14, filter: "blur(2px)" }}
-                transition={{ type: "spring", duration: 0.28, bounce: 0 }}
+                initial={{ opacity: 0, x: 28, filter: 'blur(2px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: -14, filter: 'blur(2px)' }}
+                transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
                 className="divide-y divide-border/40 will-change-[transform,opacity,filter]"
               >
                 <SettingRow
                   label="Display name"
                   description="How your name appears to other users"
-                  control={<span className="text-[12px] text-foreground/90">{name || "-"}</span>}
+                  control={
+                    <span className="text-[12px] text-foreground/90">
+                      {name || '-'}
+                    </span>
+                  }
                 />
                 <SettingRow
                   label="Email address"
                   description="Your login email"
-                  control={<span className="text-[12px] text-foreground/90">{email || "-"}</span>}
+                  control={
+                    <span className="text-[12px] text-foreground/90">
+                      {email || '-'}
+                    </span>
+                  }
                 />
                 <SettingRow
                   label="Avatar"
                   description="Upload a profile picture from your computer"
                   control={
-                    <span className="text-[11px] text-muted-foreground">{image ? "Configured" : "No avatar"}</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {image ? 'Configured' : 'No avatar'}
+                    </span>
                   }
                 />
               </motion.div>
@@ -342,8 +420,10 @@ export default function SettingsClient({
           </AnimatePresence>
         </div>
 
-        <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]">
+        <div
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
+          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
           <SectionHeader
             icon={Settings}
             title="Appearance"
@@ -353,7 +433,9 @@ export default function SettingsClient({
             <SettingRow
               label="Theme"
               description="Toggle between light and dark mode"
-              control={<ThemeToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />}
+              control={
+                <ThemeToggle className="border-0 bg-transparent shadow-none [box-shadow:none] hover:bg-muted/50" />
+              }
             />
             <SettingRow
               label="Compact sidebar"
@@ -363,8 +445,10 @@ export default function SettingsClient({
                   checked={compactSidebar}
                   onChange={(next) => {
                     setCompactSidebar(next);
-                    persistFlag("swm:compact-sidebar", "compactSidebar", next);
-                    window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
+                    persistFlag('swm:compact-sidebar', 'compactSidebar', next);
+                    window.dispatchEvent(
+                      new CustomEvent('app:compact-sidebar-changed'),
+                    );
                   }}
                 />
               }
@@ -390,8 +474,10 @@ export default function SettingsClient({
           </div>
         </div>
 
-        <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-5
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]">
+        <div
+          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-5
+          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
+        >
           <SectionHeader
             icon={Bell}
             title="Notifications"
@@ -401,34 +487,62 @@ export default function SettingsClient({
             <SettingRow
               label="Session reminders"
               description="Get reminded to start your daily session"
-              control={<Toggle checked={sessionReminders} onChange={(next) => {
-                setSessionReminders(next);
-                persistFlag("swm:session-reminders", "sessionReminders", next);
-              }} />}
+              control={
+                <Toggle
+                  checked={sessionReminders}
+                  onChange={(next) => {
+                    setSessionReminders(next);
+                    persistFlag(
+                      'swm:session-reminders',
+                      'sessionReminders',
+                      next,
+                    );
+                  }}
+                />
+              }
             />
             <SettingRow
               label="Friend activity"
               description="When friends start or finish a session"
-              control={<Toggle checked={friendActivity} onChange={(next) => {
-                setFriendActivity(next);
-                persistFlag("swm:friend-activity", "friendActivity", next);
-              }} />}
+              control={
+                <Toggle
+                  checked={friendActivity}
+                  onChange={(next) => {
+                    setFriendActivity(next);
+                    persistFlag('swm:friend-activity', 'friendActivity', next);
+                  }}
+                />
+              }
             />
             <SettingRow
               label="Room invites"
               description="Pings when you're invited to a room"
-              control={<Toggle checked={roomInvites} onChange={(next) => {
-                setRoomInvites(next);
-                persistFlag("swm:room-invites", "roomInvites", next);
-              }} />}
+              control={
+                <Toggle
+                  checked={roomInvites}
+                  onChange={(next) => {
+                    setRoomInvites(next);
+                    persistFlag('swm:room-invites', 'roomInvites', next);
+                  }}
+                />
+              }
             />
             <SettingRow
               label="Leaderboard updates"
               description="Weekly digest of your rank changes"
-              control={<Toggle checked={leaderboardUpdates} onChange={(next) => {
-                setLeaderboardUpdates(next);
-                persistFlag("swm:leaderboard-updates", "leaderboardUpdates", next);
-              }} />}
+              control={
+                <Toggle
+                  checked={leaderboardUpdates}
+                  onChange={(next) => {
+                    setLeaderboardUpdates(next);
+                    persistFlag(
+                      'swm:leaderboard-updates',
+                      'leaderboardUpdates',
+                      next,
+                    );
+                  }}
+                />
+              }
             />
           </div>
         </div>

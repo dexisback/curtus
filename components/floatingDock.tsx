@@ -97,11 +97,10 @@ function DockIcon({
       type="button"
       style={{ width: size, height: size, y }}
       whileTap={{ scale: 0.96 }}
-      className="group relative flex items-center justify-center rounded-2xl border border-border/70
-        bg-card/88 text-foreground/75 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_7px_16px_rgba(17,24,39,0.08),inset_0_1px_0_rgba(255,255,255,0.45)]
-        backdrop-blur-md transition-[color,background-color] duration-200 hover:text-foreground
-        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60
-        dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_7px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]"
+      className="group relative flex items-center justify-center rounded-2xl border border-border/60 bg-card/92 text-foreground/75
+        shadow-[var(--shadow-ambient-sm),inset_0_1px_0_rgb(255_255_255/0.42)] backdrop-blur-md transition-[color,background-color,box-shadow] duration-200
+        hover:text-foreground hover:shadow-[var(--shadow-ambient-md),inset_0_1px_0_rgb(255_255_255/0.48)] focus-visible:outline focus-visible:outline-2
+        focus-visible:outline-offset-2 focus-visible:outline-ring/60 dark:shadow-[0_1px_3px_rgb(0_0_0/0.24),0_12px_30px_rgb(0_0_0/0.22),inset_0_1px_0_rgb(255_255_255/0.05)]"
       aria-label={item.label}
       onClick={() => onAction(item)}
     >
@@ -174,12 +173,10 @@ function StudyTimerDockControl() {
           play('tap');
           void toggle();
         }}
-        className="group relative flex shrink-0 items-center justify-center rounded-2xl border border-border/70
-          bg-card/88 text-foreground/85 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_7px_16px_rgba(17,24,39,0.08),inset_0_1px_0_rgba(255,255,255,0.45)]
-          backdrop-blur-md transition-[color,background-color,opacity] duration-200 hover:text-foreground
-          focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60
-          disabled:pointer-events-none disabled:opacity-45
-          dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_7px_16px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.06)]"
+        className="group relative flex shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-card/92 text-foreground/85
+          shadow-[var(--shadow-ambient-sm),inset_0_1px_0_rgb(255_255_255/0.42)] backdrop-blur-md transition-[color,background-color,opacity,box-shadow] duration-200
+          hover:text-foreground hover:shadow-[var(--shadow-ambient-md),inset_0_1px_0_rgb(255_255_255/0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
+          focus-visible:outline-ring/60 disabled:pointer-events-none disabled:opacity-45 dark:shadow-[0_1px_3px_rgb(0_0_0/0.24),0_12px_30px_rgb(0_0_0/0.22),inset_0_1px_0_rgb(255_255_255/0.05)]"
       >
         <span
           className="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md border border-border/60
@@ -255,9 +252,8 @@ export default function FloatingDock() {
       className="pointer-events-auto"
     >
       <div
-        className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex h-[72px] items-end gap-2 rounded-3xl border border-border/60 px-3 pb-2.5 pt-2
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_10px_24px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.5)]
-          dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_10px_24px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.04)]"
+        className="shadow-float flex h-[72px] items-end gap-2 rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-3 pb-2.5 pt-2 ring-1 ring-inset ring-black/[0.035]
+          dark:border-border/50 dark:shadow-[0_2px_4px_rgb(0_0_0/0.24),0_18px_44px_rgb(0_0_0/0.28),inset_0_1px_0_rgb(255_255_255/0.045)] dark:ring-white/[0.05]"
       >
         <DockWithTheme mouseX={mouseX} />
       </div>

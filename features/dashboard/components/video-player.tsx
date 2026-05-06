@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useRef, useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Play, Pause } from "lucide-react";
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Play, Pause } from 'lucide-react';
 import {
   PANEL_SHADOW,
   OUTER_RADIUS,
@@ -11,8 +11,8 @@ import {
   SCREW_SIZE,
   SCREW_INSET,
   Screw,
-} from "./panel-primitives";
-import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
+} from './panel-primitives';
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
 
 export default function VideoPlayer() {
   const screwInset = SCREW_INSET;
@@ -39,7 +39,7 @@ export default function VideoPlayer() {
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     setProgress(
-      (videoRef.current.currentTime / videoRef.current.duration) * 100
+      (videoRef.current.currentTime / videoRef.current.duration) * 100,
     );
   };
 
@@ -79,7 +79,7 @@ export default function VideoPlayer() {
     >
       <motion.div
         className="app-cursor-drag relative flex h-[100%] w-[min(100%,90%)] min-h-0 min-w-0 max-h-full shrink-0 flex-col
-          border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
+          border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.035]"
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
@@ -114,7 +114,7 @@ export default function VideoPlayer() {
         />
 
         <div
-          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-900"
+          className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-[#161925]"
           style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
           {videoSrc ? (
@@ -161,7 +161,7 @@ export default function VideoPlayer() {
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.12, ease: "easeOut" }}
+                        transition={{ duration: 0.12, ease: 'easeOut' }}
                       >
                         <Pause size={13} className="text-white" />
                       </motion.div>
@@ -171,7 +171,7 @@ export default function VideoPlayer() {
                         initial={{ opacity: 0, scale: 0.85 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.85 }}
-                        transition={{ duration: 0.12, ease: "easeOut" }}
+                        transition={{ duration: 0.12, ease: 'easeOut' }}
                       >
                         <Play size={13} className="text-white" />
                       </motion.div>

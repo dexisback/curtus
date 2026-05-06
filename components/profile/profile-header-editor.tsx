@@ -1,10 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { Pencil, X } from "lucide-react";
-import AvatarCropModal, { MAX_AVATAR_SOURCE_BYTES } from "@/components/profile/avatar-crop-modal";
-import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { Pencil, X } from 'lucide-react';
+import AvatarCropModal, {
+  MAX_AVATAR_SOURCE_BYTES,
+} from '@/components/profile/avatar-crop-modal';
+import AvatarWithFallback from '@/components/ui/avatar-with-fallback';
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -28,26 +30,26 @@ export default function ProfileHeaderEditor({
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [draftName, setDraftName] = useState(initialName);
-  const [draftImage, setDraftImage] = useState(initialImage ?? "");
-  const [pickedFileName, setPickedFileName] = useState("");
+  const [draftImage, setDraftImage] = useState(initialImage ?? '');
+  const [pickedFileName, setPickedFileName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [pendingCropName, setPendingCropName] = useState("");
+  const [pendingCropName, setPendingCropName] = useState('');
   const cropBlobUrlRef = useRef<string | null>(null);
 
-  const initials = useMemo(() => getInitials(name || "U"), [name]);
+  const initials = useMemo(() => getInitials(name || 'U'), [name]);
 
   function revokeCropBlob() {
     const u = cropBlobUrlRef.current;
-    if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+    if (u?.startsWith('blob:')) URL.revokeObjectURL(u);
     cropBlobUrlRef.current = null;
   }
 
   useEffect(() => {
     return () => {
       const u = cropBlobUrlRef.current;
-      if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+      if (u?.startsWith('blob:')) URL.revokeObjectURL(u);
       cropBlobUrlRef.current = null;
     };
   }, []);
@@ -56,7 +58,7 @@ export default function ProfileHeaderEditor({
     if (busy) return;
     const trimmedName = draftName.trim();
     if (!trimmedName) {
-      setError("Name cannot be empty.");
+      setError('Name cannot be empty.');
       return;
     }
     setBusy(true);
@@ -65,9 +67,9 @@ export default function ProfileHeaderEditor({
       const payload: { name: string; image?: string } = { name: trimmedName };
       const trimmedImage = draftImage.trim();
       if (trimmedImage) payload.image = trimmedImage;
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = (await res.json()) as {
@@ -76,14 +78,14 @@ export default function ProfileHeaderEditor({
         error?: string;
       };
       if (!res.ok) {
-        setError(data.error ?? "Failed to update profile.");
+        setError(data.error ?? 'Failed to update profile.');
         return;
       }
       setName(data.name ?? trimmedName);
       setImage((data.image ?? trimmedImage) || null);
       setOpen(false);
     } catch {
-      setError("Something went wrong while saving.");
+      setError('Something went wrong while saving.');
     } finally {
       setBusy(false);
     }
@@ -91,12 +93,12 @@ export default function ProfileHeaderEditor({
 
   async function onFilePicked(file: File | null) {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
       return;
     }
     if (file.size > MAX_AVATAR_SOURCE_BYTES) {
-      setError("Image is too large. Please use a file under 15MB.");
+      setError('Image is too large. Please use a file under 15MB.');
       return;
     }
     revokeCropBlob();
@@ -125,7 +127,7 @@ export default function ProfileHeaderEditor({
   return (
     <>
       <div
-        className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] grid grid-cols-[1fr_auto] gap-4 rounded-2xl border border-border/50 p-5
+        className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] grid grid-cols-[1fr_auto] gap-4 rounded-2xl border border-border/50 p-5
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07),inset_0_1px_0_rgba(255,255,255,0.5)]"
       >
         <div className="flex items-center gap-4">
@@ -135,12 +137,18 @@ export default function ProfileHeaderEditor({
             initials={initials}
             className="h-14 w-14 shrink-0 rounded-2xl [outline:1px_solid_rgba(0,0,0,0.07)]"
             fallbackClassName="rounded-2xl text-sm font-semibold text-white"
-            fallbackStyle={{ background: "oklch(0.62 0.06 75)" }}
+            fallbackStyle={{ background: 'oklch(0.62 0.06 75)' }}
           />
           <div>
-            <p className="text-base font-semibold tracking-tight text-foreground">{name}</p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">{initialEmail}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Joined {joinedLabel}</p>
+            <p className="text-base font-semibold tracking-tight text-foreground">
+              {name}
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">
+              {initialEmail}
+            </p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Joined {joinedLabel}
+            </p>
           </div>
         </div>
 
@@ -150,14 +158,17 @@ export default function ProfileHeaderEditor({
           whileHover={{ y: -1, scale: 1.01 }}
           onClick={() => {
             setDraftName(name);
-            setDraftImage(image ?? "");
+            setDraftImage(image ?? '');
             setError(null);
             setOpen(true);
           }}
           className="group relative flex min-h-[5.2rem] min-w-[7.25rem] items-center justify-center rounded-xl px-5 text-muted-foreground hover:text-foreground"
           aria-label="Edit profile"
         >
-          <Pencil size={17} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:translate-x-[1px]" />
+          <Pencil
+            size={17}
+            className="transition-transform duration-200 group-hover:-rotate-12 group-hover:translate-x-[1px]"
+          />
           <motion.span
             className="pointer-events-none absolute bottom-5 h-[1.5px] w-7 rounded-full bg-current opacity-0"
             initial={false}
@@ -181,8 +192,8 @@ export default function ProfileHeaderEditor({
             <div
               className="absolute inset-0 bg-background/25"
               style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
               }}
             />
             <motion.div
@@ -194,7 +205,9 @@ export default function ProfileHeaderEditor({
                 shadow-[0_1px_2px_rgba(17,24,39,0.06),0_18px_40px_rgba(17,24,39,0.12)]"
             >
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-[13px] font-semibold text-foreground">Edit profile</h2>
+                <h2 className="text-[13px] font-semibold text-foreground">
+                  Edit profile
+                </h2>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
@@ -208,7 +221,9 @@ export default function ProfileHeaderEditor({
 
               <div className="space-y-3">
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Name</span>
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Name
+                  </span>
                   <input
                     type="text"
                     value={draftName}
@@ -217,7 +232,9 @@ export default function ProfileHeaderEditor({
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Profile image</span>
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Profile image
+                  </span>
                   <div className="flex items-center gap-2">
                     <label className="inline-flex cursor-pointer items-center rounded-[6px] border border-border/70 bg-background px-3 py-2 text-[11px] font-medium text-foreground">
                       Choose file
@@ -225,15 +242,20 @@ export default function ProfileHeaderEditor({
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => void onFilePicked(e.target.files?.[0] ?? null)}
+                        onChange={(e) =>
+                          void onFilePicked(e.target.files?.[0] ?? null)
+                        }
                       />
                     </label>
                     <span className="truncate text-[10.5px] text-muted-foreground">
-                      {pickedFileName || (draftImage ? "Image selected" : "No file chosen")}
+                      {pickedFileName ||
+                        (draftImage ? 'Image selected' : 'No file chosen')}
                     </span>
                   </div>
                 </label>
-                {error && <p className="text-[10.5px] text-destructive">{error}</p>}
+                {error && (
+                  <p className="text-[10.5px] text-destructive">{error}</p>
+                )}
                 <div className="flex justify-end gap-2 pt-1">
                   <motion.button
                     type="button"
@@ -249,9 +271,9 @@ export default function ProfileHeaderEditor({
                     whileTap={{ scale: 0.96 }}
                     onClick={() => void save()}
                     disabled={busy || !draftName.trim()}
-                    className="rounded-[6px] bg-cta px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
+                    className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
                   >
-                    {busy ? "Saving..." : "Save"}
+                    {busy ? 'Saving...' : 'Save'}
                   </motion.button>
                 </div>
               </div>

@@ -232,11 +232,8 @@ export default function LibraryClient({
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-5 overflow-y-auto overflow-x-hidden px-5 pb-10 pt-8 sm:px-6 sm:pt-10">
-      <section
-        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-4
-          shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
-      >
+    <div className="relative flex h-full min-h-0 w-full flex-col gap-5 overflow-y-auto overflow-x-hidden px-5 pb-10 pt-8 sm:px-6 sm:pt-10">
+      <section className="rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4 shadow-float">
         <div className="flex flex-wrap items-end gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
             <p className="mb-1 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
@@ -260,7 +257,7 @@ export default function LibraryClient({
             whileTap={{ scale: 0.96 }}
             onClick={openPreview}
             disabled={busy || !urlInput.trim()}
-            className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-cta px-3.5 text-[11.5px] font-medium text-cta-foreground shadow-[0_1px_3px_rgba(17,24,39,0.1)] disabled:opacity-55"
+            className="app-cta-surface inline-flex h-10 items-center gap-1.5 rounded-lg px-3.5 text-[11.5px] font-medium text-cta-foreground disabled:opacity-55"
           >
             <Plus size={14} />
             {busy ? 'Adding…' : 'Add URL'}
@@ -280,11 +277,8 @@ export default function LibraryClient({
           />
         </div>
 
-        <section
-          className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3
-            shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]"
-        >
-          <div className="flex flex-col rounded-xl bg-background p-3">
+        <section className="rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 shadow-float">
+          <div className="flex flex-col rounded-xl border border-black/[0.03] bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.58)] dark:border-white/[0.05]">
             <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground antialiased">
               Saved links
             </p>
@@ -475,7 +469,7 @@ export default function LibraryClient({
       </div>
 
       <section
-        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-4 sm:p-5
+        className="rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-4 sm:p-5
           shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)] antialiased"
       >
         <p className="mb-3 inline-flex items-center gap-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
@@ -585,7 +579,7 @@ export default function LibraryClient({
                   type="button"
                   onClick={() => void confirmAddFromPreview()}
                   disabled={busy}
-                  className="rounded-lg bg-cta px-3 py-2 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
+                  className="app-cta-surface rounded-lg px-3 py-2 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
                 >
                   {busy ? 'Adding…' : 'Save to library'}
                 </button>

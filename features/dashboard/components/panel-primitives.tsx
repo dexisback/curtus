@@ -1,9 +1,10 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties } from 'react';
 
 export const PANEL_SHADOW = [
-  "0 1px 2px rgba(17,24,39,0.04)",
-  "0 4px 14px rgba(17,24,39,0.05)",
-].join(",");
+  '0 1px 3px rgba(22,25,37,0.036)',
+  '0 14px 40px rgba(112,82,62,0.056)',
+  'inset 0 1px 0 rgba(255,255,255,0.34)',
+].join(',');
 
 export const OUTER_RADIUS = 22;
 export const GAP = 14;
@@ -15,15 +16,15 @@ const corner45Inset = OUTER_RADIUS - midArcRadius / Math.SQRT2;
 export const SCREW_INSET = corner45Inset - SCREW_SIZE / 2;
 
 const slotStyle = (rotate: number): CSSProperties => ({
-  position: "absolute",
-  width: "48%",
-  height: "1.5px",
-  borderRadius: "1px",
-  top: "50%",
-  left: "50%",
+  position: 'absolute',
+  width: '48%',
+  height: '1.5px',
+  borderRadius: '1px',
+  top: '50%',
+  left: '50%',
   transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
   background:
-    "linear-gradient(90deg, transparent 0%, rgba(60,55,48,0.3) 20%, rgba(60,55,48,0.5) 50%, rgba(60,55,48,0.3) 80%, transparent 100%)",
+    'linear-gradient(90deg, transparent 0%, rgba(60,55,48,0.3) 20%, rgba(60,55,48,0.5) 50%, rgba(60,55,48,0.3) 80%, transparent 100%)',
 });
 
 export function Screw({
@@ -34,18 +35,18 @@ export function Screw({
   style?: CSSProperties;
 }) {
   return (
-    <div className={`z-10 ${className ?? ""}`} style={style}>
+    <div className={`z-10 ${className ?? ''}`} style={style}>
       <div
         className="w-full h-full rounded-full relative"
         style={{
           background:
-            "radial-gradient(circle at 36% 30%, #e0dbd4 0%, #c4beb6 35%, #a8a29a 65%, #938d86 100%)",
+            'radial-gradient(circle at 36% 30%, #e0dbd4 0%, #c4beb6 35%, #a8a29a 65%, #938d86 100%)',
           boxShadow: [
-            "0 1.5px 5px rgba(17,24,39,0.16)",
-            "0 0 0 0.5px rgba(0,0,0,0.1)",
-            "inset 0 2px 1.5px rgba(255,255,255,0.3)",
-            "inset 0 -1.5px 1.5px rgba(0,0,0,0.08)",
-          ].join(","),
+            '0 1.5px 5px rgba(17,24,39,0.16)',
+            '0 0 0 0.5px rgba(0,0,0,0.1)',
+            'inset 0 2px 1.5px rgba(255,255,255,0.3)',
+            'inset 0 -1.5px 1.5px rgba(0,0,0,0.08)',
+          ].join(','),
         }}
       >
         <div className="absolute inset-0">
@@ -58,7 +59,7 @@ export function Screw({
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3px] h-[3px] rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(50,45,40,0.45) 0%, rgba(50,45,40,0.15) 100%)",
+              'radial-gradient(circle, rgba(50,45,40,0.45) 0%, rgba(50,45,40,0.15) 100%)',
           }}
         />
       </div>

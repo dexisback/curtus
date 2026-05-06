@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { CalendarDays, CheckSquare, Goal, Pencil, Plus, X } from "lucide-react";
-import { useSound } from "@/components/sound-provider";
-import type { TaskType } from "./page";
+import { useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { CalendarDays, CheckSquare, Goal, Pencil, Plus, X } from 'lucide-react';
+import { useSound } from '@/components/sound-provider';
+import type { TaskType } from './page';
 
 type TodoTask = {
   id: string;
@@ -15,50 +15,103 @@ type TodoTask = {
   isCompleted: boolean;
 };
 
-const TYPE_META: Record<TaskType, { label: string; color: string; bg: string }> = {
-  DAILY: { label: "Daily", color: "oklch(0.52 0.12 250)", bg: "oklch(0.52 0.12 250 / 0.09)" },
-  DEADLINE: { label: "Deadline", color: "oklch(0.60 0.14 25)", bg: "oklch(0.60 0.14 25 / 0.09)" },
-  YEARLY: { label: "Yearly", color: "oklch(0.56 0.10 155)", bg: "oklch(0.56 0.10 155 / 0.09)" },
+const TYPE_META: Record<
+  TaskType,
+  { label: string; color: string; bg: string }
+> = {
+  DAILY: {
+    label: 'Daily',
+    color: 'oklch(0.52 0.12 250)',
+    bg: 'oklch(0.52 0.12 250 / 0.09)',
+  },
+  DEADLINE: {
+    label: 'Deadline',
+    color: 'oklch(0.60 0.14 25)',
+    bg: 'oklch(0.60 0.14 25 / 0.09)',
+  },
+  YEARLY: {
+    label: 'Yearly',
+    color: 'oklch(0.56 0.10 155)',
+    bg: 'oklch(0.56 0.10 155 / 0.09)',
+  },
 };
 
 function dateDiff(target: Date) {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const end = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+  const start = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const end = new Date(
+    target.getFullYear(),
+    target.getMonth(),
+    target.getDate(),
+  ).getTime();
   return Math.ceil((end - start) / 86_400_000);
 }
 
 function AnimatedTrashIcon({ open }: { open: boolean }) {
   return (
-    <motion.svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <motion.svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
       <motion.g
-        animate={open ? { rotate: -14, x: 0, y: -2.4 } : { rotate: 0, x: 0, y: 0 }}
-        transition={{ type: "spring", duration: 0.22, bounce: 0 }}
-        style={{ transformOrigin: "11px 7px" }}
+        animate={
+          open ? { rotate: -14, x: 0, y: -2.4 } : { rotate: 0, x: 0, y: 0 }
+        }
+        transition={{ type: 'spring', duration: 0.22, bounce: 0 }}
+        style={{ transformOrigin: '11px 7px' }}
       >
-        <path d="M6 7H16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <path d="M10 4h2a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.8" />
+        <path
+          d="M6 7H16"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+        <path
+          d="M10 4h2a1 1 0 0 1 1 1v2H9V5a1 1 0 0 1 1-1Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        />
       </motion.g>
-      <path d="M6 7h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M10 10v7M14 10v7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M6 7h10v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M10 10v7M14 10v7"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
     </motion.svg>
   );
 }
 
-export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: TodoTask[] }) {
+export default function TodoWorkspaceClient({
+  initialTasks,
+}: {
+  initialTasks: TodoTask[];
+}) {
   const [tasks, setTasks] = useState(initialTasks);
   const [slicedId, setSlicedId] = useState<string | null>(null);
   const [hoveredDeleteId, setHoveredDeleteId] = useState<string | null>(null);
-  const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
+  const [modalMode, setModalMode] = useState<'create' | 'edit' | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalDescription, setModalDescription] = useState("");
-  const [modalType, setModalType] = useState<TaskType>("DAILY");
-  const [modalDeadline, setModalDeadline] = useState("");
-  const [modalTime, setModalTime] = useState("09:00");
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalDescription, setModalDescription] = useState('');
+  const [modalType, setModalType] = useState<TaskType>('DAILY');
+  const [modalDeadline, setModalDeadline] = useState('');
+  const [modalTime, setModalTime] = useState('09:00');
   const [modalBusy, setModalBusy] = useState(false);
-  const [dDay, setDDay] = useState("2026-06-01");
-  const [dDayName, setDDayName] = useState("D-Day milestone");
+  const [dDay, setDDay] = useState('2026-06-01');
+  const [dDayName, setDDayName] = useState('D-Day milestone');
   const [weeklyGoal, setWeeklyGoal] = useState(12);
   const [monthlyGoal, setMonthlyGoal] = useState(42);
   const reduceMotion = useReducedMotion();
@@ -66,24 +119,24 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
   const opSeqRef = useRef<Map<string, number>>(new Map());
 
   const done = tasks.filter((t) => t.isCompleted).length;
-  const dValue = dateDiff(new Date(dDay + "T12:00:00"));
+  const dValue = dateDiff(new Date(dDay + 'T12:00:00'));
 
   function openCreateModal() {
-    setModalMode("create");
+    setModalMode('create');
     setEditingTaskId(null);
-    setModalTitle("");
-    setModalDescription("");
-    setModalType("DAILY");
-    setModalDeadline("");
-    setModalTime("09:00");
-    play("modalOpen");
+    setModalTitle('');
+    setModalDescription('');
+    setModalType('DAILY');
+    setModalDeadline('');
+    setModalTime('09:00');
+    play('modalOpen');
   }
 
   function openEditModal(task: TodoTask) {
-    setModalMode("edit");
+    setModalMode('edit');
     setEditingTaskId(task.id);
     setModalTitle(task.title);
-    setModalDescription(task.description ?? "");
+    setModalDescription(task.description ?? '');
     setModalType(task.type);
     if (task.deadline) {
       const parsed = new Date(task.deadline);
@@ -92,20 +145,20 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
         setModalTime(parsed.toISOString().slice(11, 16));
       } else {
         setModalDeadline(task.deadline.slice(0, 10));
-        setModalTime("09:00");
+        setModalTime('09:00');
       }
     } else {
-      setModalDeadline("");
-      setModalTime("09:00");
+      setModalDeadline('');
+      setModalTime('09:00');
     }
-    play("modalOpen");
+    play('modalOpen');
   }
 
   function closeModal() {
     setModalMode(null);
     setEditingTaskId(null);
     setModalBusy(false);
-    play("modalClose");
+    play('modalClose');
   }
 
   async function markWithSlice(id: string) {
@@ -122,29 +175,39 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
       found = true;
       previousCompleted = row.isCompleted;
       nextCompleted = !previousCompleted;
-      return prev.map((t) => (t.id === id ? { ...t, isCompleted: nextCompleted } : t));
+      return prev.map((t) =>
+        t.id === id ? { ...t, isCompleted: nextCompleted } : t,
+      );
     });
     if (!found) return;
-    play(previousCompleted ? "toggleOff" : "success");
+    play(previousCompleted ? 'toggleOff' : 'success');
 
     const nextSeq = (opSeqRef.current.get(id) ?? 0) + 1;
     opSeqRef.current.set(id, nextSeq);
 
     try {
       const res = await fetch(`/api/tasks/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isCompleted: nextCompleted }),
       });
       if (!res.ok) {
         if (opSeqRef.current.get(id) !== nextSeq) return;
-        setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: previousCompleted } : t)));
-        play("error");
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, isCompleted: previousCompleted } : t,
+          ),
+        );
+        play('error');
       }
     } catch {
       if (opSeqRef.current.get(id) !== nextSeq) return;
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: previousCompleted } : t)));
-      play("error");
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, isCompleted: previousCompleted } : t,
+        ),
+      );
+      play('error');
     }
   }
 
@@ -155,19 +218,23 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
     setModalBusy(true);
     try {
       //i aint reading all that shi, happy for you or sad that it happened
-      if (modalMode === "edit" && editingTaskId) {
+      if (modalMode === 'edit' && editingTaskId) {
         const res = await fetch(`/api/tasks/${editingTaskId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             title,
             description: modalDescription.trim() || null,
             type: modalType,
-            deadline: modalDeadline ? new Date(`${modalDeadline}T${modalTime || "09:00"}:00`).toISOString() : null,
+            deadline: modalDeadline
+              ? new Date(
+                  `${modalDeadline}T${modalTime || '09:00'}:00`,
+                ).toISOString()
+              : null,
           }),
         });
         if (!res.ok) {
-          play("error");
+          play('error');
           return;
         }
         const updated = (await res.json()) as TodoTask;
@@ -184,51 +251,62 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
               : t,
           ),
         );
-        play("success");
+        play('success');
         closeModal();
         return;
       }
 
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
           description: modalDescription.trim() || undefined,
           type: modalType,
-          deadline: modalDeadline ? new Date(`${modalDeadline}T${modalTime || "09:00"}:00`).toISOString() : undefined,
+          deadline: modalDeadline
+            ? new Date(
+                `${modalDeadline}T${modalTime || '09:00'}:00`,
+              ).toISOString()
+            : undefined,
         }),
       });
       if (!res.ok) {
-        play("error");
+        play('error');
         return;
       }
       const created = (await res.json()) as TodoTask;
-      setTasks((prev) => [{ ...created, description: created.description ?? undefined, deadline: created.deadline ?? undefined }, ...prev]);
-      play("success");
+      setTasks((prev) => [
+        {
+          ...created,
+          description: created.description ?? undefined,
+          deadline: created.deadline ?? undefined,
+        },
+        ...prev,
+      ]);
+      play('success');
       closeModal();
     } catch {
-      play("error");
+      play('error');
     } finally {
       setModalBusy(false);
     }
   }
 
   async function deleteTask(id: string) {
-    if (!window.confirm("Delete this todo? This cannot be undone.")) return;
+    if (!window.confirm('Delete this todo? This cannot be undone.')) return;
     const snapshot = tasks;
     setTasks((prev) => prev.filter((t) => t.id !== id));
     try {
-      const res = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         setTasks(snapshot);
-        play("error");
+        play('error');
         return;
       }
-      play("success");
+      play('success');
     } catch {
       setTasks(snapshot);
-      play("error");
+      play('error');
     }
   }
 
@@ -237,8 +315,14 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
       <div className="mx-auto flex min-h-[calc(100vh-9rem)] w-full max-w-5xl flex-col space-y-6 pt-2">
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2">
-            <CheckSquare size={14} strokeWidth={1.6} className="text-muted-foreground opacity-70" />
-            <h1 className="text-[14px] font-semibold tracking-tight text-foreground">Todo</h1>
+            <CheckSquare
+              size={14}
+              strokeWidth={1.6}
+              className="text-muted-foreground opacity-70"
+            />
+            <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
+              Todo
+            </h1>
           </div>
           <span className="text-[11px] tabular-nums text-muted-foreground">
             {done} / {tasks.length} done
@@ -246,9 +330,11 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4">
-          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
+          <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-[11px] font-medium text-muted-foreground">Task slicing mode</p>
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Task slicing mode
+              </p>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.96 }}
@@ -282,12 +368,32 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                       onClick={() => void markWithSlice(task.id)}
                       className="relative flex min-w-0 flex-1 items-start gap-3 overflow-hidden rounded-lg px-3 py-3 text-left"
                     >
-                      <span className={"mt-0.5 h-4 w-4 rounded-[4px] border " + (task.isCompleted ? "border-transparent bg-cta/80" : "border-border/70")} />
+                      <span
+                        className={
+                          'mt-0.5 h-4 w-4 rounded-[4px] border ' +
+                          (task.isCompleted
+                            ? 'border-transparent bg-cta/80'
+                            : 'border-border/70')
+                        }
+                      />
                       <div className="min-w-0 flex-1">
-                        <p className={"text-[13.5px] font-medium " + (task.isCompleted ? "line-through text-muted-foreground" : "text-foreground")}>
+                        <p
+                          className={
+                            'text-[13.5px] font-medium ' +
+                            (task.isCompleted
+                              ? 'line-through text-muted-foreground'
+                              : 'text-foreground')
+                          }
+                        >
                           {task.title}
                         </p>
-                        <span className="mt-1 inline-block rounded-full px-2 py-0.5 text-[9.5px]" style={{ color: TYPE_META[task.type].color, background: TYPE_META[task.type].bg }}>
+                        <span
+                          className="mt-1 inline-block rounded-full px-2 py-0.5 text-[9.5px]"
+                          style={{
+                            color: TYPE_META[task.type].color,
+                            background: TYPE_META[task.type].bg,
+                          }}
+                        >
                           {TYPE_META[task.type].label}
                         </span>
                       </div>
@@ -298,7 +404,11 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                         type="button"
                         whileTap={{ scale: 0.96 }}
                         whileHover={{ rotate: -18, x: 0.3 }}
-                        transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                        transition={{
+                          type: 'spring',
+                          duration: 0.3,
+                          bounce: 0,
+                        }}
                         onClick={() => openEditModal(task)}
                         className="group relative flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted"
                         aria-label="Edit todo"
@@ -316,7 +426,11 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                         type="button"
                         whileTap={{ scale: 0.96 }}
                         onHoverStart={() => setHoveredDeleteId(task.id)}
-                        onHoverEnd={() => setHoveredDeleteId((prev) => (prev === task.id ? null : prev))}
+                        onHoverEnd={() =>
+                          setHoveredDeleteId((prev) =>
+                            prev === task.id ? null : prev,
+                          )
+                        }
                         onClick={() => void deleteTask(task.id)}
                         className="relative flex h-7 w-7 items-center justify-center rounded-[6px] text-muted-foreground hover:bg-muted"
                         aria-label="Delete todo"
@@ -343,14 +457,16 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
+            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <CalendarDays size={12} />
                 D-Day setup
               </p>
               <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">Date</span>
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">
+                    Date
+                  </span>
                   <input
                     type="date"
                     value={dDay}
@@ -359,7 +475,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">Name</span>
+                  <span className="mb-1 block text-[10.5px] font-medium text-muted-foreground">
+                    Name
+                  </span>
                   <input
                     type="text"
                     value={dDayName}
@@ -374,7 +492,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
               </p>
             </div>
 
-            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
+            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">
               <p className="mb-3 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
                 <Goal size={12} />
                 Goal configuration
@@ -388,11 +506,13 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                   value={weeklyGoal}
                   onChange={(e) => {
                     setWeeklyGoal(Number(e.target.value));
-                    play("tap");
+                    play('tap');
                   }}
                   className="mt-1 w-full"
                 />
-                <span className="tabular-nums text-[12px] text-foreground">{weeklyGoal} tasks/week</span>
+                <span className="tabular-nums text-[12px] text-foreground">
+                  {weeklyGoal} tasks/week
+                </span>
               </label>
               <label className="block text-[10.5px] text-muted-foreground">
                 Monthly focus goals
@@ -403,11 +523,13 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                   value={monthlyGoal}
                   onChange={(e) => {
                     setMonthlyGoal(Number(e.target.value));
-                    play("tap");
+                    play('tap');
                   }}
                   className="mt-1 w-full"
                 />
-                <span className="tabular-nums text-[12px] text-foreground">{monthlyGoal} tasks/month</span>
+                <span className="tabular-nums text-[12px] text-foreground">
+                  {monthlyGoal} tasks/month
+                </span>
               </label>
             </div>
           </div>
@@ -428,8 +550,8 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
             <div
               className="absolute inset-0 bg-background/25"
               style={{
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
               }}
             />
             <motion.div
@@ -442,7 +564,7 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
             >
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-[13px] font-semibold text-foreground">
-                  {modalMode === "edit" ? "Edit todo" : "Create todo"}
+                  {modalMode === 'edit' ? 'Edit todo' : 'Create todo'}
                 </h2>
                 <button
                   type="button"
@@ -457,7 +579,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
               <div className="space-y-3">
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Title</span>
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Title
+                  </span>
                   <input
                     type="text"
                     value={modalTitle}
@@ -468,7 +592,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                 </label>
 
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Content</span>
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Content
+                  </span>
                   <textarea
                     value={modalDescription}
                     onChange={(e) => setModalDescription(e.target.value)}
@@ -480,7 +606,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block">
-                    <span className="mb-1 block text-[10.5px] text-muted-foreground">Type</span>
+                    <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                      Type
+                    </span>
                     <select
                       value={modalType}
                       onChange={(e) => setModalType(e.target.value as TaskType)}
@@ -493,7 +621,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                   </label>
 
                   <label className="block">
-                    <span className="mb-1 block text-[10.5px] text-muted-foreground">Date to be done</span>
+                    <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                      Date to be done
+                    </span>
                     <input
                       type="date"
                       value={modalDeadline}
@@ -504,7 +634,9 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                 </div>
 
                 <label className="block">
-                  <span className="mb-1 block text-[10.5px] text-muted-foreground">Time</span>
+                  <span className="mb-1 block text-[10.5px] text-muted-foreground">
+                    Time
+                  </span>
                   <input
                     type="time"
                     value={modalTime}
@@ -528,10 +660,10 @@ export default function TodoWorkspaceClient({ initialTasks }: { initialTasks: To
                     whileTap={{ scale: 0.96 }}
                     onClick={() => void saveModalTask()}
                     disabled={modalBusy || !modalTitle.trim()}
-                    className="rounded-[6px] bg-cta px-3 py-1.5 text-[11px] font-medium text-cta-foreground
+                    className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground
                       disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {modalBusy ? "Saving..." : "Save"}
+                    {modalBusy ? 'Saving...' : 'Save'}
                   </motion.button>
                 </div>
               </div>

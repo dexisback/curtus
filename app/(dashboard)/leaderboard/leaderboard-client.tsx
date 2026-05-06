@@ -191,16 +191,15 @@ export default function LeaderboardClient({
 
   return (
     <>
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-2 sm:px-6 sm:pb-6">
+      <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-2 sm:px-6 sm:pb-6">
         {/* Outer panel */}
         <div
-          className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50
-            shadow-[0_1px_2px_rgba(17,24,39,0.05),0_8px_24px_rgba(17,24,39,0.08),inset_0_1px_0_rgba(255,255,255,0.5)]
-            dark:shadow-[0_1px_2px_rgba(0,0,0,0.25),0_12px_32px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.05)]"
+          className="shadow-float flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.028] dark:ring-white/[0.045]
+            dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.26),0_18px_48px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.045)]"
           style={{ padding: '16px' }}
         >
-          {/* Inner bg */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-background">
+          {/* Inner canvas — brightest tier */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             {/* Header */}
             <div className="flex shrink-0 flex-col gap-3 border-b border-border/50 px-4 pb-3 pt-4">
               <div className="flex items-center gap-2.5">
@@ -224,7 +223,7 @@ export default function LeaderboardClient({
                     className={
                       'rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
                       (scope === 'global'
-                        ? 'bg-foreground text-background shadow-[0_1px_3px_rgba(17,24,39,0.15)]'
+                        ? 'app-cta-surface text-cta-foreground'
                         : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')
                     }
                   >
@@ -238,7 +237,7 @@ export default function LeaderboardClient({
                     className={
                       'rounded-full px-3 py-1 text-[11px] font-medium transition-[background-color,color,box-shadow] duration-150 ' +
                       (scope === 'room'
-                        ? 'bg-foreground text-background shadow-[0_1px_3px_rgba(17,24,39,0.15)]'
+                        ? 'app-cta-surface text-cta-foreground'
                         : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground')
                     }
                   >
@@ -337,17 +336,25 @@ export default function LeaderboardClient({
                   {entries.length === 0 &&
                     !isPending &&
                     !(scope === 'global' && currentUserId) && (
-                      <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
-                        No data yet for this selection.
+                      <li className="list-none px-2 py-4">
+                        <div className="app-empty-atmosphere app-empty-atmosphere--dense flex min-h-[11rem] items-center justify-center rounded-xl px-6 py-8">
+                          <p className="max-w-[16rem] text-center text-[11.5px] leading-relaxed text-muted-foreground">
+                            No data yet for this selection.
+                          </p>
+                        </div>
                       </li>
                     )}
                   {entries.length === 0 &&
                     !isPending &&
                     scope === 'global' &&
                     currentUserId && (
-                      <li className="px-4 py-6 text-center text-[11.5px] text-muted-foreground">
-                        No one else on the leaderboard yet. Your row above
-                        updates when you focus.
+                      <li className="list-none px-2 py-4">
+                        <div className="app-empty-atmosphere app-empty-atmosphere--dense flex min-h-[11rem] items-center justify-center rounded-xl px-6 py-8">
+                          <p className="max-w-[16rem] text-balance text-center text-[11.5px] leading-relaxed text-muted-foreground">
+                            No one else on the leaderboard yet. Your row above
+                            updates when you focus.
+                          </p>
+                        </div>
                       </li>
                     )}
                   {entries.map((entry, i) => {

@@ -1,27 +1,37 @@
-"use client";
+'use client';
 
-import { useRef, useEffect, useState } from "react";
-import { motion } from "motion/react";
-import { CheckSquare2 } from "lucide-react";
-import { useSound } from "@/components/sound-provider";
-import { SPRING_DRAG_RELEASE, SPRING_HOVER } from "@/lib/ui-motion";
+import { useRef, useEffect, useState } from 'react';
+import { motion } from 'motion/react';
+import { CheckSquare2 } from 'lucide-react';
+import { useSound } from '@/components/sound-provider';
+import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
 
 const HOUR_WIDTH = 96;
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM – 11 PM
 
-const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const DAY_NAMES = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 function formatHour(h: number) {
-  if (h === 0 || h === 24) return "12 AM";
-  if (h === 12) return "12 PM";
+  if (h === 0 || h === 24) return '12 AM';
+  if (h === 12) return '12 PM';
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
 }
 
-type TaskType = "DAILY" | "YEARLY" | "DEADLINE";
+type TaskType = 'DAILY' | 'YEARLY' | 'DEADLINE';
 type TaskItem = {
   id: string;
   title: string;
@@ -30,21 +40,30 @@ type TaskItem = {
 };
 
 const TYPE_COLOR: Record<TaskType, string> = {
-  DAILY: "oklch(0.56 0.10 250)",
-  DEADLINE: "oklch(0.58 0.11 45)",
-  YEARLY: "oklch(0.55 0.12 320)",
+  DAILY: 'oklch(0.56 0.10 250)',
+  DEADLINE: 'oklch(0.58 0.11 45)',
+  YEARLY: 'oklch(0.55 0.12 320)',
 };
 
 function taskLeftPx(startHour: number, startMin: number) {
   return (startHour - 6) * HOUR_WIDTH + (startMin / 60) * HOUR_WIDTH;
 }
 
-function taskWidthPx(startHour: number, startMin: number, endHour: number, endMin: number) {
+function taskWidthPx(
+  startHour: number,
+  startMin: number,
+  endHour: number,
+  endMin: number,
+) {
   const durationMins = (endHour - startHour) * 60 + (endMin - startMin);
   return (durationMins / 60) * HOUR_WIDTH;
 }
 
-export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem[] }) {
+export default function TodoComponent({
+  initialTasks,
+}: {
+  initialTasks: TaskItem[];
+}) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
   const [tasks, setTasks] = useState(initialTasks);
@@ -57,7 +76,7 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
   const monthName = MONTH_NAMES[now.getMonth()];
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const tzLabel = tz.replace(/_/g, " ");
+  const tzLabel = tz.replace(/_/g, ' ');
 
   const nowHour = now.getHours() + now.getMinutes() / 60;
   const nowLeftPx = (nowHour - 6) * HOUR_WIDTH;
@@ -72,14 +91,14 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
   return (
     <div className="h-full min-h-0 w-full min-w-0 pt-0.5 pb-2.5">
       <motion.div
-        className="app-cursor-drag flex h-full w-full items-stretch overflow-hidden border border-black/[0.06] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
+        className="app-cursor-drag flex h-full w-full items-stretch overflow-hidden border border-black/[0.045] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]"
         style={{
           borderRadius: 16,
           boxShadow: [
-            "0 1px 2px rgba(17,24,39,0.05)",
-            "0 4px 10px rgba(17,24,39,0.04)",
-            "3px 8px 20px rgba(17,24,39,0.06)",
-          ].join(","),
+            '0 1px 2px rgba(17,24,39,0.05)',
+            '0 4px 10px rgba(17,24,39,0.04)',
+            '3px 8px 20px rgba(17,24,39,0.06)',
+          ].join(','),
         }}
         whileHover={{ y: -1 }}
         drag
@@ -90,14 +109,14 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
       >
         <div
           className="shrink-0 w-[88px] flex flex-col items-center justify-center gap-0.5 border-r border-border/60 px-3"
-          style={{ background: "oklch(0.945 0.005 75)" }}
+          style={{ background: 'oklch(0.945 0.005 75)' }}
         >
           <span className="text-[10px] font-semibold text-muted-foreground tracking-widest">
             {dayName}
           </span>
           <span
             className="text-2xl font-bold text-foreground tabular-nums leading-none"
-            style={{ fontVariantNumeric: "tabular-nums" }}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
           >
             {dayNum}
           </span>
@@ -121,8 +140,8 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
           ref={scrollRef}
           className="flex-1 overflow-x-auto relative"
           style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
           }}
         >
           <div
@@ -138,7 +157,9 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                     className="shrink-0 flex flex-col justify-between"
                     style={{
                       width: HOUR_WIDTH,
-                      background: isCurrentHour ? "oklch(0.58 0.11 45 / 0.05)" : "transparent",
+                      background: isCurrentHour
+                        ? 'oklch(0.58 0.11 45 / 0.05)'
+                        : 'transparent',
                     }}
                   >
                     <div className="flex items-center h-full pt-1 px-2 border-r border-border/40">
@@ -171,11 +192,15 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                       left,
                       width: width - 6,
                       marginLeft: 3,
-                      height: "52%",
+                      height: '52%',
                     }}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.06, duration: 0.22, ease: [0, 0, 0.58, 1] }}
+                    transition={{
+                      delay: i * 0.06,
+                      duration: 0.22,
+                      ease: [0, 0, 0.58, 1],
+                    }}
                   >
                     <motion.button
                       type="button"
@@ -185,22 +210,28 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                         const nextCompleted = !previousCompleted;
                         setTasks((prev) =>
                           prev.map((t) =>
-                            t.id === task.id ? { ...t, isCompleted: nextCompleted } : t,
+                            t.id === task.id
+                              ? { ...t, isCompleted: nextCompleted }
+                              : t,
                           ),
                         );
-                        play(previousCompleted ? "toggleOff" : "toggleOn");
+                        play(previousCompleted ? 'toggleOff' : 'toggleOn');
 
-                        const nextSeq = (opSeqRef.current.get(task.id) ?? 0) + 1;
+                        const nextSeq =
+                          (opSeqRef.current.get(task.id) ?? 0) + 1;
                         opSeqRef.current.set(task.id, nextSeq);
 
                         try {
                           const res = await fetch(`/api/tasks/${task.id}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ isCompleted: nextCompleted }),
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              isCompleted: nextCompleted,
+                            }),
                           });
                           if (!res.ok) {
-                            if (opSeqRef.current.get(task.id) !== nextSeq) return;
+                            if (opSeqRef.current.get(task.id) !== nextSeq)
+                              return;
                             setTasks((prev) =>
                               prev.map((t) =>
                                 t.id === task.id
@@ -208,7 +239,7 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                                   : t,
                               ),
                             );
-                            play("error");
+                            play('error');
                           }
                         } catch {
                           if (opSeqRef.current.get(task.id) !== nextSeq) return;
@@ -219,32 +250,44 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                                 : t,
                             ),
                           );
-                          play("error");
+                          play('error');
                         }
                       }}
                       className="w-full h-full rounded-lg px-2 flex flex-col justify-center gap-0.5 cursor-pointer select-none text-left"
                       style={{
-                        background: task.isCompleted ? "oklch(0.75 0.01 75 / 0.18)" : `${color}18`,
+                        background: task.isCompleted
+                          ? 'oklch(0.75 0.01 75 / 0.18)'
+                          : `${color}18`,
                         borderLeft: `2.5px solid ${color}`,
                         outline: `1px solid ${color}22`,
                         opacity: task.isCompleted ? 0.65 : 1,
                       }}
                     >
                       <span
-                        className={"text-[10px] font-medium truncate " + (task.isCompleted ? "line-through" : "")}
+                        className={
+                          'text-[10px] font-medium truncate ' +
+                          (task.isCompleted ? 'line-through' : '')
+                        }
                         style={{ color }}
                       >
                         {task.title}
                       </span>
                       <span className="text-[9px] tabular-nums text-muted-foreground">
                         {formatHour(startHour)}
-                        {startMin ? `:${String(startMin).padStart(2, "0")}` : ""}
-                        {" – "}
+                        {startMin
+                          ? `:${String(startMin).padStart(2, '0')}`
+                          : ''}
+                        {' – '}
                         {formatHour(endHour)}
-                        {endMin ? `:${String(endMin).padStart(2, "0")}` : ""}
+                        {endMin ? `:${String(endMin).padStart(2, '0')}` : ''}
                       </span>
                       <span className="text-[8.5px] text-muted-foreground/80">
-                        {task.type} {isNow && !task.isCompleted ? "• In progress" : task.isCompleted ? "• Done" : "• Upcoming"}
+                        {task.type}{' '}
+                        {isNow && !task.isCompleted
+                          ? '• In progress'
+                          : task.isCompleted
+                            ? '• Done'
+                            : '• Upcoming'}
                       </span>
                     </motion.button>
                   </motion.div>
@@ -261,7 +304,7 @@ export default function TodoComponent({ initialTasks }: { initialTasks: TaskItem
                 <div className="w-px h-full bg-red-400/70" />
                 <div
                   className="absolute top-1/2 -translate-y-1/2 -left-[3px] w-1.5 h-1.5 rounded-full bg-red-400"
-                  style={{ boxShadow: "0 0 0 2px rgba(248,113,113,0.25)" }}
+                  style={{ boxShadow: '0 0 0 2px rgba(248,113,113,0.25)' }}
                 />
               </div>
             )}

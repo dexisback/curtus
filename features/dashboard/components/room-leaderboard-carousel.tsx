@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Video, VideoOff } from "lucide-react";
-import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'motion/react';
+import { ChevronLeft, ChevronRight, Video, VideoOff } from 'lucide-react';
+import AvatarWithFallback from '@/components/ui/avatar-with-fallback';
 
 export type RoomTimerMember = {
   id: string;
@@ -24,9 +24,9 @@ export type RoomTimerBoard = {
 };
 
 function formatTimer(seconds: number) {
-  const hh = String(Math.floor(seconds / 3600)).padStart(2, "0");
-  const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
-  const ss = String(seconds % 60).padStart(2, "0");
+  const hh = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
   return `${hh}:${mm}:${ss}`;
 }
 
@@ -76,7 +76,8 @@ export default function RoomLeaderboardCarousel({
   const [index, setIndex] = useState(0);
   const [nowMs, setNowMs] = useState(0);
   const [mounted, setMounted] = useState(false);
-  const safeIndex = boards.length === 0 ? 0 : Math.min(index, boards.length - 1);
+  const safeIndex =
+    boards.length === 0 ? 0 : Math.min(index, boards.length - 1);
   const current = boards[safeIndex];
 
   useEffect(() => {
@@ -149,12 +150,14 @@ export default function RoomLeaderboardCarousel({
 
       <div
         className="min-h-0 flex-1 overflow-y-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ msOverflowStyle: "none" }}
+        style={{ msOverflowStyle: 'none' }}
       >
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {sortedMembers.map((member, i) => {
             const sessionRunning =
-              mounted && member.active ? elapsedSeconds(member.startedAtIso, nowMs) : 0;
+              mounted && member.active
+                ? elapsedSeconds(member.startedAtIso, nowMs)
+                : 0;
             const completedTodaySeconds = Math.max(0, member.todaySeconds ?? 0);
             /** Always show cumulative today time; while active, add current session elapsed to completed baseline. */
             const displaySeconds = member.active
@@ -163,7 +166,9 @@ export default function RoomLeaderboardCarousel({
             const hasVideo = hasVideoForMember?.(member.id) ?? false;
             const stream = streamForMember?.(member.id) ?? null;
             const showVideoTile = videoMode && hasVideo && stream;
-            const isSelf = Boolean(currentUserId && member.id === currentUserId);
+            const isSelf = Boolean(
+              currentUserId && member.id === currentUserId,
+            );
             const showSelfCamToggle = videoMode && isSelf && onToggleSelfCamera;
             const cardClickable = Boolean(onMemberClick);
 
@@ -174,14 +179,20 @@ export default function RoomLeaderboardCarousel({
                 aria-label={cardClickable ? `Open ${member.name}` : undefined}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.2, ease: [0, 0, 0.58, 1] }}
+                transition={{
+                  delay: i * 0.03,
+                  duration: 0.2,
+                  ease: [0, 0, 0.58, 1],
+                }}
                 whileTap={cardClickable ? { scale: 0.985 } : undefined}
                 whileHover={cardClickable ? { y: -1 } : undefined}
-                onClick={cardClickable ? () => onMemberClick?.(member) : undefined}
+                onClick={
+                  cardClickable ? () => onMemberClick?.(member) : undefined
+                }
                 onKeyDown={
                   cardClickable
                     ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           onMemberClick?.(member);
                         }
@@ -189,22 +200,24 @@ export default function RoomLeaderboardCarousel({
                     : undefined
                 }
                 className={
-                  "relative flex min-h-[7.5rem] w-full flex-col overflow-hidden rounded-[6px] border border-border/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
-                  (cardClickable ? "cursor-pointer " : "") +
+                  'relative flex min-h-[7.5rem] w-full flex-col overflow-hidden rounded-[6px] border border-border/50 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background ' +
+                  (cardClickable ? 'cursor-pointer ' : '') +
                   (showVideoTile
-                    ? "bg-neutral-950 ring-1 ring-black/20"
-                    : "bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] transition-[background-color] duration-150 hover:bg-muted/40")
+                    ? 'bg-[#161925] ring-1 ring-[#161925]/90'
+                    : 'bg-card ring-1 ring-inset ring-black/[0.03] transition-[background-color] duration-150 hover:bg-muted/35 dark:ring-white/[0.045]')
                 }
               >
                 {showVideoTile ? (
                   <>
                     <GridMemberVideo stream={stream} />
                     <div
-                      className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent pt-8 pb-1.5"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#161925]/92 via-[#161925]/38 to-transparent pt-8 pb-1.5"
                       aria-hidden
                     />
                     <div className="pointer-events-none absolute inset-x-0 bottom-1.5 px-2 text-center">
-                      <p className="truncate text-[10.5px] font-medium text-white drop-shadow-sm">{member.name}</p>
+                      <p className="truncate text-[10.5px] font-medium text-white drop-shadow-sm">
+                        {member.name}
+                      </p>
                       <p className="tabular-nums text-[11px] font-semibold tracking-tight text-white/95 drop-shadow">
                         {formatTimer(displaySeconds)}
                       </p>
@@ -218,12 +231,14 @@ export default function RoomLeaderboardCarousel({
                       initials={member.initials}
                       className={
                         compact
-                          ? "h-9 w-9 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]"
-                          : "h-10 w-10 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]"
+                          ? 'h-9 w-9 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]'
+                          : 'h-10 w-10 rounded-full [outline:1px_solid_rgba(0,0,0,0.08)]'
                       }
                       fallbackClassName="rounded-full bg-muted text-[11px] font-semibold text-foreground"
                     />
-                    <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground/90">{member.name}</p>
+                    <p className="mt-1 max-w-full truncate text-[10.5px] font-medium text-foreground/90">
+                      {member.name}
+                    </p>
                     <p className="tabular-nums text-[12px] font-semibold tracking-tight text-foreground">
                       {formatTimer(displaySeconds)}
                     </p>
@@ -240,9 +255,15 @@ export default function RoomLeaderboardCarousel({
                         e.stopPropagation();
                         onToggleSelfCamera();
                       }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/25 bg-black/55 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-black/70 disabled:opacity-60"
-                      aria-label={selfCameraOn ? "Turn camera off" : "Turn camera on"}
-                      title={selfCameraOn ? "Camera on — click to turn off" : "Camera off — click to turn on"}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/22 bg-[#161925]/58 text-white shadow-md backdrop-blur-sm transition-colors hover:bg-[#161925]/72 disabled:opacity-60"
+                      aria-label={
+                        selfCameraOn ? 'Turn camera off' : 'Turn camera on'
+                      }
+                      title={
+                        selfCameraOn
+                          ? 'Camera on — click to turn off'
+                          : 'Camera off — click to turn on'
+                      }
                     >
                       {selfCameraStarting ? (
                         <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-white/70" />
@@ -256,7 +277,7 @@ export default function RoomLeaderboardCarousel({
                 )}
 
                 {videoMode && !isSelf && hasVideo && !stream && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/90">
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#161925]/91">
                     <p className="text-[10px] text-white/70">Connecting…</p>
                   </div>
                 )}

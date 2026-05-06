@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { motion } from "motion/react";
-import { Maximize2, Plus, X } from "lucide-react";
+import { motion } from 'motion/react';
+import { Maximize2, Plus, X } from 'lucide-react';
 import {
   PANEL_SHADOW,
   OUTER_RADIUS,
@@ -10,10 +10,10 @@ import {
   SCREW_SIZE,
   SCREW_INSET,
   Screw,
-} from "./panel-primitives";
-import { SPRING_HOVER } from "@/lib/ui-motion";
+} from './panel-primitives';
+import { SPRING_HOVER } from '@/lib/ui-motion';
 
-const EMPTY_TOOLTIP = "start watching a youtube video";
+const EMPTY_TOOLTIP = 'start watching a youtube video';
 
 type Props = {
   embedUrl: string | null;
@@ -47,21 +47,25 @@ export default function YouTubeEmbedPanel({
     <div
       className={
         isLibraryLayout
-          ? "flex w-full min-w-0 flex-col items-stretch"
-          : "flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4"
+          ? 'flex w-full min-w-0 flex-col items-stretch'
+          : 'flex h-full w-full min-h-0 min-w-0 items-stretch justify-end pl-2 pr-0.5 pt-1.5 pb-3 sm:pl-3 sm:pr-1.5 sm:pt-2 sm:pb-4'
       }
     >
       <motion.div
         className={
-          "relative flex w-full flex-col border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] " +
-          (isLibraryLayout ? "min-w-0 shrink-0" : "h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0")
+          'relative flex w-full flex-col border border-black/[0.035] bg-[color:var(--panel-texture-bg)] ring-1 ring-inset ring-black/[0.035] ' +
+          (isLibraryLayout
+            ? 'min-w-0 shrink-0'
+            : 'h-full min-h-0 min-w-0 max-h-full w-[min(100%,90%)] shrink-0')
         }
         style={{
           borderRadius: `${OUTER_RADIUS}px`,
           padding: `${GAP}px`,
           boxShadow: PANEL_SHADOW,
         }}
-        whileHover={isLibraryLayout ? undefined : { y: -1, rotate: 0.06, scale: 1.002 }}
+        whileHover={
+          isLibraryLayout ? undefined : { y: -1, rotate: 0.06, scale: 1.002 }
+        }
         transition={SPRING_HOVER}
       >
         <Screw
@@ -86,8 +90,8 @@ export default function YouTubeEmbedPanel({
         <div
           className={
             isLibraryLayout
-              ? "relative aspect-video w-full overflow-hidden bg-neutral-950"
-              : "relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950"
+              ? 'relative aspect-video w-full overflow-hidden bg-neutral-950'
+              : 'relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden bg-neutral-950'
           }
           style={{ borderRadius: `${INNER_RADIUS}px` }}
         >
@@ -118,7 +122,11 @@ export default function YouTubeEmbedPanel({
             <iframe
               src={embedUrl}
               title="YouTube player"
-              className={isLibraryLayout ? "absolute inset-0 h-full w-full" : "h-full w-full"}
+              className={
+                isLibraryLayout
+                  ? 'absolute inset-0 h-full w-full'
+                  : 'h-full w-full'
+              }
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
@@ -142,7 +150,9 @@ export default function YouTubeEmbedPanel({
           ) : null}
           {embedUrl && activeLabel && (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent px-3 pb-2.5 pt-8 text-center">
-              <p className="truncate text-[10.5px] text-white/85">{activeLabel}</p>
+              <p className="truncate text-[10.5px] text-white/85">
+                {activeLabel}
+              </p>
             </div>
           )}
         </div>

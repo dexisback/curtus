@@ -1,10 +1,17 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   CheckSquare,
   LibraryBig,
@@ -17,22 +24,22 @@ import {
   Video,
   X,
   type LucideIcon,
-} from "lucide-react";
-import { useServerUserSettings } from "@/components/server-user-settings";
-import { useSound } from "@/components/sound-provider";
-import WhiteNoiseSidebarSection from "@/components/white-noise-sidebar-section";
-import { DURATION, EASE_IN, EASE_OUT, SPRING_SNAP } from "@/lib/ui-motion";
+} from 'lucide-react';
+import { useServerUserSettings } from '@/components/server-user-settings';
+import { useSound } from '@/components/sound-provider';
+import WhiteNoiseSidebarSection from '@/components/white-noise-sidebar-section';
+import { DURATION, EASE_IN, EASE_OUT, SPRING_SNAP } from '@/lib/ui-motion';
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
-  { label: "Rooms", href: "/rooms", icon: Video },
-  { label: "Library", href: "/library", icon: LibraryBig },
-  { label: "Todo", href: "/dashboard/todo", icon: CheckSquare },
-  { label: "Profile", href: "/profile", icon: UserCircle },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Leaderboard', href: '/leaderboard', icon: Trophy },
+  { label: 'Rooms', href: '/rooms', icon: Video },
+  { label: 'Library', href: '/library', icon: LibraryBig },
+  { label: 'Todo', href: '/dashboard/todo', icon: CheckSquare },
+  { label: 'Profile', href: '/profile', icon: UserCircle },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
 const containerVariants = {
@@ -41,11 +48,11 @@ const containerVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, x: -8, filter: "blur(3px)" },
+  hidden: { opacity: 0, x: -8, filter: 'blur(3px)' },
   visible: {
     opacity: 1,
     x: 0,
-    filter: "blur(0px)",
+    filter: 'blur(0px)',
     transition: { duration: DURATION.medium, ease: EASE_OUT },
   },
 };
@@ -53,7 +60,7 @@ const itemVariants = {
 const itemExit = {
   opacity: 0,
   x: -6,
-  filter: "blur(3px)",
+  filter: 'blur(3px)',
   transition: { duration: DURATION.fast, ease: EASE_IN },
 };
 
@@ -62,7 +69,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
   const { play } = useSound();
   const [open, setOpen] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +77,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
   const titleId = useId();
 
   const requestClose = useCallback(() => {
-    play("modalClose");
+    play('modalClose');
     setOpen(false);
   }, [play]);
 
@@ -81,17 +88,19 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") requestClose();
+      if (e.key === 'Escape') requestClose();
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [open, requestClose]);
 
   useEffect(() => {
@@ -107,19 +116,22 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
     setError(null);
     setBusy(true);
     try {
-      const res = await fetch("/api/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), isPublic }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Failed to create room."); return; }
-      play("success");
+      if (!res.ok) {
+        setError(data.error ?? 'Failed to create room.');
+        return;
+      }
+      play('success');
       requestClose();
       router.push(`/room/${data.code}`);
     } catch {
-      play("error");
-      setError("Something went wrong. Try again.");
+      play('error');
+      setError('Something went wrong. Try again.');
     } finally {
       setBusy(false);
     }
@@ -135,14 +147,19 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
           className="fixed inset-0 z-[210] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0, transition: { duration: DURATION.fast, ease: EASE_IN } }}
-          onClick={(e) => { if (e.target === e.currentTarget) requestClose(); }}
+          exit={{
+            opacity: 0,
+            transition: { duration: DURATION.fast, ease: EASE_IN },
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) requestClose();
+          }}
         >
           <div
             className="absolute inset-0 bg-background/25"
             style={{
-              backdropFilter: "blur(8px) saturate(1.1)",
-              WebkitBackdropFilter: "blur(8px) saturate(1.1)",
+              backdropFilter: 'blur(8px) saturate(1.1)',
+              WebkitBackdropFilter: 'blur(8px) saturate(1.1)',
             }}
           />
 
@@ -153,17 +170,24 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
             className="relative z-10 w-full max-w-sm"
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.985, transition: { duration: DURATION.fast, ease: EASE_IN } }}
+            exit={{
+              opacity: 0,
+              y: 4,
+              scale: 0.985,
+              transition: { duration: DURATION.fast, ease: EASE_IN },
+            }}
             transition={SPRING_SNAP}
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/60 p-5
-                shadow-[0_1px_2px_rgba(17,24,39,0.06),0_16px_40px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
-                dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_20px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              className="shadow-float rounded-2xl border border-border/40 bg-card/97 p-5 ring-1 ring-inset ring-black/[0.035] dark:border-border/50 dark:bg-card/95 dark:ring-white/[0.06]
+                dark:shadow-[0_2px_4px_rgb(0_0_0/0.28),0_22px_52px_rgb(0_0_0/0.32),inset_0_1px_0_rgb(255_255_255/0.05)]"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h2 id={titleId} className="text-sm font-semibold text-foreground">
+                <h2
+                  id={titleId}
+                  className="text-sm font-semibold text-foreground"
+                >
                   Create a room
                 </h2>
                 <motion.button
@@ -202,19 +226,31 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-background px-3 py-2">
-                  <span className="text-[11.5px] text-foreground/80">Public room</span>
+                  <span className="text-[11.5px] text-foreground/80">
+                    Public room
+                  </span>
                   <button
                     type="button"
                     role="switch"
                     aria-checked={isPublic}
                     onClick={() => setIsPublic((v) => !v)}
                     className="relative h-5 w-9 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/50"
-                    style={{ background: isPublic ? "var(--color-cta)" : "oklch(0.82 0.005 75)" }}
+                    style={{
+                      background: isPublic
+                        ? 'var(--color-cta)'
+                        : 'oklch(0.82 0.005 75)',
+                    }}
                   >
                     <motion.span
                       className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm"
-                      animate={{ left: isPublic ? "calc(100% - 1.125rem)" : "0.125rem" }}
-                      transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                      animate={{
+                        left: isPublic ? 'calc(100% - 1.125rem)' : '0.125rem',
+                      }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 400,
+                        damping: 28,
+                      }}
                     />
                   </button>
                 </div>
@@ -239,12 +275,10 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
                     type="submit"
                     whileTap={{ scale: 0.96 }}
                     disabled={busy || !name.trim()}
-                    className="flex-1 rounded-lg bg-cta py-2 text-[11.5px] font-medium text-cta-foreground
-                      shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
-                      disabled:opacity-50 disabled:cursor-not-allowed
-                      transition-opacity duration-150"
+                    className="app-cta-surface flex-1 rounded-lg py-2 text-[11.5px] font-medium text-cta-foreground
+                      disabled:pointer-events-none disabled:opacity-50"
                   >
-                    {busy ? "Creating…" : "Create room"}
+                    {busy ? 'Creating…' : 'Create room'}
                   </motion.button>
                 </div>
               </form>
@@ -260,12 +294,12 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
 export default function Sidebar({ userName }: { userName?: string | null }) {
   const server = useServerUserSettings();
   const trimmed = userName?.trim();
-  const greetingName = trimmed ? trimmed : "there";
+  const greetingName = trimmed ? trimmed : 'there';
   const [isOpen, setIsOpen] = useState(() => {
     if (server) return !server.compactSidebar;
-    if (typeof window === "undefined") return true;
+    if (typeof window === 'undefined') return true;
     try {
-      return localStorage.getItem("swm:compact-sidebar") !== "1";
+      return localStorage.getItem('swm:compact-sidebar') !== '1';
     } catch {
       return true;
     }
@@ -279,24 +313,24 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
   }, [isOpen]);
 
   const toggleSidebarWidth = useCallback(() => {
-    play("tap");
+    play('tap');
     const next = !isOpenRef.current;
     setIsOpen(next);
     try {
-      localStorage.setItem("swm:compact-sidebar", next ? "0" : "1");
+      localStorage.setItem('swm:compact-sidebar', next ? '0' : '1');
     } catch {
       // ignore
     }
     queueMicrotask(() => {
       try {
-        window.dispatchEvent(new CustomEvent("app:compact-sidebar-changed"));
+        window.dispatchEvent(new CustomEvent('app:compact-sidebar-changed'));
       } catch {
         // ignore
       }
     });
-    void fetch("/api/settings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    void fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ compactSidebar: !next }),
     }).catch(() => {});
   }, [play]);
@@ -304,30 +338,39 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
   useLayoutEffect(() => {
     if (!server) return;
     try {
-      localStorage.setItem("swm:compact-sidebar", server.compactSidebar ? "1" : "0");
+      localStorage.setItem(
+        'swm:compact-sidebar',
+        server.compactSidebar ? '1' : '0',
+      );
     } catch {}
   }, [server]);
 
   useEffect(() => {
     const handler = () => {
       try {
-        const compact = localStorage.getItem("swm:compact-sidebar") === "1";
+        const compact = localStorage.getItem('swm:compact-sidebar') === '1';
         setIsOpen(!compact);
       } catch {}
     };
-    window.addEventListener("app:compact-sidebar-changed", handler as EventListener);
+    window.addEventListener(
+      'app:compact-sidebar-changed',
+      handler as EventListener,
+    );
     return () => {
-      window.removeEventListener("app:compact-sidebar-changed", handler as EventListener);
+      window.removeEventListener(
+        'app:compact-sidebar-changed',
+        handler as EventListener,
+      );
     };
   }, []);
 
   const openCreate = useCallback(() => {
-    play("modalOpen");
+    play('modalOpen');
     setCreateMounted(true);
   }, [play]);
 
   function isActive(href: string) {
-    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   }
 
@@ -335,9 +378,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
     <>
       <motion.aside
         initial={false}
-        animate={{ width: isOpen ? "13rem" : "3.5rem" }}
-        transition={{ type: "spring", stiffness: 380, damping: 32 }}
-        className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border/40"
+        animate={{ width: isOpen ? '13rem' : '3.5rem' }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        className="relative flex h-full shrink-0 flex-col overflow-hidden border-r border-border/35 bg-muted/50 bg-[image:var(--panel-texture-image)] bg-[length:340px_340px]
+          shadow-[inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
+          dark:border-border/50 dark:bg-[color:var(--panel-texture-bg)] dark:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]"
       >
         <motion.button
           type="button"
@@ -345,17 +390,22 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
           whileTap={{ scale: 0.96 }}
           className="m-0.5 flex h-[3.5rem] w-[3.5rem] shrink-0 cursor-pointer items-center justify-center
             rounded-lg transition-colors duration-150 hover:bg-accent/60"
-          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
           <AnimatePresence mode="wait" initial={false}>
             {isOpen ? (
               <motion.span
                 key="close"
                 className="flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: DURATION.fast, ease: EASE_IN } }}
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.25,
+                  filter: 'blur(4px)',
+                  transition: { duration: DURATION.fast, ease: EASE_IN },
+                }}
+                transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
               >
                 <X size={16} strokeWidth={1.5} />
               </motion.span>
@@ -363,10 +413,15 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
               <motion.span
                 key="menu"
                 className="flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.25, filter: "blur(4px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, scale: 0.25, filter: "blur(4px)", transition: { duration: DURATION.fast, ease: EASE_IN } }}
-                transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+                initial={{ opacity: 0, scale: 0.25, filter: 'blur(4px)' }}
+                animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                exit={{
+                  opacity: 0,
+                  scale: 0.25,
+                  filter: 'blur(4px)',
+                  transition: { duration: DURATION.fast, ease: EASE_IN },
+                }}
+                transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
               >
                 <Menu size={16} strokeWidth={1.5} />
               </motion.span>
@@ -403,19 +458,23 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                     >
                       <Link
                         href={item.href}
-                        onClick={() => play("tap")}
+                        onClick={() => play('tap')}
                         className={
-                          "flex items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 py-[7.5px] " +
-                          "text-[11.5px] font-medium transition-[background-color,color] duration-150 " +
+                          'flex items-center gap-2.5 overflow-hidden whitespace-nowrap rounded-lg px-2.5 py-[7.5px] ' +
+                          'text-[11.5px] font-medium transition-[background-color,color] duration-150 ' +
                           (active
-                            ? "bg-accent text-foreground"
-                            : "text-foreground/70 hover:bg-accent/60 hover:text-foreground")
+                            ? 'bg-[color:color-mix(in_oklch,var(--color-cta)_14%,white)] text-foreground shadow-[inset_0_0_0_1px_rgba(199,154,122,0.28)] dark:text-[#161925] dark:shadow-[inset_0_0_0_1px_rgba(22,25,37,0.08)]'
+                            : 'text-foreground/70 hover:bg-accent/55 hover:text-foreground')
                         }
                       >
                         <item.icon
                           size={15}
                           strokeWidth={1.6}
-                          className={active ? "opacity-80 shrink-0" : "opacity-55 shrink-0"}
+                          className={
+                            active
+                              ? 'opacity-80 shrink-0'
+                              : 'opacity-55 shrink-0'
+                          }
                         />
                         {item.label}
                       </Link>
@@ -424,7 +483,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 })}
               </div>
 
-              <motion.div variants={itemVariants} exit={itemExit} className="mt-2 shrink-0">
+              <motion.div
+                variants={itemVariants}
+                exit={itemExit}
+                className="mt-2 shrink-0"
+              >
                 <WhiteNoiseSidebarSection />
               </motion.div>
 
@@ -435,11 +498,9 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={openCreate}
-                className="mt-2 flex w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-cta/25 bg-cta
+                className="app-cta-surface mt-2 flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border border-cta/20
                   px-4 py-2.5 text-[11.5px] font-medium text-cta-foreground
-                  shadow-[0_1px_3px_rgba(17,24,39,0.1),inset_0_1px_0_rgba(255,255,255,0.12)]
-                  transition-[box-shadow,transform] duration-150 whitespace-nowrap cursor-pointer
-                  hover:shadow-[0_2px_6px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.14)]"
+                  whitespace-nowrap transition-transform duration-150"
               >
                 <Plus size={13} strokeWidth={2} />
                 Create New
@@ -450,13 +511,10 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
       </motion.aside>
 
       {createMounted && (
-        <CreateRoomModal
-          onExited={() => setCreateMounted(false)}
-        />
+        <CreateRoomModal onExited={() => setCreateMounted(false)} />
       )}
     </>
   );
 }
 
 // — sideBar.tsx: Collapsible nav, greeting, create-room modal (portal). Syncs compact sidebar with /api/settings and localStorage.
-

@@ -73,8 +73,8 @@ export default function RoomSettingsModal({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 8, opacity: 0, scale: 0.985 }}
             transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
-            className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-[0_12px_48px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
-              dark:bg-card/90 dark:shadow-[0_12px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
+            className="shadow-float relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/40 bg-card/96 ring-1 ring-inset ring-black/[0.035] dark:border-border/50 dark:bg-card/94 dark:ring-white/[0.06]
+              dark:shadow-[0_2px_6px_rgb(0_0_0/0.28),0_24px_56px_rgb(0_0_0/0.34),inset_0_1px_0_rgb(255_255_255/0.05)]"
           >
             <div className="flex items-start justify-between gap-3 border-b border-border/50 px-5 py-4">
               <div className="flex min-w-0 items-start gap-3">

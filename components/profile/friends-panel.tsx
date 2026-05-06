@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { motion } from "motion/react";
-import { Users, UserPlus } from "lucide-react";
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Users, UserPlus } from 'lucide-react';
 
 export type FriendItem = {
   id: string;
@@ -20,7 +20,7 @@ export default function FriendsPanel({
   fallbackNames: string[];
 }) {
   const [friends, setFriends] = useState(initialFriends);
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,30 +30,33 @@ export default function FriendsPanel({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/friends", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/friends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = (await res.json()) as { friend?: FriendItem; error?: string };
+      const data = (await res.json()) as {
+        friend?: FriendItem;
+        error?: string;
+      };
       if (!res.ok || !data.friend) {
-        setError(data.error ?? "Unable to add friend.");
+        setError(data.error ?? 'Unable to add friend.');
         return;
       }
       setFriends((prev) => {
         if (prev.some((f) => f.id === data.friend!.id)) return prev;
         return [data.friend!, ...prev];
       });
-      setEmail("");
+      setEmail('');
     } catch {
-      setError("Something went wrong while adding friend.");
+      setError('Something went wrong while adding friend.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] rounded-2xl border border-border/50 p-4">
+    <div className="shadow-ambient-sm rounded-2xl border border-border/45 bg-muted/42 p-4 ring-1 ring-inset ring-black/[0.025] dark:bg-muted/28 dark:ring-white/[0.05]">
       <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
         <Users size={13} />
         Friends
@@ -71,7 +74,7 @@ export default function FriendsPanel({
           type="submit"
           whileTap={{ scale: 0.96 }}
           disabled={busy || !email.trim()}
-          className="flex shrink-0 items-center gap-1 rounded-[6px] bg-cta px-2.5 py-2 text-[10.5px] font-medium text-cta-foreground disabled:opacity-60"
+          className="app-cta-surface flex shrink-0 items-center gap-1 rounded-[6px] px-2.5 py-2 text-[10.5px] font-medium text-cta-foreground disabled:opacity-60"
         >
           <UserPlus size={12} />
           Add
@@ -83,23 +86,35 @@ export default function FriendsPanel({
       <div className="space-y-2">
         {friends.length > 0 ? (
           friends.map((friend) => (
-            <div key={friend.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
+            <div
+              key={friend.id}
+              className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2"
+            >
               <div className="min-w-0">
-                <p className="truncate text-[11.5px] text-foreground">{friend.name}</p>
-                <p className="truncate text-[10px] text-muted-foreground">{friend.email}</p>
+                <p className="truncate text-[11.5px] text-foreground">
+                  {friend.name}
+                </p>
+                <p className="truncate text-[10px] text-muted-foreground">
+                  {friend.email}
+                </p>
               </div>
               <span className="text-[10px] text-muted-foreground">friend</span>
             </div>
           ))
         ) : fallbackNames.length > 0 ? (
           fallbackNames.slice(0, 4).map((name) => (
-            <div key={name} className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2">
+            <div
+              key={name}
+              className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2"
+            >
               <span className="text-[11.5px] text-foreground">{name}</span>
               <span className="text-[10px] text-muted-foreground">recent</span>
             </div>
           ))
         ) : (
-          <p className="text-[11px] text-muted-foreground">No friends yet. Add by email.</p>
+          <p className="text-[11px] text-muted-foreground">
+            No friends yet. Add by email.
+          </p>
         )}
       </div>
     </div>

@@ -1,22 +1,30 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, LogOut, Mic, Settings, Video, VideoOff, X } from "lucide-react";
-import { connectWithAuth } from "@/lib/socket";
-import { useStudyTimer } from "@/components/study-timer-provider";
-import { useSound } from "@/components/sound-provider";
-import { mergeSelfStudyTimer } from "@/lib/timer-sync";
-import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
-import Chat from "./chat";
-import { useRoomVideo } from "./use-room-video";
-import RoomSettingsModal from "./room-settings-modal";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { AnimatePresence, motion } from 'motion/react';
+import {
+  ArrowLeft,
+  LogOut,
+  Mic,
+  Settings,
+  Video,
+  VideoOff,
+  X,
+} from 'lucide-react';
+import { connectWithAuth } from '@/lib/socket';
+import { useStudyTimer } from '@/components/study-timer-provider';
+import { useSound } from '@/components/sound-provider';
+import { mergeSelfStudyTimer } from '@/lib/timer-sync';
+import AvatarWithFallback from '@/components/ui/avatar-with-fallback';
+import Chat from './chat';
+import { useRoomVideo } from './use-room-video';
+import RoomSettingsModal from './room-settings-modal';
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
   type RoomTimerMember,
-} from "@/features/dashboard/components/room-leaderboard-carousel";
+} from '@/features/dashboard/components/room-leaderboard-carousel';
 
 function VideoSurface({
   stream,
@@ -97,10 +105,14 @@ export default function RoomClient({
   const [videoEnabledUserIds, setVideoEnabledUserIds] = useState<string[]>([]);
   const [todayMinutes, setTodayMinutes] = useState<Record<string, number>>({});
   const [todaySeconds, setTodaySeconds] = useState<Record<string, number>>({});
-  const [sessionStartedAt, setSessionStartedAt] = useState<Record<string, string | null>>({});
+  const [sessionStartedAt, setSessionStartedAt] = useState<
+    Record<string, string | null>
+  >({});
   const [leaving, setLeaving] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(null);
+  const [focusedMember, setFocusedMember] = useState<RoomTimerMember | null>(
+    null,
+  );
   const {
     localStream,
     remoteStreams,
@@ -113,14 +125,18 @@ export default function RoomClient({
   const selfCamOn = videoEnabledUserIds.includes(currentUserId);
 
   const streamForMember = useCallback(
-    (userId: string) => (userId === currentUserId ? localStream : remoteStreams[userId] ?? null),
+    (userId: string) =>
+      userId === currentUserId ? localStream : (remoteStreams[userId] ?? null),
     [currentUserId, localStream, remoteStreams],
   );
 
-  const hasVideoForMember = useCallback((userId: string) => videoEnabledUserIds.includes(userId), [videoEnabledUserIds]);
+  const hasVideoForMember = useCallback(
+    (userId: string) => videoEnabledUserIds.includes(userId),
+    [videoEnabledUserIds],
+  );
 
   const toggleSelfCamera = useCallback(() => {
-    play("tap");
+    play('tap');
     if (selfCamOn) stopVideo();
     else void startVideo();
   }, [play, selfCamOn, startVideo, stopVideo]);
@@ -130,7 +146,7 @@ export default function RoomClient({
     if (!socket) return;
 
     const joinRoom = () => {
-      socket.emit("room:join", { roomId });
+      socket.emit('room:join', { roomId });
     };
     joinRoom();
 
@@ -154,23 +170,23 @@ export default function RoomClient({
     const onKicked = (payload: { roomId: string }) => {
       if (payload.roomId !== roomId) return;
       stopVideo();
-      router.push("/rooms");
+      router.push('/rooms');
     };
     const onConnect = () => {
       joinRoom();
-      socket.emit("presence:refresh");
+      socket.emit('presence:refresh');
     };
 
-    socket.on("presence", onPresence);
-    socket.on("room:kicked", onKicked);
-    socket.on("connect", onConnect);
+    socket.on('presence', onPresence);
+    socket.on('room:kicked', onKicked);
+    socket.on('connect', onConnect);
 
     return () => {
-      socket.emit("room:leave", { roomId });
+      socket.emit('room:leave', { roomId });
       stopVideo();
-      socket.off("presence", onPresence);
-      socket.off("room:kicked", onKicked);
-      socket.off("connect", onConnect);
+      socket.off('presence', onPresence);
+      socket.off('room:kicked', onKicked);
+      socket.off('connect', onConnect);
     };
   }, [roomId, router, stopVideo]);
 
@@ -178,8 +194,8 @@ export default function RoomClient({
     setLeaving(true);
     stopVideo();
     try {
-      await fetch(`/api/rooms/${code}`, { method: "DELETE" });
-      router.push("/rooms");
+      await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
+      router.push('/rooms');
     } finally {
       setLeaving(false);
     }
@@ -189,9 +205,9 @@ export default function RoomClient({
     setLeaving(true);
     stopVideo();
     try {
-      await fetch(`/api/rooms/${code}`, { method: "DELETE" });
+      await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
       setSettingsOpen(false);
-      router.push("/rooms");
+      router.push('/rooms');
     } finally {
       setLeaving(false);
     }
@@ -210,7 +226,7 @@ export default function RoomClient({
           .split(/\s+/)
           .map((p) => p[0])
           .slice(0, 2)
-          .join("")
+          .join('')
           .toUpperCase(),
         active: studyingUserIds.includes(m.id),
         startedAtIso:
@@ -221,7 +237,16 @@ export default function RoomClient({
         todaySeconds: todaySeconds[m.id] ?? 0,
       })),
     }),
-    [roomId, name, code, members, studyingUserIds, sessionStartedAt, todayMinutes, todaySeconds],
+    [
+      roomId,
+      name,
+      code,
+      members,
+      studyingUserIds,
+      sessionStartedAt,
+      todayMinutes,
+      todaySeconds,
+    ],
   );
 
   const displayBoard = useMemo(
@@ -234,7 +259,9 @@ export default function RoomClient({
     [board, currentUserId, selfTimerActive, selfStartedAtMs, selfTodaySeconds],
   );
 
-  const focusHasVideo = focusedMember ? videoEnabledUserIds.includes(focusedMember.id) : false;
+  const focusHasVideo = focusedMember
+    ? videoEnabledUserIds.includes(focusedMember.id)
+    : false;
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6">
@@ -247,7 +274,9 @@ export default function RoomClient({
           Back
         </Link>
         <div className="min-w-0 flex-1 text-center">
-          <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">{name}</h1>
+          <h1 className="truncate text-[14px] font-semibold tracking-tight text-foreground">
+            {name}
+          </h1>
           <p className="text-[10.5px] text-muted-foreground">Code: {code}</p>
         </div>
         <div className="flex shrink-0 justify-end">
@@ -256,7 +285,7 @@ export default function RoomClient({
               type="button"
               whileTap={{ scale: 0.96 }}
               onClick={() => {
-                play("tap");
+                play('tap');
                 setSettingsOpen(true);
               }}
               className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-card/80 text-foreground/90 shadow-[0_1px_2px_rgba(17,24,39,0.04)] transition-colors hover:bg-accent/60"
@@ -291,7 +320,7 @@ export default function RoomClient({
       )}
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.3fr)_minmax(19rem,0.9fr)]">
-        <div className="min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]">
+        <div className="shadow-float min-h-0 rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.032] dark:ring-white/[0.045]">
           <div className="flex h-full min-h-0 flex-col rounded-xl bg-background p-2">
             <AnimatePresence mode="wait" initial={false}>
               {focusedMember ? (
@@ -301,7 +330,7 @@ export default function RoomClient({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, y: 6 }}
                   transition={{ duration: 0.22, ease: [0, 0, 0.58, 1] }}
-                  className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border border-border/50 bg-black"
+                  className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[10px] border border-border/50 bg-[#161925]"
                 >
                   <button
                     type="button"
@@ -313,11 +342,13 @@ export default function RoomClient({
                   </button>
                   <div className="flex min-h-0 flex-1 items-center justify-center">
                     {focusHasVideo ? (
-                      <div className="h-full w-full bg-neutral-950 p-2">
+                      <div className="h-full w-full bg-[#161925] p-2">
                         {focusedMember.id === currentUserId ? (
                           <VideoSurface stream={localStream} muted />
                         ) : (
-                          <VideoSurface stream={remoteStreams[focusedMember.id] ?? null} />
+                          <VideoSurface
+                            stream={remoteStreams[focusedMember.id] ?? null}
+                          />
                         )}
                       </div>
                     ) : (
@@ -338,7 +369,7 @@ export default function RoomClient({
                     )}
                   </div>
                   <div className="pointer-events-none absolute bottom-3 left-0 right-0 flex justify-center">
-                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-black/55 px-2 py-1.5 text-white/90 backdrop-blur-md">
+                    <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-[#161925]/65 px-2 py-1.5 text-white/90 backdrop-blur-md">
                       <button
                         type="button"
                         disabled
@@ -354,11 +385,13 @@ export default function RoomClient({
                           whileTap={{ scale: 0.94 }}
                           disabled={videoStarting}
                           onClick={() => {
-                            play("tap");
+                            play('tap');
                             toggleSelfCamera();
                           }}
                           className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-50"
-                          aria-label={selfCamOn ? "Turn camera off" : "Turn camera on"}
+                          aria-label={
+                            selfCamOn ? 'Turn camera off' : 'Turn camera on'
+                          }
                         >
                           {videoStarting ? (
                             <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-white/70" />
@@ -397,7 +430,7 @@ export default function RoomClient({
           </div>
         </div>
 
-        <div className="min-h-0 rounded-2xl border border-border/50 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-3 shadow-[0_1px_2px_rgba(17,24,39,0.04),0_6px_18px_rgba(17,24,39,0.07)]">
+        <div className="shadow-float min-h-0 rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.032] dark:ring-white/[0.045]">
           <div className="flex h-full min-h-0 flex-col rounded-xl bg-background p-3">
             <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
               Chat panel

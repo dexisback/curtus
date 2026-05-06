@@ -80,10 +80,7 @@ export default function WhiteNoiseSidebarSection() {
   const label = nowPlayingLabel(previewSoundId, currentTone, isPlaying);
 
   return (
-    <div
-      className="mt-2 rounded-2xl border border-border/55 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] p-2
-        shadow-[0_1px_2px_rgba(17,24,39,0.04),0_4px_14px_rgba(17,24,39,0.06)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.2),0_4px_14px_rgba(0,0,0,0.18)]"
-    >
+    <div className="shadow-ambient-sm mt-2 rounded-2xl border border-border/45 bg-muted/48 p-2 ring-1 ring-inset ring-black/[0.03] dark:bg-muted/35 dark:ring-white/[0.06]">
       <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-foreground/[0.04] text-foreground/85">

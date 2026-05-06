@@ -1,8 +1,15 @@
-import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { Minimize2, Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
-import { prisma } from "@/lib/db";
-import { requireSession } from "@/lib/session";
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import {
+  Minimize2,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Video,
+  VideoOff,
+} from 'lucide-react';
+import { prisma } from '@/lib/db';
+import { requireSession } from '@/lib/session';
 
 export default async function RoomVideoCallPage({
   params,
@@ -26,14 +33,18 @@ export default async function RoomVideoCallPage({
   if (!room) notFound();
 
   const isMember = room.members.some((m) => m.userId === session.user.id);
-  if (!room.isPublic && !isMember) redirect("/rooms");
+  if (!room.isPublic && !isMember) redirect('/rooms');
 
   return (
     <div className="flex h-screen w-full flex-col bg-background px-4 pb-5 pt-3 sm:px-6">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <p className="text-[11px] text-muted-foreground">Full-screen room call</p>
-          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">{room.name}</h1>
+          <p className="text-[11px] text-muted-foreground">
+            Full-screen room call
+          </p>
+          <h1 className="text-[14px] font-semibold tracking-tight text-foreground">
+            {room.name}
+          </h1>
         </div>
         <Link
           href={`/room/${room.code}`}
@@ -44,9 +55,11 @@ export default async function RoomVideoCallPage({
         </Link>
       </div>
 
-      <div className="relative min-h-0 flex-1 rounded-3xl border border-border/50 p-5 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] shadow-[0_1px_2px_rgba(17,24,39,0.05),0_12px_36px_rgba(17,24,39,0.1)]">
+      <div className="shadow-float relative min-h-0 flex-1 rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-5 ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]">
         <div className="flex h-full w-full items-center justify-center rounded-2xl bg-black">
-          <p className="text-[12px] text-white/60">Video stream viewport (UI-first shell)</p>
+          <p className="text-[12px] text-white/60">
+            Video stream viewport (UI-first shell)
+          </p>
         </div>
 
         <div className="pointer-events-none absolute bottom-5 left-0 right-0 flex justify-center">

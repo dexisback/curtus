@@ -227,7 +227,7 @@ export default function ProfileModal({
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(ellipse 65% 55% at 50% 42%, oklch(0 0 0 / 0.18) 0%, oklch(0 0 0 / 0.04) 45%, transparent 70%)',
+                'radial-gradient(ellipse 65% 55% at 50% 42%, rgb(22 25 37 / 0.16) 0%, rgb(22 25 37 / 0.04) 45%, transparent 70%)',
             }}
           />
 
@@ -239,9 +239,8 @@ export default function ProfileModal({
             onClick={(e) => e.stopPropagation()}
           >
             <div
-              className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px] max-h-[min(88vh,640px)] overflow-hidden rounded-2xl border border-border/60
-                shadow-[0_1px_2px_rgba(17,24,39,0.06),0_16px_40px_rgba(17,24,39,0.12),inset_0_1px_0_rgba(255,255,255,0.45)]
-                dark:border-border/50 dark:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_20px_48px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)]"
+              className="shadow-float max-h-[min(88vh,640px)] overflow-hidden rounded-2xl border border-border/40 bg-card/98 ring-1 ring-inset ring-black/[0.038] dark:border-border/50 dark:bg-card/96 dark:ring-white/[0.065]
+                dark:shadow-[0_2px_4px_rgb(0_0_0/0.3),0_22px_56px_rgb(0_0_0/0.34),inset_0_1px_0_rgb(255_255_255/0.05)]"
             >
               <div className="max-h-[inherit] overflow-y-auto">
                 <div className="flex items-start justify-between gap-2 border-b border-border/50 p-3 sm:p-4">

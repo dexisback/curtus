@@ -14,8 +14,9 @@ const LB_OUTER = 22;
 const LB_GAP = 14;
 const LB_INNER = LB_OUTER - LB_GAP;
 const LB_SHADOW = [
-  '0 1px 2px rgba(17,24,39,0.04)',
-  '0 4px 14px rgba(17,24,39,0.05)',
+  '0 1px 3px rgba(22,25,37,0.05)',
+  '0 12px 34px rgba(115,85,62,0.07)',
+  'inset 0 1px 0 rgba(255,255,255,0.38)',
 ].join(',');
 
 const RANK_COLORS: Record<number, string> = {
@@ -149,7 +150,7 @@ export default function Leaderboard({
     <>
       <div className="flex h-full min-h-0 w-full min-w-0 items-stretch justify-start pl-0.5 pr-0 pt-1 pb-2">
         <motion.div
-          className="app-cursor-drag relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.04] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:200px_200px]"
+          className="app-cursor-drag relative h-full min-h-0 w-full min-w-0 max-w-full border border-black/[0.035] bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.03] dark:ring-white/[0.045]"
           style={{
             borderRadius: `${LB_OUTER}px`,
             padding: `${LB_GAP}px`,
@@ -163,7 +164,7 @@ export default function Leaderboard({
           transition={SPRING_HOVER}
         >
           <div
-            className="relative flex h-full w-full flex-col overflow-hidden bg-background"
+            className="relative flex h-full w-full flex-col overflow-hidden border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.045)]"
             style={{ borderRadius: `${LB_INNER}px` }}
           >
             <div className="min-h-0 flex-1 px-1.5 py-1.5">
@@ -175,8 +176,10 @@ export default function Leaderboard({
                   onMemberClick={openProfile}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
-                  Join a room to view room leaderboard activity.
+                <div className="app-empty-atmosphere mx-1.5 mb-1.5 mt-1 flex h-full min-h-[7.5rem] items-center justify-center rounded-[14px] px-4">
+                  <p className="max-w-[13rem] text-balance text-center text-[10px] leading-relaxed text-muted-foreground">
+                    Join a room to view room leaderboard activity.
+                  </p>
                 </div>
               )}
             </div>
