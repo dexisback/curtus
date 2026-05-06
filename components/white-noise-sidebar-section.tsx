@@ -19,9 +19,9 @@ import {
 import { DURATION, EASE_OUT_SMOOTH } from '@/lib/ui-motion';
 
 const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
-  { id: 'paris-cafe', label: 'Paris Cafe' },
-  { id: 'beach', label: 'Beach' },
-  { id: 'river', label: 'River' },
+  { id: 'beach', label: 'Soothing Waves' },
+  { id: 'river', label: 'Soft Waves' },
+  { id: 'paris-cafe', label: 'Chinatown' },
 ];
 
 const EXPANDED_KEY = 'swm:white-noise-dock-expanded';

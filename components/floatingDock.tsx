@@ -53,7 +53,12 @@ const DOCK_LINKS: DockItem[] = [
   },
   { id: 'rooms', label: 'Rooms', kind: 'link', href: '/rooms', icon: Video },
   { id: 'focus', label: 'Focus', kind: 'link', href: '/rooms', icon: Focus },
-  { id: 'theme', label: 'Theme', kind: 'theme', icon: SunMoon },
+  {
+    id: 'theme',
+    label: 'the developer likes light mode on this app',
+    kind: 'theme',
+    icon: SunMoon,
+  },
 ];
 
 function DockIcon({
