@@ -1,9 +1,5 @@
 export default function Home() {
   return (
-    <div className="h-full flex items-center justify-center">
-      <p className="text-sm text-muted-foreground">landing page</p>
-    </div>
+    <main className="flex min-h-full w-full flex-col items-center justify-center gap-10 bg-neutral-300 px-4 py-10"></main>
   );
 }
-
-// — Marketing/landing or redirect entry.
