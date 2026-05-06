@@ -1,12 +1,15 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { prisma } from "@/lib/db";
-import { requireApiSession, withApi } from "@/lib/api-session";
-import { parseRequestJson } from "@/lib/api";
-import { limiters, enforce } from "@/lib/ratelimit";
-import { parseYouTubeInput } from "@/lib/youtube";
-import { fetchYouTubeOEmbedTitle } from "@/lib/youtube-oembed";
-import { isMissingLibraryTableError, LIBRARY_LIST_SELECT } from "@/lib/library-db";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { requireApiSession, withApi } from '@/lib/api-session';
+import { parseRequestJson } from '@/lib/api';
+import { limiters, enforce } from '@/lib/ratelimit';
+import { parseYouTubeInput } from '@/lib/youtube';
+import { fetchYouTubeOEmbedTitle } from '@/lib/youtube-oembed';
+import {
+  isMissingLibraryTableError,
+  LIBRARY_LIST_SELECT,
+} from '@/lib/library-db';
 
 const createLibrarySchema = z.object({
   url: z.string().trim().min(1).max(500),
@@ -19,7 +22,7 @@ export const GET = withApi(async () => {
   const items = await prisma.libraryItem
     .findMany({
       where: { userId: session.user.id },
-      orderBy: { updatedAt: "desc" },
+      orderBy: { updatedAt: 'desc' },
       take: 40,
       select: LIBRARY_LIST_SELECT,
     })
@@ -41,21 +44,26 @@ export const GET = withApi(async () => {
 
 export const POST = withApi(async (request: Request) => {
   const session = await requireApiSession();
-  await enforce(limiters.profileWrite, session.user.id);
+  await enforce(limiters.libraryWrite, session.user.id);
 
   const parsed = await parseRequestJson(request, createLibrarySchema);
   if (!parsed.success) return parsed.response;
 
   const yt = parseYouTubeInput(parsed.data.url);
   if (!yt) {
-    return NextResponse.json({ error: "Please enter a valid YouTube video or playlist URL." }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Please enter a valid YouTube video or playlist URL.' },
+      { status: 400 },
+    );
   }
 
   let resolvedTitle: string | null = null;
   const ac = new AbortController();
   const tid = setTimeout(() => ac.abort(), 8000);
   try {
-    resolvedTitle = await fetchYouTubeOEmbedTitle(yt.normalizedUrl, { signal: ac.signal });
+    resolvedTitle = await fetchYouTubeOEmbedTitle(yt.normalizedUrl, {
+      signal: ac.signal,
+    });
   } catch {
     resolvedTitle = null;
   } finally {
@@ -81,7 +89,10 @@ export const POST = withApi(async (request: Request) => {
 
   if (!created) {
     return NextResponse.json(
-      { error: "Library is not ready yet. Please run database migrations and retry." },
+      {
+        error:
+          'Library is not ready yet. Please run database migrations and retry.',
+      },
       { status: 503 },
     );
   }

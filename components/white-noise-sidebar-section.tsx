@@ -26,18 +26,6 @@ const TONES: Array<{ id: WhiteNoiseToneId; label: string }> = [
 
 const EXPANDED_KEY = 'swm:white-noise-dock-expanded';
 
-function readExpandedDefault(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    const v = localStorage.getItem(EXPANDED_KEY);
-    if (v === '0') return false;
-    if (v === '1') return true;
-  } catch {
-    /* ignore */
-  }
-  return true;
-}
-
 function toneChipClass(active: boolean) {
   return (
     'h-9 rounded-lg border px-2.5 text-left text-[11px] transition-colors ' +
@@ -77,7 +65,8 @@ export default function WhiteNoiseSidebarSection() {
     setVolume,
   } = useWhiteNoise();
 
-  const [expanded, setExpanded] = useState(() => readExpandedDefault());
+  // Keep deterministic SSR/client markup to avoid hydration mismatches.
+  const [expanded, setExpanded] = useState(true);
 
   const persistExpanded = useCallback((next: boolean) => {
     setExpanded(next);

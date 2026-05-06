@@ -1,9 +1,13 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
-import { Ban, MoreVertical, UserMinus, UserPlus, X } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { Ban, MoreVertical, UserMinus, UserPlus, X } from 'lucide-react';
+import {
+  formatMinutesClock,
+  formatMinutesCompact,
+} from '@/lib/study-time-format';
 
 const EASE_OUT: readonly [number, number, number, number] = [0, 0, 0.58, 1];
 const EASE_IN: readonly [number, number, number, number] = [0.42, 0, 1, 1];
@@ -23,28 +27,110 @@ type ProfileModalProps = {
   viewerIsHost?: boolean;
 };
 
-function ActivityCalendarShell() {
-  const cols = 7;
-  const rows = 4;
-  const total = cols * rows;
+type ActivityDay = {
+  date: string;
+  totalMinutes: number;
+};
+
+function weekdayLabel(isoDate: string): string {
+  return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString(undefined, {
+    weekday: 'short',
+  });
+}
+
+function shortDateLabel(isoDate: string): string {
+  return new Date(`${isoDate}T12:00:00Z`).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function ActivityCalendarShell({ userId }: { userId: string }) {
+  const [days, setDays] = useState<ActivityDay[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/users/${userId}/activity`, {
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { days?: ActivityDay[] };
+        if (cancelled) return;
+        const nextDays = data.days ?? [];
+        setDays(nextDays);
+        setSelectedDate(
+          (prev) => prev ?? nextDays[nextDays.length - 1]?.date ?? null,
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const maxMinutes = Math.max(1, ...days.map((d) => d.totalMinutes));
+  const selected = days.find((d) => d.date === selectedDate) ?? null;
+
+  const weekdayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-center text-balance text-[10px] font-medium text-muted-foreground">
-        Study activity
+      <p className="text-center text-balance text-[10.5px] font-medium text-muted-foreground">
+        Study activity (last 35 days)
       </p>
       <div className="mx-auto w-full max-w-[280px]">
+        <div className="mb-1 grid w-full grid-cols-7 gap-[3px]">
+          {weekdayHeaders.map((label) => (
+            <span
+              key={label}
+              className="text-center text-[9px] text-muted-foreground"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
         <div className="grid w-full grid-cols-7 gap-[3px]">
-          {Array.from({ length: total }, (_, i) => {
-            const t = (i * 0.11) % 1;
-            const opacity = 0.12 + t * 0.55;
-            return (
+          {loading &&
+            Array.from({ length: 35 }, (_, i) => (
               <div
-                key={i}
-                className="aspect-square rounded-[2.5px] border border-border/30 bg-cta/80"
-                style={{ opacity: Math.min(0.9, opacity) }}
+                key={`loading-${i}`}
+                className="aspect-square animate-pulse rounded-[3px] border border-border/30 bg-muted/40"
               />
-            );
-          })}
+            ))}
+          {!loading &&
+            days.map((day) => {
+              const intensity = day.totalMinutes / maxMinutes;
+              const opacity = Math.max(0.12, Math.min(0.95, intensity));
+              const selectedCell = selectedDate === day.date;
+              return (
+                <button
+                  key={day.date}
+                  type="button"
+                  onClick={() => setSelectedDate(day.date)}
+                  title={`${shortDateLabel(day.date)} - ${formatMinutesClock(day.totalMinutes)}`}
+                  className={
+                    'aspect-square rounded-[3px] border bg-cta/90 transition-[transform,opacity,border-color] duration-150 hover:scale-[1.03] ' +
+                    (selectedCell
+                      ? 'border-foreground/55 shadow-[0_0_0_1px_rgba(0,0,0,0.08)]'
+                      : 'border-border/35')
+                  }
+                  style={{ opacity }}
+                />
+              );
+            })}
+        </div>
+        <div className="mt-2 rounded-md border border-border/50 bg-background/70 px-2 py-1.5 text-[10px] text-foreground/85">
+          {selected
+            ? `${weekdayLabel(selected.date)}, ${shortDateLabel(selected.date)} · ${formatMinutesCompact(selected.totalMinutes)} (${formatMinutesClock(selected.totalMinutes)})`
+            : 'No activity selected'}
         </div>
       </div>
     </div>
@@ -77,7 +163,7 @@ export default function ProfileModal({
       return;
     }
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
@@ -86,18 +172,18 @@ export default function ProfileModal({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") requestClose();
+      if (e.key === 'Escape') requestClose();
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [open, requestClose]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
     };
-    if (menuOpen) document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    if (menuOpen) document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
   }, [menuOpen]);
 
   const onBackdrop = useCallback(
@@ -109,7 +195,7 @@ export default function ProfileModal({
 
   if (!mounted) return null;
 
-  const accent = user.accentColor ?? "oklch(0.62 0.06 75)";
+  const accent = user.accentColor ?? 'oklch(0.62 0.06 75)';
 
   return createPortal(
     <AnimatePresence
@@ -133,15 +219,15 @@ export default function ProfileModal({
           <div
             className="absolute inset-0 bg-background/20 dark:bg-background/30"
             style={{
-              backdropFilter: "blur(10px) saturate(1.15)",
-              WebkitBackdropFilter: "blur(10px) saturate(1.15)",
+              backdropFilter: 'blur(10px) saturate(1.15)',
+              WebkitBackdropFilter: 'blur(10px) saturate(1.15)',
             }}
           />
           <div
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(ellipse 65% 55% at 50% 42%, oklch(0 0 0 / 0.18) 0%, oklch(0 0 0 / 0.04) 45%, transparent 70%)",
+                'radial-gradient(ellipse 65% 55% at 50% 42%, oklch(0 0 0 / 0.18) 0%, oklch(0 0 0 / 0.04) 45%, transparent 70%)',
             }}
           />
 
@@ -280,7 +366,7 @@ export default function ProfileModal({
                   </div>
                 </div>
                 <div className="border-t border-border/50 p-3 sm:p-4">
-                  <ActivityCalendarShell />
+                  <ActivityCalendarShell userId={user.id} />
                 </div>
               </div>
             </div>
@@ -296,9 +382,13 @@ function MenuItemRow({
   icon: Icon,
   label,
   onClick,
-  className = "",
+  className = '',
 }: {
-  icon: React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>;
+  icon: React.ComponentType<{
+    size?: number;
+    className?: string;
+    strokeWidth?: number;
+  }>;
   label: string;
   onClick: () => void;
   className?: string;
@@ -308,8 +398,8 @@ function MenuItemRow({
       type="button"
       whileTap={{ scale: 0.98 }}
       className={
-        "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-foreground/90 " +
-        "hover:bg-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/40 " +
+        'flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs text-foreground/90 ' +
+        'hover:bg-accent/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/40 ' +
         className
       }
       onClick={onClick}
@@ -321,4 +411,3 @@ function MenuItemRow({
 }
 
 // — profile-modal.tsx: Portal modal for a leaderboard user — activity shell, friend/block/kick actions when allowed.
-

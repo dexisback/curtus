@@ -1,9 +1,9 @@
-import { parseYouTubeInput } from "@/lib/youtube";
+import { parseYouTubeInput } from '@/lib/youtube';
 
 export type LibraryItemView = {
   id: string;
   url: string;
-  mediaKind: "VIDEO" | "PLAYLIST";
+  mediaKind: 'VIDEO' | 'PLAYLIST';
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
@@ -15,7 +15,7 @@ export type LibraryItemView = {
 type PrismaLibraryRow = {
   id: string;
   url: string;
-  mediaKind: "VIDEO" | "PLAYLIST";
+  mediaKind: 'VIDEO' | 'PLAYLIST';
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
@@ -24,7 +24,9 @@ type PrismaLibraryRow = {
 };
 
 /** Server loader: Prisma row → client list shape. */
-export function libraryItemFromPrismaRow(row: PrismaLibraryRow): LibraryItemView {
+export function libraryItemFromPrismaRow(
+  row: PrismaLibraryRow,
+): LibraryItemView {
   const parsed = parseYouTubeInput(row.url);
   return {
     id: row.id,
@@ -40,10 +42,10 @@ export function libraryItemFromPrismaRow(row: PrismaLibraryRow): LibraryItemView
 }
 
 function fallbackLabel(item: LibraryItemView): string {
-  if (item.mediaKind === "PLAYLIST") {
-    return `Playlist ${item.playlistId ?? ""}`.trim();
+  if (item.mediaKind === 'PLAYLIST') {
+    return `Playlist ${item.playlistId ?? ''}`.trim();
   }
-  return `Video ${item.videoId ?? ""}`.trim();
+  return `Video ${item.videoId ?? ''}`.trim();
 }
 
 export function displayLabel(item: LibraryItemView): string {
@@ -53,14 +55,18 @@ export function displayLabel(item: LibraryItemView): string {
 }
 
 export function formatItemDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Intl.DateTimeFormat('en-GB', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(iso));
 }
 
 /** Shape of `item` in POST /api/library JSON (dates are ISO strings after JSON parse). */
 export type LibraryItemPostBody = {
   id: string;
   url: string;
-  mediaKind: "VIDEO" | "PLAYLIST";
+  mediaKind: 'VIDEO' | 'PLAYLIST';
   videoId: string | null;
   playlistId: string | null;
   title: string | null;
@@ -70,7 +76,9 @@ export type LibraryItemPostBody = {
 };
 
 /** POST /api/library JSON item → list row. */
-export function libraryItemFromPostBody(item: LibraryItemPostBody): LibraryItemView {
+export function libraryItemFromPostBody(
+  item: LibraryItemPostBody,
+): LibraryItemView {
   return {
     id: item.id,
     url: item.url,
