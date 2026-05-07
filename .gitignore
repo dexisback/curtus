@@ -58,7 +58,6 @@ server/.env
 # dev test scripts
 scripts/
 
-docs/
 HANDOVER.md
 sounds/
 sounds/*
@@ -67,6 +66,3 @@ sounds/**/*
 skills-lock.json
 skills-lock.json/*
 
-
-public/
-public/*
