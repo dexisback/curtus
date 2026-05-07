@@ -46,7 +46,7 @@ export default function ThemeToggle({
   if (!mounted) {
     return (
       <div
-        className={`h-8 w-8 shrink-0 rounded-full border border-border/50 bg-card/50 ${className ?? ''}`}
+        className={`h-10 w-10 shrink-0 rounded-full border border-border/50 bg-card/50 ${className ?? ''}`}
         aria-hidden
       />
     );
@@ -59,7 +59,7 @@ export default function ThemeToggle({
         onClick={onToggle}
         title={THEME_BANTER_HOVER}
         className={
-          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 ' +
+          'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/50 ' +
           'bg-card/80 text-foreground/85 shadow-sm hover:bg-accent/60 hover:text-foreground ' +
           (className ?? '')
         }
@@ -81,7 +81,7 @@ export default function ThemeToggle({
       title={THEME_BANTER_HOVER}
       whileTap={{ scale: 0.96 }}
       className={
-        'relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full ' +
+        'relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full ' +
         'border border-border/50 bg-card/80 text-foreground/85 shadow-sm ' +
         'hover:bg-accent/60 hover:text-foreground ' +
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/60 ' +

@@ -59,8 +59,8 @@ function LoginPageContent() {
   const isPending = pendingProvider !== null;
 
   return (
-    <div className="box-border flex h-[100dvh] max-h-[100dvh] w-full max-w-[100vw] flex-col overflow-hidden bg-[#f7f5f2] p-3 sm:p-4">
-      <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded-[30px] border border-black/[0.07] bg-[#eae8e4] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),inset_0_0_0_1px_rgba(0,0,0,0.028),0_18px_48px_rgba(22,25,37,0.06)] md:h-[calc(100dvh-24px)] md:min-h-0">
+    <div className="box-border flex min-h-dvh w-full max-w-[100vw] flex-col overflow-x-hidden bg-[#f7f5f2] p-3 sm:p-4">
+      <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded-[30px] border border-black/[0.07] bg-[#eae8e4] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),inset_0_0_0_1px_rgba(0,0,0,0.028),0_18px_48px_rgba(22,25,37,0.06)]">
         <div
           className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-black/[0.05] p-3 sm:p-4 md:min-h-0"
           style={{
@@ -116,7 +116,7 @@ function LoginPageContent() {
             />
             <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                <div className="flex w-full flex-col md:h-full md:w-[125%] md:origin-top-left md:scale-[0.8]">
+                <div className="flex w-full flex-col md:h-full">
                   {/* ── Upper: two-column area ── */}
                   <div className="flex items-center px-4 pt-8 pb-2 sm:px-8 md:px-16 md:pt-14">
                     <div className="grid w-full grid-cols-1 items-center gap-10 md:grid-cols-[2fr_3fr] md:gap-12">

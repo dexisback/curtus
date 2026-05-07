@@ -191,7 +191,7 @@ export default function LeaderboardClient({
 
   return (
     <>
-      <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-hidden px-3 pb-4 pt-2 sm:px-5 sm:pb-5 md:px-6 md:pb-6">
+      <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-auto px-3 pb-4 pt-2 sm:px-5 sm:pb-5 md:px-6 md:pb-6">
         {/* Outer panel */}
         <div
           className="shadow-float flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/40 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] ring-1 ring-inset ring-black/[0.028] dark:ring-white/[0.045]

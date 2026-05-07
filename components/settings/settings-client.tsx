@@ -80,14 +80,14 @@ function Toggle({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative h-5 w-9 rounded-full transition-colors duration-200 disabled:opacity-60"
+      className="relative h-6 w-11 rounded-full transition-colors duration-200 disabled:opacity-60"
       style={{
         background: checked ? 'var(--color-cta)' : 'oklch(0.82 0.005 75)',
       }}
     >
       <motion.span
-        className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm"
-        animate={{ left: checked ? 'calc(100% - 1.125rem)' : '0.125rem' }}
+        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
+        animate={{ left: checked ? 'calc(100% - 1.375rem)' : '0.125rem' }}
         transition={{ type: 'spring', stiffness: 420, damping: 28 }}
       />
     </button>

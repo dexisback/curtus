@@ -37,9 +37,9 @@ export default async function DashboardGroupLayout({
 
   return (
     <MobileNavProvider>
-      <div className="flex h-[100dvh] min-h-0 w-full max-w-[100vw] overflow-x-hidden overflow-y-hidden bg-background">
+      <div className="flex min-h-dvh w-full max-w-[100vw] overflow-x-hidden bg-background">
         <Sidebar userName={user.name} />
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-hidden">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
           <div
             className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_78%_54%_at_50%_34%,color-mix(in_oklch,var(--color-card)_45%,transparent)_0%,transparent_62%)]
             dark:bg-[radial-gradient(ellipse_78%_54%_at_50%_34%,rgb(255_255_255/0.035)_0%,transparent_62%)]"
@@ -52,7 +52,7 @@ export default async function DashboardGroupLayout({
           />
           <DashboardNavbar user={user} />
 
-          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-hidden">
+          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
             {children}
           </div>
 
@@ -64,10 +64,10 @@ export default async function DashboardGroupLayout({
                 aria-hidden="true"
               />
               <div
-                className="origin-bottom pointer-events-none translate-y-3 opacity-0
+                className="origin-bottom pointer-events-auto translate-y-0 opacity-100 sm:pointer-events-none sm:translate-y-3 sm:opacity-0
                 transition-[transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.2,0,0,0.1)]
-                group-hover/dock-peek:pointer-events-auto group-hover/dock-peek:translate-y-0
-                group-hover/dock-peek:opacity-100
+                sm:group-hover/dock-peek:pointer-events-auto sm:group-hover/dock-peek:translate-y-0
+                sm:group-hover/dock-peek:opacity-100
                 motion-reduce:pointer-events-auto motion-reduce:translate-y-0 motion-reduce:opacity-100"
               >
                 <FloatingDock />

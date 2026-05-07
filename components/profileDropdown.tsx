@@ -1,15 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
-import { UserCircle, SlidersHorizontal, HelpCircle, LogOut } from "lucide-react";
-import { signOut } from "@/lib/auth-client";
-import { useSound } from "@/components/sound-provider";
-import AvatarWithFallback from "@/components/ui/avatar-with-fallback";
-import { clearDashboardLecture } from "@/lib/dashboard-lecture";
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  UserCircle,
+  SlidersHorizontal,
+  HelpCircle,
+  LogOut,
+} from 'lucide-react';
+import { signOut } from '@/lib/auth-client';
+import { useSound } from '@/components/sound-provider';
+import AvatarWithFallback from '@/components/ui/avatar-with-fallback';
+import { clearDashboardLecture } from '@/lib/dashboard-lecture';
 
-type UserLite = { name?: string | null; image?: string | null; email?: string | null };
+type UserLite = {
+  name?: string | null;
+  image?: string | null;
+  email?: string | null;
+};
 
 export default function ProfileDropdown({ user }: { user: UserLite }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,46 +32,46 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   async function handleSignOut() {
-    play("modalClose");
+    play('modalClose');
     clearDashboardLecture();
     await signOut({
       fetchOptions: {
-        onSuccess: () => router.replace("/login"),
+        onSuccess: () => router.replace('/login'),
       },
     });
   }
 
   const avatarUrl = user?.image;
-  const displayName = user?.name ?? user?.email ?? "User";
+  const displayName = user?.name ?? user?.email ?? 'User';
 
   const menuItems = [
     {
-      label: "Profile",
+      label: 'Profile',
       icon: UserCircle,
       onClick: () => {
-        router.push("/profile");
+        router.push('/profile');
       },
     },
     {
-      label: "Preferences",
+      label: 'Preferences',
       icon: SlidersHorizontal,
       onClick: () => {
-        router.push("/settings");
+        router.push('/settings');
       },
     },
     {
-      label: "Help",
+      label: 'Help',
       icon: HelpCircle,
       onClick: () => {
-        router.push("/help");
+        router.push('/help');
       },
     },
-    { label: "Sign Out", icon: LogOut, onClick: handleSignOut },
+    { label: 'Sign Out', icon: LogOut, onClick: handleSignOut },
   ];
 
   return (
@@ -70,11 +79,11 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
       <motion.button
         onClick={() => {
           const next = !isOpen;
-          play(next ? "modalOpen" : "modalClose");
+          play(next ? 'modalOpen' : 'modalClose');
           setIsOpen(next);
         }}
         whileTap={{ scale: 0.92 }}
-        className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center
+        className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center
           hover:bg-accent transition-colors duration-150 cursor-pointer
           border border-border/40 shadow-[0_1px_2px_rgba(17,24,39,0.04)] overflow-hidden"
       >
@@ -114,11 +123,11 @@ export default function ProfileDropdown({ user }: { user: UserLite }) {
                 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => {
-                  play("tap");
+                  play('tap');
                   setIsOpen(false);
                   void item.onClick();
                 }}
-                className="w-full flex items-center gap-2.5 text-left px-2.5 py-[6px] text-xs rounded-lg
+                className="w-full flex min-h-[40px] items-center gap-2.5 text-left px-2.5 py-[6px] text-xs rounded-lg
                   text-foreground/80 hover:text-foreground hover:bg-accent/70
                   active:bg-accent transition-colors duration-150 cursor-pointer"
               >

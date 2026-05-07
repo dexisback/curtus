@@ -197,7 +197,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
                   whileTap={{ scale: 0.96 }}
                   aria-label="Close"
                   onClick={requestClose}
-                  className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground
                     hover:bg-muted/60 hover:text-foreground transition-colors duration-150"
                 >
                   <X size={14} strokeWidth={1.75} />
@@ -236,7 +236,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
                     role="switch"
                     aria-checked={isPublic}
                     onClick={() => setIsPublic((v) => !v)}
-                    className="relative h-5 w-9 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/50"
+                    className="relative h-6 w-11 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/50"
                     style={{
                       background: isPublic
                         ? 'var(--color-cta)'
@@ -244,9 +244,9 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
                     }}
                   >
                     <motion.span
-                      className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm"
+                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm"
                       animate={{
-                        left: isPublic ? 'calc(100% - 1.125rem)' : '0.125rem',
+                        left: isPublic ? 'calc(100% - 1.375rem)' : '0.125rem',
                       }}
                       transition={{
                         type: 'spring',
@@ -440,7 +440,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
             ? { type: 'spring', stiffness: 380, damping: 32 }
             : { type: 'spring', stiffness: 400, damping: 34 }
         }
-        className="fixed inset-y-0 left-0 z-[140] flex h-[100dvh] max-h-[100dvh] w-[min(17rem,calc(100vw-2.75rem))]
+        className="fixed inset-y-0 left-0 z-[140] flex min-h-dvh w-[min(17rem,calc(100vw-2.75rem))]
           shrink-0 flex-col overflow-hidden border-r border-border/35 bg-muted/50 bg-[image:var(--panel-texture-image)] bg-[length:340px_340px]
           shadow-[0_14px_40px_rgb(22_25_37/0.1),inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
           dark:border-border/50 dark:bg-[color:var(--panel-texture-bg)] dark:shadow-[0_16px_44px_rgb(0_0_0/0.38),inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]

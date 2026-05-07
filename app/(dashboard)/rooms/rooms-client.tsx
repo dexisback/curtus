@@ -231,7 +231,7 @@ export default function RoomsClient({
   const hasAnyRoom = myRooms.length > 0 || publicRooms.length > 0;
 
   return (
-    <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-hidden px-3 pb-5 pt-2 sm:px-5 sm:pb-6 md:px-6">
+    <div className="relative flex h-full min-h-0 w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-auto px-3 pb-5 pt-2 sm:px-5 sm:pb-6 md:px-6">
       {/* Page header */}
       <div className="mb-4 flex shrink-0 items-center gap-2 pt-2">
         <Video
