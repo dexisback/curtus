@@ -59,37 +59,42 @@ function LoginPageContent() {
   const isPending = pendingProvider !== null;
 
   return (
-    <div className="box-border flex min-h-[100dvh] w-full max-w-[100vw] flex-col overflow-x-hidden overflow-y-auto bg-neutral-100 p-3 sm:p-4">
-      <div className="min-h-0 w-full max-w-full flex-1 rounded-[30px] border border-black/10 bg-[#ececec] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_0_0_1px_rgba(0,0,0,0.03),0_18px_45px_rgba(0,0,0,0.08)] md:min-h-0 md:h-[calc(100dvh-24px)]">
+    <div className="box-border flex h-[100dvh] max-h-[100dvh] w-full max-w-[100vw] flex-col overflow-hidden bg-neutral-100 p-3 sm:p-4">
+      <div className="flex min-h-0 w-full max-w-full flex-1 flex-col rounded-[30px] border border-black/10 bg-[#ececec] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_0_0_1px_rgba(0,0,0,0.03),0_18px_45px_rgba(0,0,0,0.08)] md:h-[calc(100dvh-24px)] md:min-h-0">
         <div
-          className="min-h-[min(100%,48rem)] w-full rounded-[22px] border border-black/5 p-3 sm:p-4 md:h-full md:min-h-0"
+          className="flex min-h-0 flex-1 flex-col rounded-[22px] border border-black/5 p-3 sm:p-4 md:min-h-0"
           style={{
             backgroundImage:
-              'repeating-linear-gradient(-45deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 5px)',
+              'repeating-linear-gradient(-45deg, rgba(0,0,0,0.045) 0px, rgba(0,0,0,0.045) 1px, transparent 1px, transparent 5px)',
           }}
         >
-          <div className="relative min-h-[min(100%,44rem)] w-full overflow-x-hidden overflow-y-visible rounded-[18px] border border-black/5 bg-white/95 p-2 shadow-xl shadow-black/10 md:h-full md:min-h-0 md:overflow-hidden">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[18px] border border-black/5 bg-white/95 p-2 shadow-xl shadow-black/10">
             <div className="pointer-events-none absolute inset-0 rounded-[18px] bg-gradient-to-b from-white/35 via-transparent to-transparent" />
             <div className="pointer-events-none absolute inset-[1px] rounded-[17px] ring-1 ring-black/5" />
-            <div className="flex w-full flex-col md:h-full md:w-[125%] md:origin-top-left md:scale-[0.8]">
-              {/* ── Upper: two-column area ── */}
-              <div className="flex items-center px-4 pt-8 pb-2 sm:px-8 md:px-16 md:pt-14">
-                <div className="w-full grid grid-cols-1 gap-10 md:grid-cols-[2fr_3fr] md:gap-12 items-center">
-                  {/* Left: Auth */}
-                  <div className="flex flex-col gap-5 max-w-sm">
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] text-neutral-600 shadow-[0_4px_14px_rgba(22,25,37,0.08)] backdrop-blur-sm">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#C79A7A]" />
-                      Focused live rooms
+            <div className="pointer-events-none absolute inset-0 rounded-[18px] bg-[linear-gradient(180deg,transparent_52%,rgba(246,244,241,0.28)_100%)] opacity-[0.45]" aria-hidden />
+            <div className="relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex w-full flex-col md:h-full md:w-[125%] md:origin-top-left md:scale-[0.8]">
+                  {/* ── Upper: two-column area ── */}
+                  <div className="flex items-center px-4 pt-8 pb-2 sm:px-8 md:px-16 md:pt-14">
+                    <div className="grid w-full grid-cols-1 items-center gap-10 md:grid-cols-[2fr_3fr] md:gap-12">
+                  {/* Left: Auth — single vertical rhythm: intro → card → social proof */}
+                  <div className="flex max-w-sm flex-col">
+                    <div className="flex flex-col gap-3">
+                      <div className="inline-flex w-fit items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-[11px] text-neutral-600 shadow-[0_4px_14px_rgba(22,25,37,0.08)] backdrop-blur-sm">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#C79A7A]" />
+                        Focused live rooms
+                      </div>
+                      <p className="text-[13px] font-medium text-neutral-700">
+                        Study together in calm, real-time sessions
+                      </p>
+                      <p className="text-sm leading-relaxed text-neutral-400">
+                        Continue with your provider to access rooms, timers, and
+                        live study sessions.
+                      </p>
                     </div>
-                    <p className="text-[13px] font-medium text-neutral-700">
-                      Study together in calm, real-time sessions
-                    </p>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      Continue with your provider to access rooms, timers, and
-                      live study sessions.
-                    </p>
 
-                    <div className="rounded-2xl bg-white/70 p-6 shadow-[0_2px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm">
+                    <div className="mt-6 rounded-2xl bg-white/70 p-6 shadow-[0_2px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm">
                       <div className="flex flex-col gap-1 mb-5">
                         <h1 className="text-lg font-semibold text-foreground">
                           Sign in to StudyWithMe
@@ -168,44 +173,70 @@ function LoginPageContent() {
                         </button>
                       </div>
                     </div>
-                    <div className="mt-1 w-full max-w-[18.5rem]">
-                      <p className="mb-2 text-[11px] text-neutral-400">
+
+                    <div className="mt-5 w-full max-w-[18.5rem]">
+                      <p className="mb-2.5 text-[11px] text-neutral-400">
                         Join thousands of students studying live
                       </p>
                       <TestimonialAnimatedTooltip />
                     </div>
                   </div>
 
-                  {/* Right: Card stack */}
+                  {/* Right: Card stack + barely-there ambient depth */}
                   <div className="min-w-0 max-w-[100%] pb-8 md:pb-0">
-                    <div className="mx-auto w-full max-w-[58rem] min-w-0 rounded-2xl px-2 py-4 sm:px-6 md:px-8">
-                      <LandingCardStack className="h-[min(24rem,calc(100vw+4rem))] sm:h-[min(30rem,calc(100vw))] md:h-[36rem]" />
+                    <div className="relative mx-auto w-full min-w-0 max-w-[58rem] px-2 py-4 sm:px-6 md:px-8">
+                      <div
+                        className="pointer-events-none absolute left-1/2 top-[46%] z-0 h-[min(380px,78vh)] w-[min(480px,92%)] -translate-x-1/2 -translate-y-1/2 opacity-[0.85]"
+                        aria-hidden
+                        style={{
+                          background:
+                            'radial-gradient(ellipse 55% 48% at 50% 48%, rgba(199,154,122,0.055) 0%, rgba(246,244,240,0.02) 42%, transparent 72%)',
+                        }}
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-x-[6%] bottom-[8%] z-0 h-28 opacity-70 blur-2xl"
+                        aria-hidden
+                        style={{
+                          background:
+                            'radial-gradient(ellipse 70% 55% at 50% 80%, rgba(22,25,37,0.028) 0%, transparent 65%)',
+                        }}
+                      />
+                      <div className="relative z-[1]">
+                        <LandingCardStack className="h-[min(24rem,calc(100vw+4rem))] sm:h-[min(30rem,calc(100vw))] md:h-[36rem]" />
+                      </div>
+                    </div>
+                  </div>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <div className="relative z-[2] shrink-0 rounded-b-[14px] border-t border-black/[0.05] bg-[rgba(255,255,255,0.55)] px-3 py-2.5 backdrop-blur-[6px] sm:px-4 sm:py-3">
+                <div className="flex justify-end">
+                  <a
+                    href="https://github.com/dexisback/ss-provider"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="please"
+                    className="group relative inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#161925]/72 px-3 py-1.5 text-[11px] text-white/85 shadow-[0_6px_16px_rgba(22,25,37,0.22)] backdrop-blur-md transition-colors hover:bg-[#161925]/82"
+                  >
+                    <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-[#161925]/90 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity duration-75 group-hover:opacity-100 group-focus-visible:opacity-100">
+                      please
+                    </span>
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                    Star on GitHub
+                  </a>
+                </div>
+              </div>
             </div>
-            <a
-              href="https://github.com/dexisback/ss-provider"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="please"
-              className="group absolute bottom-5 right-5 z-20 inline-flex items-center gap-2 rounded-full border border-black/10 bg-[#161925]/72 px-3 py-1.5 text-[11px] text-white/85 shadow-[0_6px_16px_rgba(22,25,37,0.22)] backdrop-blur-md transition-colors hover:bg-[#161925]/82"
-            >
-              <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-md bg-[#161925]/90 px-1.5 py-0.5 text-[10px] text-white opacity-0 transition-opacity duration-75 group-hover:opacity-100 group-focus-visible:opacity-100">
-                please
-              </span>
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z" />
-              </svg>
-              Star on GitHub
-            </a>
           </div>
         </div>
       </div>

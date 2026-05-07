@@ -523,7 +523,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 hi, {greetingName}
               </motion.p>
 
-              <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
+              <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {NAV_ITEMS.map((item) => {
                   const active = isActive(item.href);
                   return (

@@ -9,7 +9,11 @@ export default async function AuthLayout({
   const session = await getServerSession();
   if (session) redirect("/dashboard");
 
-  return <main className="min-h-screen">{children}</main>;
+  return (
+    <main className="flex min-h-[100dvh] max-h-[100dvh] flex-col overflow-hidden overflow-x-hidden">
+      {children}
+    </main>
+  );
 }
 
 // — Auth segment layout (minimal shell around login/signup).

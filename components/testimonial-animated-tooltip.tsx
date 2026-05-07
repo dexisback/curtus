@@ -74,7 +74,7 @@ export default function TestimonialAnimatedTooltip() {
   };
 
   return (
-    <section className="w-full max-w-none rounded-2xl bg-transparent px-1 py-1">
+    <section className="w-full max-w-none">
       <div
         ref={containerRef}
         className="group relative flex w-full items-end justify-center overflow-visible"
@@ -93,14 +93,14 @@ export default function TestimonialAnimatedTooltip() {
                 damping: 24,
                 mass: 0.5,
               }}
-              className="pointer-events-none absolute bottom-[calc(100%+0.45rem)] z-50 -translate-x-1/2 text-white"
+              className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] z-50 -translate-x-1/2"
               style={{ left: tooltipX }}
             >
-              <div className="w-64 rounded-xl border border-white/10 bg-[#161925]/95 px-4 py-3 shadow-[0_8px_20px_rgba(22,25,37,0.32)] backdrop-blur-sm">
-                <p className="text-[17px] font-semibold leading-tight text-white">
+              <div className="w-[15.5rem] rounded-xl border border-black/[0.06] bg-[rgba(253,252,250,0.96)] px-3.5 py-2.5 shadow-[0_8px_28px_rgba(0,0,0,0.07)] backdrop-blur-[6px] ring-1 ring-black/[0.03]">
+                <p className="text-[15px] font-semibold leading-tight tracking-tight text-neutral-800">
                   {people[hoveredIndex]?.name}
                 </p>
-                <p className="mt-1 text-[13px] leading-snug text-white/70">
+                <p className="mt-0.5 text-[12px] leading-snug text-neutral-500">
                   {people[hoveredIndex]?.designation}
                 </p>
               </div>
@@ -108,7 +108,13 @@ export default function TestimonialAnimatedTooltip() {
           ) : null}
         </AnimatePresence>
 
-        <div className="inline-flex rounded-2xl border border-white/10 bg-[#161925]/68 px-4 py-3 shadow-[0_6px_14px_rgba(22,25,37,0.22)] backdrop-blur-md">
+        <div
+          className="inline-flex rounded-xl border px-3 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-[8px]"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.72)',
+            borderColor: 'rgba(0,0,0,0.05)',
+          }}
+        >
           <div className="flex flex-row items-center">
             {people.map((person, index) => (
               <motion.button
@@ -120,10 +126,10 @@ export default function TestimonialAnimatedTooltip() {
                 onMouseEnter={() => setHovered(index)}
                 onFocus={() => setHovered(index)}
                 onBlur={() => setHovered(null)}
-                whileHover={{ y: -3, scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
-                className={`relative h-14 w-14 rounded-full border-2 border-white/75 bg-[#161925] shadow-[0_3px_8px_rgba(22,25,37,0.28)] ${
-                  index === 0 ? '' : '-ml-2.5'
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className={`relative h-11 w-11 overflow-hidden rounded-full border border-black/[0.06] bg-neutral-100 shadow-[0_2px_8px_rgba(22,25,37,0.07)] ring-[0.5px] ring-white/90 ${
+                  index === 0 ? '' : '-ml-2'
                 }`}
                 style={{
                   zIndex: hoveredIndex === index ? 40 : people.length - index,
@@ -132,7 +138,7 @@ export default function TestimonialAnimatedTooltip() {
               >
                 <span
                   aria-hidden
-                  className="block h-full w-full rounded-full bg-cover bg-center bg-no-repeat"
+                  className="block h-full w-full rounded-full bg-cover bg-center bg-no-repeat opacity-[0.94]"
                   style={{ backgroundImage: `url("${person.image}")` }}
                 />
               </motion.button>
