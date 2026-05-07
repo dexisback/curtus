@@ -351,7 +351,7 @@ export default function LeaderboardClient({
                       <li className="list-none px-2 py-4">
                         <div className="app-empty-atmosphere app-empty-atmosphere--dense flex min-h-[11rem] items-center justify-center rounded-xl px-6 py-8">
                           <p className="max-w-[16rem] text-balance text-center text-[11.5px] leading-relaxed text-muted-foreground">
-                          Leaderboard empty. The only time you're gonna be at the top
+                            {`Leaderboard empty. The only time you\u2019re gonna be at the top`}
                           </p>
                         </div>
                       </li>
