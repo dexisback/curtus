@@ -123,6 +123,7 @@ export default function RoomClient({
   } = useRoomVideo({ roomId, currentUserId, videoEnabledUserIds });
 
   const selfCamOn = videoEnabledUserIds.includes(currentUserId);
+  const refreshTimerRefs = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const streamForMember = useCallback(
     (userId: string) =>
@@ -145,8 +146,24 @@ export default function RoomClient({
     const socket = connectWithAuth();
     if (!socket) return;
 
+    const clearRefreshTimers = () => {
+      refreshTimerRefs.current.forEach((id) => clearTimeout(id));
+      refreshTimerRefs.current = [];
+    };
+    const queuePresenceRefreshBurst = () => {
+      clearRefreshTimers();
+      const delays = [120, 450, 1100];
+      refreshTimerRefs.current = delays.map((ms) =>
+        setTimeout(() => {
+          if (socket.connected) socket.emit('presence:refresh');
+        }, ms),
+      );
+    };
     const joinRoom = () => {
       socket.emit('room:join', { roomId });
+      // room:join persistence is async on the server; burst refreshes avoid stale state
+      // when refresh arrives before membership is committed.
+      queuePresenceRefreshBurst();
     };
     joinRoom();
 
@@ -174,14 +191,18 @@ export default function RoomClient({
     };
     const onConnect = () => {
       joinRoom();
-      socket.emit('presence:refresh');
     };
 
     socket.on('presence', onPresence);
     socket.on('room:kicked', onKicked);
     socket.on('connect', onConnect);
+    const keepAliveId = setInterval(() => {
+      if (socket.connected) socket.emit('presence:refresh');
+    }, 15_000);
 
     return () => {
+      clearRefreshTimers();
+      clearInterval(keepAliveId);
       socket.emit('room:leave', { roomId });
       stopVideo();
       socket.off('presence', onPresence);
