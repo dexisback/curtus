@@ -294,10 +294,13 @@ async function publishPresence(io: StudyServer, roomId: string) {
     sessionStartedAt,
   });
 
-  const activeRoomCount = [...io.of('/').adapter.rooms.entries()].filter(
-    ([rid, socketSet]) => !rid.startsWith('user:') && socketSet.size > 0,
-  ).length;
-  roomsActive.set(activeRoomCount);
+  const namespace = typeof io.of === 'function' ? io.of('/') : null;
+  if (namespace?.adapter?.rooms) {
+    const activeRoomCount = [...namespace.adapter.rooms.entries()].filter(
+      ([rid, socketSet]) => !rid.startsWith('user:') && socketSet.size > 0,
+    ).length;
+    roomsActive.set(activeRoomCount);
+  }
 }
 
 async function maybeRemovePresenceMember(
@@ -510,11 +513,14 @@ async function validateMediaTarget(
 
 export function registerSocketEvents(io: StudyServer) {
   io.on('connection', (socket: StudySocket) => {
-    const socketLog = logger.child({
-      socket_id: socket.id,
-      user_id_hash: socket.data.userId,
-      request_id: socket.data.requestId,
-    });
+    const socketLog =
+      typeof logger.child === 'function'
+        ? logger.child({
+            socket_id: socket.id,
+            user_id_hash: socket.data.userId,
+            request_id: socket.data.requestId,
+          })
+        : logger;
     const observeEvent = async (eventName: string, fn: () => Promise<void>) =>
       withSocketSpan(
         `socket.${eventName}`,
