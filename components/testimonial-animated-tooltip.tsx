@@ -109,10 +109,10 @@ export default function TestimonialAnimatedTooltip() {
         </AnimatePresence>
 
         <div
-          className="inline-flex rounded-xl border px-3 py-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] backdrop-blur-[8px]"
+          className="inline-flex rounded-xl border px-3 py-2.5 shadow-[0_6px_26px_rgba(22,25,37,0.045)] backdrop-blur-[6px]"
           style={{
-            backgroundColor: 'rgba(255,255,255,0.72)',
-            borderColor: 'rgba(0,0,0,0.05)',
+            backgroundColor: 'rgba(237, 233, 226, 0.88)',
+            borderColor: 'rgba(0,0,0,0.045)',
           }}
         >
           <div className="flex flex-row items-center">
