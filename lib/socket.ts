@@ -1,4 +1,4 @@
-import { io, type Socket } from "socket.io-client";
+import { io, type Socket } from 'socket.io-client';
 
 type ServerToClientEvents = {
   presence: (payload: {
@@ -10,7 +10,7 @@ type ServerToClientEvents = {
     todaySeconds: Record<string, number>;
     sessionStartedAt: Record<string, string | null>;
   }) => void;
-  "chat:message": (payload: {
+  'chat:message': (payload: {
     id: string;
     roomId: string;
     content: string;
@@ -19,39 +19,36 @@ type ServerToClientEvents = {
     userName: string;
     createdAt: string;
   }) => void;
-  "session:logged": (payload: {
+  'session:logged': (payload: {
     durationMin: number;
     lifetimeFocusMinutes: number;
     roomId: string | null;
   }) => void;
-  "ping:received": (payload: {
-    fromUserId: string;
-    createdAt: string;
-  }) => void;
-  "room:error": (payload: { message: string }) => void;
-  "room:kicked": (payload: { roomId: string }) => void;
-  "media:offer": (payload: {
+  'ping:received': (payload: { fromUserId: string; createdAt: string }) => void;
+  'room:error': (payload: { message: string }) => void;
+  'room:kicked': (payload: { roomId: string }) => void;
+  'media:offer': (payload: {
     roomId: string;
     fromUserId: string;
     description: RTCSessionDescriptionInit;
   }) => void;
-  "media:answer": (payload: {
+  'media:answer': (payload: {
     roomId: string;
     fromUserId: string;
     description: RTCSessionDescriptionInit;
   }) => void;
-  "media:ice-candidate": (payload: {
+  'media:ice-candidate': (payload: {
     roomId: string;
     fromUserId: string;
     candidate: RTCIceCandidateInit;
   }) => void;
-  "media:peer-left": (payload: { roomId: string; userId: string }) => void;
+  'media:peer-left': (payload: { roomId: string; userId: string }) => void;
 };
 
 type ClientToServerEvents = {
-  "room:join": (payload: { roomId: string }) => void;
-  "room:leave": (payload: { roomId: string }) => void;
-  "chat:send": (
+  'room:join': (payload: { roomId: string }) => void;
+  'room:leave': (payload: { roomId: string }) => void;
+  'chat:send': (
     payload: { roomId: string; content: string; clientNonce: string },
     ack?: (response: {
       ok: boolean;
@@ -67,40 +64,44 @@ type ClientToServerEvents = {
       error?: string;
     }) => void,
   ) => void;
-  "room:video-state": (
+  'room:video-state': (
     payload: { roomId: string; enabled: boolean },
     ack?: (response: { ok: boolean; error?: string }) => void,
   ) => void;
-  "media:join": (
+  'media:join': (
     payload: { roomId: string },
     ack?: (response: { ok: boolean; peers?: string[]; error?: string }) => void,
   ) => void;
-  "media:leave": (payload: { roomId: string }) => void;
-  "media:offer": (payload: {
+  'media:leave': (payload: { roomId: string }) => void;
+  'media:offer': (payload: {
     roomId: string;
     toUserId: string;
     description: RTCSessionDescriptionInit;
   }) => void;
-  "media:answer": (payload: {
+  'media:answer': (payload: {
     roomId: string;
     toUserId: string;
     description: RTCSessionDescriptionInit;
   }) => void;
-  "media:ice-candidate": (payload: {
+  'media:ice-candidate': (payload: {
     roomId: string;
     toUserId: string;
     candidate: RTCIceCandidateInit;
   }) => void;
-  "session:started": (payload: { roomId?: string | null }) => void;
-  "session:stopped": () => void;
-  "ping:send": (payload: { toUserId: string }) => void;
-  "presence:refresh": () => void;
+  'session:started': (payload: { roomId?: string | null }) => void;
+  'session:stopped': () => void;
+  'ping:send': (payload: { toUserId: string }) => void;
+  'presence:refresh': () => void;
 };
 
 export type StudySocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socketSingleton: StudySocket | null = null;
-let socketTokenCache: { token: string; expiresAtMs: number } | null = null;
+let socketTokenCache: {
+  token: string;
+  requestId: string;
+  expiresAtMs: number;
+} | null = null;
 let pendingPresenceRefresh = false;
 
 function getSocketUrl() {
@@ -109,40 +110,44 @@ function getSocketUrl() {
 
 function getCookieAuth() {
   return {
-    cookie: typeof document === "undefined" ? "" : document.cookie,
+    cookie: typeof document === 'undefined' ? '' : document.cookie,
   };
 }
 
 async function getSocketToken() {
   const now = Date.now();
   if (socketTokenCache && socketTokenCache.expiresAtMs > now) {
-    return socketTokenCache.token;
+    return socketTokenCache;
   }
   try {
-    const res = await fetch("/api/socket/token", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
+    const res = await fetch('/api/socket/token', {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
     });
     if (!res.ok) return null;
+    const requestId = res.headers.get('x-request-id') ?? crypto.randomUUID();
     const data = (await res.json()) as { token?: string };
     if (!data.token) return null;
     socketTokenCache = {
       token: data.token,
+      requestId,
       expiresAtMs: now + 8 * 60 * 1000,
     };
-    return data.token;
+    return socketTokenCache;
   } catch {
     return null;
   }
 }
 
 export function getSocket() {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   const socketUrl = getSocketUrl();
   if (!socketUrl) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("NEXT_PUBLIC_SOCKET_URL is not set. Realtime features are disabled.");
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        'NEXT_PUBLIC_SOCKET_URL is not set. Realtime features are disabled.',
+      );
     }
     return null;
   }
@@ -152,14 +157,22 @@ export function getSocket() {
       autoConnect: false,
       withCredentials: true,
       auth: async (cb) => {
-        const token = await getSocketToken();
-        cb(token ? { ...getCookieAuth(), socketToken: token } : getCookieAuth());
+        const tokenMeta = await getSocketToken();
+        cb(
+          tokenMeta
+            ? {
+                ...getCookieAuth(),
+                socketToken: tokenMeta.token,
+                requestId: tokenMeta.requestId,
+              }
+            : getCookieAuth(),
+        );
       },
     });
 
-    socketSingleton.on("connect", () => {
+    socketSingleton.on('connect', () => {
       if (pendingPresenceRefresh && socketSingleton?.connected) {
-        socketSingleton.emit("presence:refresh");
+        socketSingleton.emit('presence:refresh');
         pendingPresenceRefresh = false;
       }
     });
@@ -180,7 +193,7 @@ export function requestPresenceRefresh() {
   const socket = connectWithAuth();
   if (!socket) return;
   if (socket.connected) {
-    socket.emit("presence:refresh");
+    socket.emit('presence:refresh');
     pendingPresenceRefresh = false;
   } else {
     pendingPresenceRefresh = true;
@@ -192,4 +205,3 @@ export function disconnectSocket() {
 }
 
 // — socket.ts: Browser Socket.IO client singleton, token fetch/cache, cookie + signed auth for realtime.
-

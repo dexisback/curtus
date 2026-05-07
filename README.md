@@ -63,6 +63,20 @@ npm run dev --prefix server
 - `npm test` — run Vitest
 - `npm run format` — prettier
 
+## Observability
+
+This repo now supports phased observability:
+
+- Structured JSON logs (web + socket) with correlation fields (`request_id`, `trace_id`, `room_id`, `event_name`).
+- OpenTelemetry traces exported to Grafana Cloud Tempo.
+- Socket server Prometheus metrics endpoint on `GET /metrics`.
+
+See:
+
+- `docs/observability.md` for setup + Grafana Cloud wiring.
+- `docs/observability-runbook.md` for dashboard panels, alerts, SLOs, and triage steps.
+- `docs/grafana-cloud-scrape-example.yaml` for a Prometheus scrape job template.
+
 ## CI
 
 GitHub Actions runs install + `npm run check` on pushes/PRs: `.github/workflows/ci.yml`.

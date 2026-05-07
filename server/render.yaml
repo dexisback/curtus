@@ -15,3 +15,9 @@ services:
         sync: false
       - key: UPSTASH_REDIS_TOKEN
         sync: false
+      - key: OBS_ENABLED
+        value: "true"
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        sync: false
+      - key: OTEL_EXPORTER_OTLP_HEADERS
+        sync: false

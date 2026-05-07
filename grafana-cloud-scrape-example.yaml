@@ -1,0 +1,14 @@
+apiVersion: 1
+
+scrape_configs:
+  - job_name: ss-provider-socket
+    scrape_interval: 30s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - studywithme-socket.onrender.com
+    scheme: https
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: service
+        replacement: ss-provider-socket

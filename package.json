@@ -26,6 +26,10 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.217.0",
+    "@opentelemetry/sdk-node": "^0.217.0",
     "@prisma/adapter-neon": "^7.5.0",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
