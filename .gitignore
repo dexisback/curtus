@@ -63,6 +63,5 @@ sounds/
 sounds/*
 sounds/**
 sounds/**/*
-skills-lock.json
-skills-lock.json/*
+/skills-lock.json
 
