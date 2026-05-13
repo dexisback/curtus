@@ -52,26 +52,13 @@ export default async function DashboardGroupLayout({
           />
           <DashboardNavbar user={user} />
 
-          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="relative z-10 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+6.75rem)] sm:pb-[calc(env(safe-area-inset-bottom,0px)+7.25rem)]">
             {children}
           </div>
 
-          {/* Keep dock discoverable without blocking the todo timeline interactions. */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-4">
-            <div className="group/dock-peek relative flex flex-col items-center">
-              <div
-                className="pointer-events-auto h-3 w-40"
-                aria-hidden="true"
-              />
-              <div
-                className="origin-bottom pointer-events-auto translate-y-0 opacity-100 sm:pointer-events-none sm:translate-y-3 sm:opacity-0
-                transition-[transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.2,0,0,0.1)]
-                sm:group-hover/dock-peek:pointer-events-auto sm:group-hover/dock-peek:translate-y-0
-                sm:group-hover/dock-peek:opacity-100
-                motion-reduce:pointer-events-auto motion-reduce:translate-y-0 motion-reduce:opacity-100"
-              >
-                <FloatingDock />
-              </div>
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-4">
+            <div className="pointer-events-auto">
+              <FloatingDock />
             </div>
           </div>
         </main>

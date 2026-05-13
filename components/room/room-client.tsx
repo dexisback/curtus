@@ -285,7 +285,7 @@ export default function RoomClient({
     : false;
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden px-4 pb-5 pt-3 sm:px-6">
+    <div className="flex min-h-dvh w-full flex-col overflow-x-hidden overflow-y-auto px-4 pb-5 pt-3 sm:px-6 md:h-full md:min-h-0 md:overflow-hidden">
       <div className="mb-3 flex items-center justify-between gap-2">
         <Link
           href="/rooms"
@@ -342,7 +342,7 @@ export default function RoomClient({
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2.3fr)_minmax(19rem,0.9fr)]">
         <div className="shadow-float min-h-0 rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.032] dark:ring-white/[0.045]">
-          <div className="flex h-full min-h-0 flex-col rounded-xl bg-background p-2">
+          <div className="flex min-h-0 flex-col rounded-xl bg-background p-2 md:h-full">
             <AnimatePresence mode="wait" initial={false}>
               {focusedMember ? (
                 <motion.div
@@ -452,7 +452,7 @@ export default function RoomClient({
         </div>
 
         <div className="shadow-float min-h-0 rounded-2xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] p-3 ring-1 ring-inset ring-black/[0.032] dark:ring-white/[0.045]">
-          <div className="flex h-full min-h-0 flex-col rounded-xl bg-background p-3">
+          <div className="flex min-h-0 flex-col rounded-xl bg-background p-3 md:h-full">
             <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
               Chat panel
             </p>

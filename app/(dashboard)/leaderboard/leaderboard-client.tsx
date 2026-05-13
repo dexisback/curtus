@@ -199,7 +199,7 @@ export default function LeaderboardClient({
           style={{ padding: 'clamp(12px,3vw,16px)' }}
         >
           {/* Inner canvas — brightest tier */}
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <div className="flex min-h-0 flex-1 flex-col overflow-visible rounded-xl border border-black/[0.03] bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] dark:border-white/[0.05] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:overflow-hidden">
             {/* Header */}
             <div className="flex shrink-0 flex-col gap-3 border-b border-border/50 px-3 pb-3 pt-4 sm:px-4">
               <div className="flex items-center gap-2.5">
@@ -323,7 +323,7 @@ export default function LeaderboardClient({
             )}
 
             {/* Rows */}
-            <div className="relative min-h-0 flex-1 overflow-y-auto">
+            <div className="relative flex-1 overflow-visible md:min-h-0 md:overflow-y-auto">
               <AnimatePresence mode="wait">
                 <motion.ol
                   key={`${scope}:${roomId}:${period}`}

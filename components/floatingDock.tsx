@@ -12,6 +12,7 @@ import {
   SunMoon,
   Video,
 } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSound } from '@/components/sound-provider';
 import { useTheme } from '@/components/theme-provider';
 import { useStudyTimer } from '@/components/study-timer-provider';
@@ -65,10 +66,12 @@ function DockIcon({
   item,
   mouseX,
   onAction,
+  hoverEnabled,
 }: {
   item: DockItem;
   mouseX: ReturnType<typeof useMotionValue<number>>;
   onAction: (item: DockItem) => void;
+  hoverEnabled: boolean;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
 
@@ -78,11 +81,18 @@ function DockIcon({
     return x - (rect.left + rect.width / 2);
   });
 
-  const size = useSpring(useTransform(distance, [-140, 0, 140], [46, 58, 46]), {
-    stiffness: 320,
-    damping: 24,
-    mass: 0.35,
-  });
+  const size = useSpring(
+    useTransform(
+      distance,
+      [-140, 0, 140],
+      hoverEnabled ? [46, 58, 46] : [42, 42, 42],
+    ),
+    {
+      stiffness: 320,
+      damping: 24,
+      mass: 0.35,
+    },
+  );
 
   const y = useSpring(useTransform(distance, [-140, 0, 140], [0, -8, 0]), {
     stiffness: 320,
@@ -138,6 +148,7 @@ function StudyTimerDockControl() {
   const { active, elapsedSeconds, todaySeconds, redisAvailable, busy, toggle } =
     useStudyTimer();
   const { play } = useSound();
+  const hoverEnabled = useMediaQuery('(min-width: 640px)');
   const idleLabel = formatTodayClock(todaySeconds);
 
   /** Running: continue from today's logged minutes + current session (not a fresh 00:00 session). */
@@ -157,7 +168,10 @@ function StudyTimerDockControl() {
       </span>
       <motion.button
         type="button"
-        style={{ width: 46, height: 46 }}
+        style={{
+          width: hoverEnabled ? 46 : 42,
+          height: hoverEnabled ? 46 : 42,
+        }}
         whileTap={{ scale: 0.96 }}
         disabled={!redisAvailable || busy}
         title={
@@ -215,6 +229,7 @@ function DockWithTheme({
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { play } = useSound();
+  const hoverEnabled = useMediaQuery('(min-width: 640px)');
 
   const onAction = (item: DockItem) => {
     if (item.kind === 'theme') {
@@ -235,6 +250,7 @@ function DockWithTheme({
           item={item}
           mouseX={mouseX}
           onAction={onAction}
+          hoverEnabled={hoverEnabled}
         />
       ))}
     </>
@@ -243,16 +259,19 @@ function DockWithTheme({
 
 export default function FloatingDock() {
   const mouseX = useMotionValue<number>(Infinity);
+  const hoverEnabled = useMediaQuery('(min-width: 640px)');
 
   return (
     <motion.div
       initial={false}
-      onMouseMove={(event) => mouseX.set(event.clientX)}
-      onMouseLeave={() => mouseX.set(Infinity)}
+      onMouseMove={
+        hoverEnabled ? (event) => mouseX.set(event.clientX) : undefined
+      }
+      onMouseLeave={hoverEnabled ? () => mouseX.set(Infinity) : undefined}
       className="pointer-events-auto"
     >
       <div
-        className="shadow-float flex h-[72px] items-end gap-2 rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-3 pb-2.5 pt-2 ring-1 ring-inset ring-black/[0.035]
+        className="shadow-float flex h-[66px] w-full max-w-[min(calc(100vw-1rem),34rem)] items-end justify-center gap-1.5 overflow-x-hidden rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-2 pb-2 pt-2 ring-1 ring-inset ring-black/[0.035]
           dark:border-border/50 dark:shadow-[0_2px_4px_rgb(0_0_0/0.24),0_18px_44px_rgb(0_0_0/0.28),inset_0_1px_0_rgb(255_255_255/0.045)] dark:ring-white/[0.05]"
       >
         <DockWithTheme mouseX={mouseX} />
