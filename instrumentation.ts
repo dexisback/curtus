@@ -17,7 +17,9 @@ export async function register() {
     process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ??
     (endpoint ? `${endpoint.replace(/\/$/, '')}/v1/traces` : undefined);
 
-  if (!tracesEndpoint) return;
+  if (!tracesEndpoint) {
+    return;
+  }
 
   const sdk = new NodeSDK({
     traceExporter: new OTLPTraceExporter({ url: tracesEndpoint }),
