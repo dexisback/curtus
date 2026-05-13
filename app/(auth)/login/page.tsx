@@ -226,7 +226,7 @@ function LoginPageContent() {
 
                       {/* Right: cooler tonal pad + ambient glow / bloom */}
                       <div className="min-w-0 max-w-[100%] pb-8 md:pb-0">
-                        <div className="relative mx-auto w-full min-w-0 max-w-[58rem] rounded-[22px] bg-gradient-to-br from-[#f9fafb]/88 via-[#f7f8fa]/55 to-[#f4f6f9]/72 px-2 py-4 ring-1 ring-black/[0.025] sm:px-6 md:px-8 md:from-[#f8fafc]/82 md:via-[#f6f8fb]/48 md:to-[#f3f6f9]/68">
+                        <div className="relative mx-auto w-full min-w-0 max-w-[54rem] rounded-[22px] bg-gradient-to-br from-[#f9fafb]/88 via-[#f7f8fa]/55 to-[#f4f6f9]/72 px-2 py-4 ring-1 ring-black/[0.025] sm:px-6 md:px-8 md:from-[#f8fafc]/82 md:via-[#f6f8fb]/48 md:to-[#f3f6f9]/68">
                           <div
                             className="pointer-events-none absolute left-[52%] top-[42%] z-0 h-[min(420px,82vh)] w-[min(520px,96%)] -translate-x-1/2 -translate-y-1/2 opacity-[0.75]"
                             aria-hidden
@@ -252,7 +252,7 @@ function LoginPageContent() {
                             }}
                           />
                           <div className="relative z-[1]">
-                            <LandingCardStack className="h-[min(24rem,calc(100vw+4rem))] sm:h-[min(30rem,calc(100vw))] md:h-[36rem]" />
+                            <LandingCardStack className="h-[min(24rem,calc(100vw+4rem))] sm:h-[min(30rem,calc(100vw))] md:h-[34rem]" />
                           </div>
                         </div>
                       </div>
