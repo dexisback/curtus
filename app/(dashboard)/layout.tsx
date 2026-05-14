@@ -56,9 +56,23 @@ export default async function DashboardGroupLayout({
             {children}
           </div>
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:pb-4">
-            <div className="pointer-events-auto">
-              <FloatingDock />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 flex max-w-[100vw] justify-center px-2 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:fixed sm:inset-x-0 sm:bottom-0 sm:pb-4">
+            <div className="group/dock-peek relative flex flex-col items-center">
+              {/* Mobile: always visible. Desktop: hover-peek target area. */}
+              <div
+                className="pointer-events-auto h-3 w-40 sm:h-4 sm:w-44"
+                aria-hidden="true"
+              />
+              <div
+                className="pointer-events-auto translate-y-0 opacity-100
+                sm:pointer-events-none sm:translate-y-3 sm:opacity-0
+                transition-[transform,opacity] duration-200 [transition-timing-function:cubic-bezier(0.2,0,0,0.1)]
+                sm:group-hover/dock-peek:pointer-events-auto sm:group-hover/dock-peek:translate-y-0
+                sm:group-hover/dock-peek:opacity-100
+                motion-reduce:pointer-events-auto motion-reduce:translate-y-0 motion-reduce:opacity-100"
+              >
+                <FloatingDock />
+              </div>
             </div>
           </div>
         </main>

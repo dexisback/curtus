@@ -271,7 +271,7 @@ export default function FloatingDock() {
       className="pointer-events-auto"
     >
       <div
-        className="shadow-float flex h-[66px] w-full max-w-[min(calc(100vw-1rem),34rem)] items-end justify-center gap-1.5 overflow-x-hidden rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-2 pb-2 pt-2 ring-1 ring-inset ring-black/[0.035]
+        className="shadow-float flex h-[66px] w-full max-w-[min(calc(100vw-1rem),34rem)] items-end justify-center gap-1.5 overflow-visible rounded-3xl border border-border/45 bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] px-2 pb-2 pt-2 ring-1 ring-inset ring-black/[0.035]
           dark:border-border/50 dark:shadow-[0_2px_4px_rgb(0_0_0/0.24),0_18px_44px_rgb(0_0_0/0.28),inset_0_1px_0_rgb(255_255_255/0.045)] dark:ring-white/[0.05]"
       >
         <DockWithTheme mouseX={mouseX} />
