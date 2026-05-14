@@ -508,7 +508,9 @@ async function validateMediaTarget(
   const toActiveInRoom = socketsInRoom.some(
     (s: StudyRemoteSocket) => s.data.userId === toUserId,
   );
-  return Boolean(toMember && fromEnabled && toEnabled && toActiveInRoom);
+  return Boolean(
+    toMember && toActiveInRoom && (Boolean(fromEnabled) || Boolean(toEnabled)),
+  );
 }
 
 export function registerSocketEvents(io: StudyServer) {
@@ -712,12 +714,6 @@ export function registerSocketEvents(io: StudyServer) {
         }
 
         const key = getRoomVideoEnabledKey(parsed.data.roomId);
-        const enabled = await redis.sismember(key, socket.data.userId);
-        if (!enabled) {
-          ack?.({ ok: false, error: 'video_not_enabled' });
-          return;
-        }
-
         const peers = (await redis.smembers<string[]>(key))
           .filter((userId: string) => userId !== socket.data.userId)
           .sort();

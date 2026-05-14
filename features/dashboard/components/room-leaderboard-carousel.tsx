@@ -55,6 +55,7 @@ export default function RoomLeaderboardCarousel({
   boards,
   compact = false,
   onMemberClick,
+  onBoardChange,
   streamForMember,
   hasVideoForMember,
   currentUserId,
@@ -65,6 +66,7 @@ export default function RoomLeaderboardCarousel({
   boards: RoomTimerBoard[];
   compact?: boolean;
   onMemberClick?: (member: RoomTimerMember) => void;
+  onBoardChange?: (board: RoomTimerBoard, index: number) => void;
   /** When set, members with video show a live tile (room view). */
   streamForMember?: (userId: string) => MediaStream | null;
   hasVideoForMember?: (userId: string) => boolean;
@@ -88,6 +90,11 @@ export default function RoomLeaderboardCarousel({
     const i = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
+
+  useEffect(() => {
+    if (!current) return;
+    onBoardChange?.(current, safeIndex);
+  }, [current, onBoardChange, safeIndex]);
 
   const nextBoard = () =>
     setIndex((v) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 type LandingCard = {
   title: string;
@@ -67,8 +68,11 @@ export default function LandingCardStack({
 }: {
   className?: string;
 }) {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [stageWidth, setStageWidth] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const pendingDeactivateRef = useRef<number | null>(null);
   const justActivatedUntilRef = useRef(0);
@@ -85,8 +89,20 @@ export default function LandingCardStack({
     };
   }, []);
 
+  useEffect(() => {
+    const node = stageRef.current;
+    if (!node) return;
+    const update = () => setStageWidth(node.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
   const isAnyCardActive = () => activeIndex !== null;
   const isCurrentActive = (index: number) => activeIndex === index;
+  const mobileActiveX =
+    stageWidth > 0 ? Math.max(0, (stageWidth - ACTIVE_CARD_WIDTH) / 2) : 138;
 
   const triggerReset = () => {
     if (activeIndex === null) return;
@@ -137,6 +153,7 @@ export default function LandingCardStack({
       }}
     >
       <div
+        ref={stageRef}
         className="absolute inset-y-0"
         style={{ left: STAGE_LEFT, right: STAGE_RIGHT }}
       >
@@ -178,7 +195,9 @@ export default function LandingCardStack({
                     ? 460
                     : card.config.y,
                 x: isCurrentActive(index)
-                  ? 138
+                  ? isMobile
+                    ? mobileActiveX
+                    : 138
                   : isAnyCardActive()
                     ? card.config.x * 0.52 + 104
                     : card.config.x,

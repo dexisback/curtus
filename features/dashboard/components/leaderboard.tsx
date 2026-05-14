@@ -4,12 +4,14 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useStudyTimer } from '@/components/study-timer-provider';
+import { connectWithAuth } from '@/lib/socket';
 import { mergeSelfStudyTimer, TIMER_POLL_INTERVAL_MS } from '@/lib/timer-sync';
 import { SPRING_DRAG_RELEASE, SPRING_HOVER } from '@/lib/ui-motion';
 import ProfileModal, { type ProfileModalUser } from './profile-modal';
 import RoomLeaderboardCarousel, {
   type RoomTimerBoard,
 } from './room-leaderboard-carousel';
+import { useDashboardRoomVideo } from './use-dashboard-room-video';
 
 const LB_OUTER = 22;
 const LB_GAP = 14;
@@ -55,6 +57,12 @@ export default function Leaderboard({
   const { active, startedAtMs, todaySeconds } = useStudyTimer();
   const [boards, setBoards] = useState(initialBoards);
   const [selected, setSelected] = useState<ProfileModalUser | null>(null);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(
+    initialBoards[0]?.id ?? null,
+  );
+  const [activeVideoEnabledUserIds, setActiveVideoEnabledUserIds] = useState<
+    string[]
+  >([]);
 
   const displayBoards = useMemo(
     () =>
@@ -66,9 +74,35 @@ export default function Leaderboard({
     [boards, currentUserId, active, startedAtMs, todaySeconds],
   );
 
+  const activeBoard =
+    displayBoards.find((board) => board.id === activeBoardId) ??
+    displayBoards[0] ??
+    null;
+  const { streamForMember, hasVideoForMember } = useDashboardRoomVideo({
+    roomId: activeBoard?.id ?? null,
+    videoEnabledUserIds: activeVideoEnabledUserIds,
+  });
+
   useEffect(() => {
     setBoards(initialBoards);
   }, [initialBoards]);
+
+  useEffect(() => {
+    if (displayBoards.length === 0) {
+      setActiveBoardId(null);
+      return;
+    }
+    if (
+      !activeBoardId ||
+      !displayBoards.some((board) => board.id === activeBoardId)
+    ) {
+      setActiveBoardId(displayBoards[0].id);
+    }
+  }, [activeBoardId, displayBoards]);
+
+  useEffect(() => {
+    setActiveVideoEnabledUserIds([]);
+  }, [activeBoardId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,6 +174,33 @@ export default function Leaderboard({
     };
   }, []);
 
+  useEffect(() => {
+    const socket = connectWithAuth();
+    if (!socket || !activeBoardId) return;
+
+    const onPresence = (payload: {
+      roomId: string;
+      memberIds: string[];
+      studyingUserIds: string[];
+      videoEnabledUserIds: string[];
+      todayMinutes: Record<string, number>;
+      todaySeconds: Record<string, number>;
+      sessionStartedAt: Record<string, string | null>;
+    }) => {
+      if (payload.roomId !== activeBoardId) return;
+      setActiveVideoEnabledUserIds(payload.videoEnabledUserIds);
+    };
+
+    socket.on('presence', onPresence);
+    if (socket.connected) {
+      socket.emit('presence:refresh');
+    }
+
+    return () => {
+      socket.off('presence', onPresence);
+    };
+  }, [activeBoardId]);
+
   const openProfile = useCallback((u: RoomTimerBoard['members'][number]) => {
     setSelected(toProfileUser(u));
   }, []);
@@ -181,6 +242,9 @@ export default function Leaderboard({
                   compact
                   currentUserId={currentUserId}
                   onMemberClick={openProfile}
+                  onBoardChange={(board) => setActiveBoardId(board.id)}
+                  streamForMember={streamForMember}
+                  hasVideoForMember={hasVideoForMember}
                 />
               ) : (
                 <div className="app-empty-atmosphere mx-1.5 mb-1.5 mt-1 flex h-full min-h-[7.5rem] items-center justify-center rounded-[14px] px-4">
