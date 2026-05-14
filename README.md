@@ -68,35 +68,35 @@ Curtus uses a decoupled architecture. The frontend handles standard requests and
 
 ```mermaid
 graph TD
-    Client[Web Client<br/>Next.js / React]
-    PeerClient[Peer Web Client]
+    Client["Web Client (Next.js and React)"]
+    PeerClient["Peer Web Client"]
     
-    subgraph Frontend [Next.js Web Server]
-        NextApp[Next.js App Router]
-        Auth[Better-Auth]
+    subgraph Frontend ["Next.js Web Server"]
+        NextApp["Next.js App Router"]
+        Auth["Better-Auth"]
         NextApp <--> Auth
     end
     
-    subgraph Realtime [Socket.IO Server]
-        SocketServer[Standalone Node.js Server]
-        Events[Signaling, Event Handlers & State Sync]
+    subgraph Realtime ["Socket.IO Server"]
+        SocketServer["Standalone Node.js Server"]
+        Events["Signaling, Event Handlers and State Sync"]
         SocketServer <--> Events
     end
     
-    subgraph Infrastructure [Data & Caching]
-        Postgres[(Neon Postgres DB)]
-        Prisma[Prisma ORM]
-        Redis[(Upstash Redis)]
+    subgraph Infrastructure ["Data and Caching"]
+        Postgres[("Neon Postgres DB")]
+        Prisma["Prisma ORM"]
+        Redis[("Upstash Redis")]
         Prisma <--> Postgres
     end
 
-    Client <-->|REST / RSC| NextApp
+    Client <-->|REST and RSC| NextApp
     Client <-->|WebSockets| SocketServer
-    Client <-->|WebRTC (P2P Mesh Video)| PeerClient
+    Client <-->|WebRTC P2P Mesh Video| PeerClient
 
-    NextApp <-->|Queries / Mutations| Prisma
-    SocketServer <-->|Queries / Mutations| Prisma
-    SocketServer <-->|Pub/Sub & Presence| Redis
+    NextApp <-->|Queries and Mutations| Prisma
+    SocketServer <-->|Queries and Mutations| Prisma
+    SocketServer <-->|PubSub and Presence| Redis
     NextApp <-->|Rate Limiting| Redis
 ```
 
