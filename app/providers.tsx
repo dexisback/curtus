@@ -1,11 +1,12 @@
-"use client";
+'use client';
 
-import { ServerUserSettingsProvider } from "@/components/server-user-settings";
-import { SoundProvider } from "@/components/sound-provider";
-import { StudyTimerProvider } from "@/components/study-timer-provider";
-import { ThemeProvider } from "@/components/theme-provider";
-import { WhiteNoiseProvider } from "@/components/white-noise-provider";
-import type { SerializedUserSettings } from "@/lib/user-settings";
+import { ServerUserSettingsProvider } from '@/components/server-user-settings';
+import { SoundProvider } from '@/components/sound-provider';
+import { StudyTimerProvider } from '@/components/study-timer-provider';
+import { ThemeProvider } from '@/components/theme-provider';
+import { WhiteNoiseProvider } from '@/components/white-noise-provider';
+import StudyTimerInactivityGuard from '@/components/timer/study-timer-inactivity-guard';
+import type { SerializedUserSettings } from '@/lib/user-settings';
 
 export default function Providers({
   children,
@@ -19,7 +20,10 @@ export default function Providers({
       <ThemeProvider>
         <SoundProvider>
           <StudyTimerProvider>
-            <WhiteNoiseProvider>{children}</WhiteNoiseProvider>
+            <WhiteNoiseProvider>
+              {children}
+              <StudyTimerInactivityGuard />
+            </WhiteNoiseProvider>
           </StudyTimerProvider>
         </SoundProvider>
       </ThemeProvider>
