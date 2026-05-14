@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -86,19 +86,19 @@
   /* L1 — large chrome panels (rooms/dashboard shells) */
   --panel-texture-bg: oklch(0.979 0.0068 78);
   /* Paper grain only — keep ≤ 0.04 for subconscious read */
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.032'/%3E%3C/svg%3E");
+  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E");
   /* Softer lift — diffused, not template-y */
-  --shadow-ambient-sm: 0 1px 2px rgb(22 25 37 / 0.034),
-    0 16px 42px rgb(112 82 62 / 0.048);
-  --shadow-ambient-md: 0 2px 5px rgb(22 25 37 / 0.032),
-    0 26px 58px rgb(118 88 66 / 0.058);
-  --shadow-float: 0 1px 2px rgb(22 25 37 / 0.038),
-    0 18px 48px rgb(108 82 62 / 0.062),
+  --shadow-ambient-sm:
+    0 1px 2px rgb(22 25 37 / 0.034), 0 16px 42px rgb(112 82 62 / 0.048);
+  --shadow-ambient-md:
+    0 2px 5px rgb(22 25 37 / 0.032), 0 26px 58px rgb(118 88 66 / 0.058);
+  --shadow-float:
+    0 1px 2px rgb(22 25 37 / 0.038), 0 18px 48px rgb(108 82 62 / 0.062),
     inset 0 1px 0 rgb(255 255 255 / 0.36);
   --app-hatch: repeating-linear-gradient(
     -48deg,
-    rgb(22 25 37 / 0.016) 0px,
-    rgb(22 25 37 / 0.016) 1px,
+    rgb(22 25 37 / 0.042) 0px,
+    rgb(22 25 37 / 0.042) 1px,
     transparent 1px,
     transparent 11px
   );
@@ -136,11 +136,11 @@
   --sidebar-ring: oklch(0.58 0.05 54);
   --panel-texture-bg: oklch(0.248 0.019 268);
   --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  --shadow-ambient-sm: 0 1px 3px rgb(0 0 0 / 0.2),
-    0 16px 44px rgb(0 0 0 / 0.2);
-  --shadow-ambient-md: 0 2px 6px rgb(0 0 0 / 0.24),
-    0 26px 60px rgb(0 0 0 / 0.26);
-  --shadow-float: 0 1px 2px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.24),
+  --shadow-ambient-sm: 0 1px 3px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.2);
+  --shadow-ambient-md:
+    0 2px 6px rgb(0 0 0 / 0.24), 0 26px 60px rgb(0 0 0 / 0.26);
+  --shadow-float:
+    0 1px 2px rgb(0 0 0 / 0.2), 0 16px 44px rgb(0 0 0 / 0.24),
     inset 0 1px 0 rgb(255 255 255 / 0.045);
   --app-hatch: repeating-linear-gradient(
     -48deg,
@@ -178,21 +178,26 @@
     color: var(--cta-foreground);
     background-color: color-mix(in oklch, var(--cta) 90%, white 10%);
     background-image: none;
-    box-shadow: 0 1px 2px rgb(22 25 37 / 0.05),
+    box-shadow:
+      0 1px 2px rgb(22 25 37 / 0.05),
       0 8px 22px color-mix(in oklch, var(--cta) 11%, transparent),
       inset 0 1px 0 rgb(255 255 255 / 0.16);
-    transition: box-shadow 0.22s ease, background-color 0.22s ease,
+    transition:
+      box-shadow 0.22s ease,
+      background-color 0.22s ease,
       opacity 0.2s ease;
   }
   .app-cta-surface:hover:not(:disabled) {
     background-color: color-mix(in oklch, var(--cta) 86%, white 14%);
-    box-shadow: 0 1px 3px rgb(22 25 37 / 0.045),
+    box-shadow:
+      0 1px 3px rgb(22 25 37 / 0.045),
       0 12px 32px color-mix(in oklch, var(--cta) 13%, transparent),
       inset 0 1px 0 rgb(255 255 255 / 0.22);
   }
   .app-cta-surface:active:not(:disabled) {
     background-color: color-mix(in oklch, var(--cta) 92%, black 8%);
-    box-shadow: 0 1px 2px rgb(22 25 37 / 0.04),
+    box-shadow:
+      0 1px 2px rgb(22 25 37 / 0.04),
       0 6px 16px color-mix(in oklch, var(--cta) 8%, transparent),
       inset 0 1px 0 rgb(255 255 255 / 0.12);
   }
@@ -205,25 +210,29 @@
     isolation: isolate;
   }
   .app-empty-atmosphere::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
     border-radius: inherit;
     pointer-events: none;
-    background-image: radial-gradient(
+    background-image:
+      radial-gradient(
         ellipse 78% 60% at 50% 48%,
         color-mix(in oklch, var(--cta) 10%, transparent) 0%,
         transparent 64%
       ),
-      var(--app-hatch),
-      var(--panel-texture-image);
-    background-size: auto, auto, 320px 320px;
+      var(--app-hatch), var(--panel-texture-image);
+    background-size:
+      auto,
+      auto,
+      320px 320px;
     opacity: 0.55;
   }
   /** Stronger layering for leaderboard-sized voids — still subliminal. */
   .app-empty-atmosphere--dense::before {
-    background-image: radial-gradient(
+    background-image:
+      radial-gradient(
         ellipse 64% 50% at 50% 46%,
         color-mix(in oklch, var(--cta) 11%, transparent) 0%,
         transparent 58%
@@ -233,9 +242,12 @@
         transparent 52%,
         color-mix(in oklch, var(--foreground) 2.2%, transparent) 100%
       ),
-      var(--app-hatch),
-      var(--panel-texture-image);
-    background-size: auto, auto, auto, 300px 300px;
+      var(--app-hatch), var(--panel-texture-image);
+    background-size:
+      auto,
+      auto,
+      auto,
+      300px 300px;
     opacity: 0.68;
   }
   .app-empty-atmosphere > * {
@@ -248,7 +260,7 @@
     overflow: hidden;
   }
   .app-shimmer-block::after {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
@@ -294,23 +306,39 @@
   body {
     @apply h-full w-full overflow-x-hidden text-foreground font-sans;
     background-color: var(--background);
-    background-image: var(--app-hatch), var(--panel-texture-image);
-    background-size: auto, 360px 360px;
+    /* Minimal texture: visible (but still subtle) top blooms + hatch + paper grain */
+    background-image:
+      radial-gradient(
+        ellipse 78% 58% at 52% -10%,
+        color-mix(in oklch, var(--cta) 14%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 52% 38% at 16% -6%,
+        color-mix(in oklch, var(--foreground) 2.2%, transparent) 0%,
+        transparent 70%
+      ),
+      var(--app-hatch), var(--panel-texture-image);
+    background-size:
+      auto,
+      auto,
+      auto,
+      360px 360px;
     line-height: 1.52;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
   /* ---- Cursor semantics (links, buttons, inputs, disabled, precision) ---- */
-  a[href]:not([aria-disabled="true"]) {
+  a[href]:not([aria-disabled='true']) {
     @apply cursor-pointer;
   }
 
   button:not(:disabled):not([disabled]),
-  [type="button"]:not(:disabled):not([disabled]),
-  [type="submit"]:not(:disabled):not([disabled]),
-  [type="reset"]:not(:disabled):not([disabled]),
-  [role="button"]:not([aria-disabled="true"]):not(:disabled):not([disabled]) {
+  [type='button']:not(:disabled):not([disabled]),
+  [type='submit']:not(:disabled):not([disabled]),
+  [type='reset']:not(:disabled):not([disabled]),
+  [role='button']:not([aria-disabled='true']):not(:disabled):not([disabled]) {
     @apply cursor-pointer;
   }
 
@@ -319,34 +347,34 @@
   }
 
   input:not([type]):not(:disabled),
-  input[type="text"]:not(:disabled),
-  input[type="search"]:not(:disabled),
-  input[type="email"]:not(:disabled),
-  input[type="password"]:not(:disabled),
-  input[type="url"]:not(:disabled),
-  input[type="tel"]:not(:disabled),
-  input[type="number"]:not(:disabled),
+  input[type='text']:not(:disabled),
+  input[type='search']:not(:disabled),
+  input[type='email']:not(:disabled),
+  input[type='password']:not(:disabled),
+  input[type='url']:not(:disabled),
+  input[type='tel']:not(:disabled),
+  input[type='number']:not(:disabled),
   textarea:not(:disabled) {
     @apply cursor-text;
   }
 
-  input[type="checkbox"]:not(:disabled),
-  input[type="radio"]:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
   select:not(:disabled) {
     @apply cursor-pointer;
   }
 
-  input[type="range"]:not(:disabled) {
+  input[type='range']:not(:disabled) {
     cursor: ew-resize;
   }
 
-  input[type="file"]:not(:disabled)::file-selector-button {
+  input[type='file']:not(:disabled)::file-selector-button {
     @apply cursor-pointer;
   }
 
   :disabled,
   [disabled],
-  [aria-disabled="true"] {
+  [aria-disabled='true'] {
     cursor: not-allowed;
   }
 
