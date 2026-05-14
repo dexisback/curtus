@@ -52,7 +52,7 @@ Whether you're studying for exams or just need a quiet place to get work done al
 ## Features
 
 - **Study Rooms**: Join open community rooms or create private, invite-only rooms for you and your friends.
-- **Video & Chat**: Integrated video feeds and real-time text chat to stay accountable and connected with study partners.
+- **WebRTC Video & Chat**: Peer-to-peer WebRTC mesh architecture for ultra-low latency video streaming, keeping you visually accountable alongside real-time text chat.
 - **Focus Timer**: Built-in study timers to track your deep work sessions automatically.
 - **Global Leaderboards**: Track your total study duration, maintain daily streaks, and view global rankings.
 - **Task & D-Day Tracking**: Organize daily to-dos and set countdowns for upcoming deadlines or exams.
@@ -64,11 +64,12 @@ Whether you're studying for exams or just need a quiet place to get work done al
 
 ## Architecture
 
-Curtus uses a decoupled architecture, separating the frontend application server from the websocket infrastructure used for real-time room sync.
+Curtus uses a decoupled architecture. The frontend handles standard requests and UI state, while a standalone Node.js server acts as the WebRTC signaling layer and real-time state synchronizer. Video feeds are established via direct peer-to-peer connections to minimize server bandwidth.
 
 ```mermaid
 graph TD
     Client[Web Client<br/>Next.js / React]
+    PeerClient[Peer Web Client]
     
     subgraph Frontend [Next.js Web Server]
         NextApp[Next.js App Router]
@@ -78,7 +79,7 @@ graph TD
     
     subgraph Realtime [Socket.IO Server]
         SocketServer[Standalone Node.js Server]
-        Events[Event Handlers & State Sync]
+        Events[Signaling, Event Handlers & State Sync]
         SocketServer <--> Events
     end
     
@@ -91,10 +92,11 @@ graph TD
 
     Client <-->|REST / RSC| NextApp
     Client <-->|WebSockets| SocketServer
+    Client <-->|WebRTC (P2P Mesh Video)| PeerClient
 
     NextApp <-->|Queries / Mutations| Prisma
     SocketServer <-->|Queries / Mutations| Prisma
-    SocketServer <-->|Pub/Sub & Presense| Redis
+    SocketServer <-->|Pub/Sub & Presence| Redis
     NextApp <-->|Rate Limiting| Redis
 ```
 
@@ -103,12 +105,20 @@ graph TD
 ## Tech Stack
 
 - **Frontend Application**: [Next.js 16](https://nextjs.org/) (App Router), React 19
+- **Video Streaming Layer**: WebRTC (P2P Mesh Network)
 - **Styling & Components**: [Tailwind CSS v4](https://tailwindcss.com/), Radix UI, Shadcn
 - **Animation**: [Framer Motion](https://www.framer.com/motion/), [GSAP](https://gsap.com/)
 - **Database Layer**: [Neon Postgres](https://neon.tech/), [Prisma v7 ORM](https://www.prisma.io/)
-- **Real-time Server**: [Socket.IO](https://socket.io/) (Node.js)
+- **Real-time Server**: [Socket.IO](https://socket.io/) (Node.js) for WebRTC signaling and data sync
 - **Caching & Rate Limiting**: [Upstash Redis](https://upstash.com/), RateLimit, QStash
 - **Observability**: OpenTelemetry, Prometheus, Grafana Cloud (Tempo)
+
+---
+
+## Known Limitations
+
+- **Video Capacity Restrictions**: Video calls utilize a peer-to-peer (P2P) WebRTC mesh network architecture. Because each participant must send and receive streams to every other participant, bandwidth and CPU usage scale exponentially. Therefore, video streams are limited to a maximum of 4 concurrent users per room to maintain performance and client stability.
+- **Microphones Intentionally Disabled**: To strictly preserve the quiet, distraction-free "study library" atmosphere, audio transmission (microphones) is permanently disabled. Communication is strictly limited to text chat and visual accountability.
 
 ---
 
