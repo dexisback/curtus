@@ -1,93 +1,223 @@
-# StudyWithMe
+<div align="center">
+  <!-- TODO: Replace with your actual logo if you have one -->
+  <!-- <img src="./public/logo.png" alt="Curtus Logo" width="120" /> -->
+  
+  <h1>Curtus</h1>
+  <p><strong>A polished, web-based collaborative focus and study environment.</strong></p>
 
-A web-based collaborative focus / study environment, built for the web with a calm, polished UI.
+  <p>
+    <a href="https://github.com/yourusername/ss-provider/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-AGPL%20v3-blue.svg" alt="License"></a>
+    <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js"></a>
+    <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?logo=typescript" alt="TypeScript"></a>
+  </p>
+</div>
 
+<br />
 
-## Getting started (local)
+<!-- 
+  SPACE FOR YOUR DEMO VIDEO 
+  Once your video is ready, embed it below. 
+  Example:
+  <video src="https://your-domain.com/demo.mp4" controls width="100%"></video>
+-->
+<div align="center">
+  <img src="https://via.placeholder.com/800x450?text=Demo+Video+Coming+Soon" alt="Demo Video Placeholder" width="800" />
+</div>
+
+<br />
+
+## About
+
+Curtus is a web-based platform designed to facilitate focused study and accountability. Made with a calm and polished user interface, it provides shared virtual spaces where users can work collaboratively in real-time.
+
+Whether you're studying for exams or just need a quiet place to get work done alongside others, Curtus helps you stay on track without getting distracted.
+
+---
+
+## Screenshots
+
+<!-- TODO: Replace these placeholder images with your actual screenshots from the public folder -->
+<div align="center">
+  <img src="https://via.placeholder.com/400x250?text=Dashboard+View" alt="Dashboard View" width="48%" />
+  <img src="https://via.placeholder.com/400x250?text=Study+Room" alt="Study Room View" width="48%" />
+</div>
+<br />
+<div align="center">
+  <img src="https://via.placeholder.com/400x250?text=Settings+Panel" alt="Settings Panel" width="48%" />
+  <img src="https://via.placeholder.com/400x250?text=Leaderboard" alt="Leaderboard View" width="48%" />
+</div>
+
+---
+
+## Features
+
+- **Study Rooms**: Join open community rooms or create private, invite-only rooms for you and your friends.
+- **Video & Chat**: Integrated video feeds and real-time text chat to stay accountable and connected with study partners.
+- **Focus Timer**: Built-in study timers to track your deep work sessions automatically.
+- **Global Leaderboards**: Track your total study duration, maintain daily streaks, and view global rankings.
+- **Task & D-Day Tracking**: Organize daily to-dos and set countdowns for upcoming deadlines or exams.
+- **White Noise Library**: Built-in ambient audio to help you stay focused.
+- **YouTube Picture-in-Picture**: Watch lectures or ambient streams directly in the app without switching tabs.
+- **Configurable Environment**: Modify UI themes, timers, sound cues, and privacy controls to fit your workflow.
+
+---
+
+## Architecture
+
+Curtus uses a decoupled architecture, separating the frontend application server from the websocket infrastructure used for real-time room sync.
+
+```mermaid
+graph TD
+    Client[Web Client<br/>Next.js / React]
+    
+    subgraph Frontend [Next.js Web Server]
+        NextApp[Next.js App Router]
+        Auth[Better-Auth]
+        NextApp <--> Auth
+    end
+    
+    subgraph Realtime [Socket.IO Server]
+        SocketServer[Standalone Node.js Server]
+        Events[Event Handlers & State Sync]
+        SocketServer <--> Events
+    end
+    
+    subgraph Infrastructure [Data & Caching]
+        Postgres[(Neon Postgres DB)]
+        Prisma[Prisma ORM]
+        Redis[(Upstash Redis)]
+        Prisma <--> Postgres
+    end
+
+    Client <-->|REST / RSC| NextApp
+    Client <-->|WebSockets| SocketServer
+
+    NextApp <-->|Queries / Mutations| Prisma
+    SocketServer <-->|Queries / Mutations| Prisma
+    SocketServer <-->|Pub/Sub & Presense| Redis
+    NextApp <-->|Rate Limiting| Redis
+```
+
+---
+
+## Tech Stack
+
+- **Frontend Application**: [Next.js 16](https://nextjs.org/) (App Router), React 19
+- **Styling & Components**: [Tailwind CSS v4](https://tailwindcss.com/), Radix UI, Shadcn
+- **Animation**: [Framer Motion](https://www.framer.com/motion/), [GSAP](https://gsap.com/)
+- **Database Layer**: [Neon Postgres](https://neon.tech/), [Prisma v7 ORM](https://www.prisma.io/)
+- **Real-time Server**: [Socket.IO](https://socket.io/) (Node.js)
+- **Caching & Rate Limiting**: [Upstash Redis](https://upstash.com/), RateLimit, QStash
+- **Observability**: OpenTelemetry, Prometheus, Grafana Cloud (Tempo)
+
+---
+
+## Getting Started
+
+Follow these instructions to set up the project locally for development.
 
 ### Prerequisites
 
-- Node.js `20.x`
-- npm
+- **Node.js**: `v20.x`
+- **Package Manager**: npm
+- **Postgres Database**: Local instance or hosted (e.g., Neon)
+- **Redis**: Local instance or hosted (e.g., Upstash)
 
-### Install
+### 1. Installation
+
+Clone the repository and install dependencies for both the Next.js application and the Socket.IO server:
 
 ```bash
+# Install Next.js dependencies
 npm ci
+
+# Install socket server dependencies
 npm ci --prefix server
 ```
 
-### Configure env
+### 2. Environment Configuration
+
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill the values in `.env`. The full list is in `.env.example`, but commonly:
+**Required configuration:**
+- `DATABASE_URL` / `PRISMA_DATABASE_URL`: Postgres connection string.
+- `BETTER_AUTH_URL` / `BETTER_AUTH_SECRET`: Authentication credentials.
+- `UPSTASH_REDIS_URL` / `UPSTASH_REDIS_TOKEN`: Redis connection parameters.
+- `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_SOCKET_URL`: Public URIs for the frontend and socket server.
 
-- `DATABASE_URL` / `PRISMA_DATABASE_URL` (Postgres)
-- `BETTER_AUTH_URL` + `BETTER_AUTH_SECRET`
-- OAuth: `GOOGLE_CLIENT_ID/SECRET`, `GITHUB_CLIENT_ID/SECRET`
-- `UPSTASH_REDIS_URL` + `UPSTASH_REDIS_TOKEN`
-- Public URLs: `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SOCKET_URL`
+*(Note: OAuth keys such as `GOOGLE_CLIENT_ID` are optional but required for social login).*
 
-### Prisma
+### 3. Database Initialization
 
-Prisma client generation runs on install (`postinstall`) and during build.
-
-Optional seed:
+Generate the Prisma client and optionally seed the database:
 
 ```bash
+# Generate Prisma client
+npx prisma generate
+
+# Seed initial data
 npm run db:seed
 ```
 
-### Run dev servers
+### 4. Running Development Servers
 
-Terminal 1 (Next.js):
+Curtus requires both the Next.js web server and the Socket.IO server to run concurrently.
 
+**Terminal 1 (Next.js Application):**
 ```bash
 npm run dev
 ```
 
-Terminal 2 (Socket.IO server):
-
+**Terminal 2 (Socket.IO Server):**
 ```bash
 npm run dev --prefix server
 ```
 
-## Scripts
+The application will be accessible at `http://localhost:3000`.
 
-- `npm run dev` — run the Next.js app
-- `npm run build` / `npm start` — production build + run
-- `npm run check` — lint + typecheck (web + server)
-- `npm test` — run Vitest
-- `npm run format` — prettier
+---
+
+## Available Scripts
+
+- `npm run dev` — Start the Next.js application in development mode.
+- `npm run build` — Create a production build of the Next.js application.
+- `npm start` — Run the compiled Next.js application.
+- `npm run check` — Execute ESLint and TypeScript type checking.
+- `npm test` — Run Vitest unit and integration tests.
+- `npm run format` — Format the codebase using Prettier.
+
+---
 
 ## Observability
 
-This repo now supports phased observability:
+This repository implements a robust observability pipeline:
 
-- Structured JSON logs (web + socket) with correlation fields (`request_id`, `trace_id`, `room_id`, `event_name`).
-- OpenTelemetry traces exported to Grafana Cloud Tempo.
-- Socket server Prometheus metrics endpoint on `GET /metrics`.
+- **Structured JSON Logs**: Unified logging across web and socket servers with correlation parameters (`request_id`, `trace_id`, `room_id`).
+- **Distributed Tracing**: OpenTelemetry traces exported to Grafana Cloud Tempo.
+- **Metrics**: Socket server exposes a Prometheus metrics endpoint via `GET /metrics`.
 
-See:
+Refer to `docs/observability.md` and `docs/observability-runbook.md` for complete setup instructions.
 
-- `docs/observability.md` for setup + Grafana Cloud wiring.
-- `docs/observability-runbook.md` for dashboard panels, alerts, SLOs, and triage steps.
-- `docs/grafana-cloud-scrape-example.yaml` for a Prometheus scrape job template.
-
-## CI
-
-GitHub Actions runs install + `npm run check` on pushes/PRs: `.github/workflows/ci.yml`.
+---
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+Contributions are welcome. Please refer to our [Contribution Guidelines](CONTRIBUTING.md) to understand our workflow and expectations before submitting a pull request.
+
+---
+
+## Credits & Acknowledgements
+
+A massive thank you to the **[Yeolpumta (YPT)](https://www.yeolpumta.com/en/)** app. I used YPT extensively during my high school exam days, and it served as a core inspiration for this app.
+
+---
 
 ## License
 
-Licensed under **AGPL-3.0**.
+Curtus is licensed under the **AGPL-3.0 License**.
 
-If you run a modified version of this software as a network service, the AGPL generally requires you to make the corresponding source code available to users of that service. Make sure you understand your obligations before deploying a modified build.
-
+> **Important**: If you run a modified version of this software as a network service, the AGPL generally requires you to make the corresponding source code available to users of that service. Make sure you understand your obligations before deploying a modified build. See the [`LICENSE`](LICENSE) file for more details.

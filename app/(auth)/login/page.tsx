@@ -139,7 +139,7 @@ function LoginPageContent() {
                         <div className="mt-6 rounded-2xl border border-black/[0.045] bg-[#ffffff] p-6 shadow-[0_4px_44px_rgba(22,25,37,0.042),0_14px_48px_rgba(22,25,37,0.028)]">
                           <div className="flex flex-col gap-1 mb-5">
                             <h1 className="text-lg font-semibold text-foreground">
-                              Sign in to StudyWithMe
+                              Sign in to curtus
                             </h1>
                             <p className="text-xs text-muted-foreground">
                               Choose a provider to continue
