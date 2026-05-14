@@ -218,7 +218,7 @@ function LoginPageContent() {
 
                         <div className="mt-5 w-full max-w-[18.5rem]">
                           <p className="mb-2.5 text-[11px] text-neutral-400">
-                            Join thousands of students studying live
+                            Be amongst the first ones to try out the app
                           </p>
                           <TestimonialAnimatedTooltip />
                         </div>
