@@ -1,19 +1,27 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { prisma } from "@/lib/db";
-import { parseRequestJson } from "@/lib/api";
-import { requireApiSession, withApi } from "@/lib/api-session";
-import { enforce, limiters } from "@/lib/ratelimit";
-import { getOrCreateUserSettings, serializeUserSettings } from "@/lib/user-settings";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/db';
+import { parseRequestJson } from '@/lib/api';
+import { requireApiSession, withApi } from '@/lib/api-session';
+import { enforce, limiters } from '@/lib/ratelimit';
+import {
+  getOrCreateUserSettings,
+  serializeUserSettings,
+} from '@/lib/user-settings';
 
 const patchSchema = z.object({
-  theme: z.enum(["light", "dark"]).optional(),
+  theme: z.enum(['light', 'dark']).optional(),
   soundEnabled: z.boolean().optional(),
   compactSidebar: z.boolean().optional(),
   sessionReminders: z.boolean().optional(),
   friendActivity: z.boolean().optional(),
   roomInvites: z.boolean().optional(),
   leaderboardUpdates: z.boolean().optional(),
+  todoDdayDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  todoDdayTitle: z.string().trim().min(1).max(120).optional(),
 });
 
 export const GET = withApi(async () => {
@@ -30,29 +38,69 @@ export const PATCH = withApi(async (request: Request) => {
 
   const data = parsed.data;
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
+    return NextResponse.json({ error: 'Nothing to update.' }, { status: 400 });
   }
 
   const updated = await prisma.userSettings.upsert({
     where: { userId: session.user.id },
     update: {
-      ...(data.theme !== undefined ? { theme: data.theme === "dark" ? "DARK" : "LIGHT" } : {}),
-      ...(data.soundEnabled !== undefined ? { soundEnabled: data.soundEnabled } : {}),
-      ...(data.compactSidebar !== undefined ? { compactSidebar: data.compactSidebar } : {}),
-      ...(data.sessionReminders !== undefined ? { sessionReminders: data.sessionReminders } : {}),
-      ...(data.friendActivity !== undefined ? { friendActivity: data.friendActivity } : {}),
-      ...(data.roomInvites !== undefined ? { roomInvites: data.roomInvites } : {}),
-      ...(data.leaderboardUpdates !== undefined ? { leaderboardUpdates: data.leaderboardUpdates } : {}),
+      ...(data.theme !== undefined
+        ? { theme: data.theme === 'dark' ? 'DARK' : 'LIGHT' }
+        : {}),
+      ...(data.soundEnabled !== undefined
+        ? { soundEnabled: data.soundEnabled }
+        : {}),
+      ...(data.compactSidebar !== undefined
+        ? { compactSidebar: data.compactSidebar }
+        : {}),
+      ...(data.sessionReminders !== undefined
+        ? { sessionReminders: data.sessionReminders }
+        : {}),
+      ...(data.friendActivity !== undefined
+        ? { friendActivity: data.friendActivity }
+        : {}),
+      ...(data.roomInvites !== undefined
+        ? { roomInvites: data.roomInvites }
+        : {}),
+      ...(data.leaderboardUpdates !== undefined
+        ? { leaderboardUpdates: data.leaderboardUpdates }
+        : {}),
+      ...(data.todoDdayDate !== undefined
+        ? { todoDdayDate: data.todoDdayDate }
+        : {}),
+      ...(data.todoDdayTitle !== undefined
+        ? { todoDdayTitle: data.todoDdayTitle }
+        : {}),
     },
     create: {
       userId: session.user.id,
-      ...(data.theme !== undefined ? { theme: data.theme === "dark" ? "DARK" : "LIGHT" } : {}),
-      ...(data.soundEnabled !== undefined ? { soundEnabled: data.soundEnabled } : {}),
-      ...(data.compactSidebar !== undefined ? { compactSidebar: data.compactSidebar } : {}),
-      ...(data.sessionReminders !== undefined ? { sessionReminders: data.sessionReminders } : {}),
-      ...(data.friendActivity !== undefined ? { friendActivity: data.friendActivity } : {}),
-      ...(data.roomInvites !== undefined ? { roomInvites: data.roomInvites } : {}),
-      ...(data.leaderboardUpdates !== undefined ? { leaderboardUpdates: data.leaderboardUpdates } : {}),
+      ...(data.theme !== undefined
+        ? { theme: data.theme === 'dark' ? 'DARK' : 'LIGHT' }
+        : {}),
+      ...(data.soundEnabled !== undefined
+        ? { soundEnabled: data.soundEnabled }
+        : {}),
+      ...(data.compactSidebar !== undefined
+        ? { compactSidebar: data.compactSidebar }
+        : {}),
+      ...(data.sessionReminders !== undefined
+        ? { sessionReminders: data.sessionReminders }
+        : {}),
+      ...(data.friendActivity !== undefined
+        ? { friendActivity: data.friendActivity }
+        : {}),
+      ...(data.roomInvites !== undefined
+        ? { roomInvites: data.roomInvites }
+        : {}),
+      ...(data.leaderboardUpdates !== undefined
+        ? { leaderboardUpdates: data.leaderboardUpdates }
+        : {}),
+      ...(data.todoDdayDate !== undefined
+        ? { todoDdayDate: data.todoDdayDate }
+        : {}),
+      ...(data.todoDdayTitle !== undefined
+        ? { todoDdayTitle: data.todoDdayTitle }
+        : {}),
     },
     select: {
       theme: true,
@@ -62,6 +110,8 @@ export const PATCH = withApi(async (request: Request) => {
       friendActivity: true,
       roomInvites: true,
       leaderboardUpdates: true,
+      todoDdayDate: true,
+      todoDdayTitle: true,
     },
   });
 

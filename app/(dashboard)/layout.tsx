@@ -37,9 +37,9 @@ export default async function DashboardGroupLayout({
 
   return (
     <MobileNavProvider>
-      <div className="flex min-h-dvh w-full max-w-[100vw] overflow-x-hidden bg-background bg-[image:var(--panel-texture-image)] bg-[length:420px_420px]">
+      <div className="flex min-h-dvh w-full max-w-[100vw] bg-background bg-[image:var(--panel-texture-image)] bg-[length:420px_420px]">
         <Sidebar userName={user.name} />
-        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto bg-[image:radial-gradient(ellipse_72%_52%_at_50%_-8%,color-mix(in_oklch,var(--color-cta)_10%,transparent)_0%,transparent_60%),var(--app-hatch),var(--panel-texture-image)] bg-[length:auto,auto,360px_360px]">
+        <main className="relative flex min-h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-[image:radial-gradient(ellipse_72%_52%_at_50%_-8%,color-mix(in_oklch,var(--color-cta)_10%,transparent)_0%,transparent_60%),var(--app-hatch),var(--panel-texture-image)] bg-[length:auto,auto,360px_360px]">
           <div
             className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_78%_54%_at_50%_34%,color-mix(in_oklch,var(--color-card)_45%,transparent)_0%,transparent_62%)]
             dark:bg-[radial-gradient(ellipse_78%_54%_at_50%_34%,rgb(255_255_255/0.035)_0%,transparent_62%)]"

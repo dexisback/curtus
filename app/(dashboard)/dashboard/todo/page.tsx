@@ -1,22 +1,26 @@
-import { requireSession } from "@/lib/session";
-import { prisma } from "@/lib/db";
-import TodoWorkspaceClient from "./todo-workspace-client";
+import { requireSession } from '@/lib/session';
+import { prisma } from '@/lib/db';
+import { getOrCreateUserSettings } from '@/lib/user-settings';
+import TodoWorkspaceClient from './todo-workspace-client';
 
-export type TaskType = "DAILY" | "YEARLY" | "DEADLINE";
+export type TaskType = 'DAILY' | 'YEARLY' | 'DEADLINE';
 
 export default async function TodoPage() {
   const session = await requireSession();
-  const tasks = await prisma.task.findMany({
-    where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      type: true,
-      deadline: true,
-      isCompleted: true,
-    },
-  });
+  const [tasks, settings] = await Promise.all([
+    prisma.task.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        deadline: true,
+        isCompleted: true,
+      },
+    }),
+    getOrCreateUserSettings(prisma, session.user.id),
+  ]);
 
   return (
     <TodoWorkspaceClient
@@ -27,6 +31,8 @@ export default async function TodoPage() {
         deadline: task.deadline?.toISOString().slice(0, 10),
         isCompleted: task.isCompleted,
       }))}
+      initialDdayDate={settings.todoDdayDate}
+      initialDdayTitle={settings.todoDdayTitle}
     />
   );
 }

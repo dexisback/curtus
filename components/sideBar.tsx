@@ -142,7 +142,7 @@ function CreateRoomModal({ onExited }: { onExited: () => void }) {
   if (!mounted) return null;
 
   return createPortal(
-    <AnimatePresence onExitComplete={onExited}>
+    <AnimatePresence initial={false} onExitComplete={onExited}>
       {open && (
         <motion.div
           key="create-room-overlay"
@@ -444,7 +444,7 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
           shrink-0 flex-col overflow-hidden border-r border-border/35 bg-muted/50 bg-[image:var(--panel-texture-image)] bg-[length:340px_340px]
           shadow-[0_14px_40px_rgb(22_25_37/0.1),inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
           dark:border-border/50 dark:bg-[color:var(--panel-texture-bg)] dark:shadow-[0_16px_44px_rgb(0_0_0/0.38),inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]
-          lg:relative lg:inset-auto lg:z-auto lg:h-full lg:w-auto lg:max-h-none lg:shadow-[inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
+          lg:sticky lg:top-0 lg:self-start lg:inset-auto lg:z-auto lg:h-dvh lg:min-h-dvh lg:w-auto lg:max-h-dvh lg:shadow-[inset_-1px_0_0_rgba(255,255,255,0.52),inset_-10px_0_20px_-14px_rgba(22,25,37,0.05),inset_0_0_0_1px_rgba(22,25,37,0.02)]
           dark:lg:shadow-[inset_-1px_0_0_rgba(255,255,255,0.04),inset_-12px_0_24px_-12px_rgb(0_0_0/0.32)]"
       >
         {(lgUp || mobileNavOpen) && (

@@ -199,6 +199,7 @@ export default function ProfileModal({
 
   return createPortal(
     <AnimatePresence
+      initial={false}
       onExitComplete={() => {
         onExited();
       }}

@@ -88,6 +88,7 @@ export type SocketData = {
   userId: string;
   userName: string;
   joinedRoomIds: string[];
+  roomJoinReasons: Record<string, { ui: boolean; video: boolean }>;
   requestId?: string;
 };
 
@@ -426,6 +427,44 @@ function addJoinedRoom(socket: StudySocket, roomId: string) {
   }
 }
 
+function getRoomJoinReason(socket: StudySocket, roomId: string) {
+  const existing = socket.data.roomJoinReasons[roomId];
+  if (existing) return existing;
+  const next = { ui: false, video: false };
+  socket.data.roomJoinReasons[roomId] = next;
+  return next;
+}
+
+function setUiJoinReason(socket: StudySocket, roomId: string, joined: boolean) {
+  const reason = getRoomJoinReason(socket, roomId);
+  reason.ui = joined;
+  if (joined) {
+    addJoinedRoom(socket, roomId);
+    return;
+  }
+  if (!reason.video) {
+    delete socket.data.roomJoinReasons[roomId];
+    removeJoinedRoom(socket, roomId);
+  }
+}
+
+function setVideoJoinReason(
+  socket: StudySocket,
+  roomId: string,
+  enabled: boolean,
+) {
+  const reason = getRoomJoinReason(socket, roomId);
+  reason.video = enabled;
+  if (enabled) {
+    addJoinedRoom(socket, roomId);
+    return;
+  }
+  if (!reason.ui) {
+    delete socket.data.roomJoinReasons[roomId];
+    removeJoinedRoom(socket, roomId);
+  }
+}
+
 function removeJoinedRoom(socket: StudySocket, roomId: string) {
   socket.data.joinedRoomIds = socket.data.joinedRoomIds.filter(
     (id: string) => id !== roomId,
@@ -450,6 +489,7 @@ async function evictFromRoom(
   roomId: string,
 ) {
   socket.leave(roomId);
+  delete socket.data.roomJoinReasons[roomId];
   removeJoinedRoom(socket, roomId);
   await redis.srem(getRoomVideoEnabledKey(roomId), socket.data.userId);
   await maybeRemovePresenceMember(io, socket, roomId);
@@ -599,7 +639,7 @@ export function registerSocketEvents(io: StudyServer) {
         const joinDone = roomJoinDurationMs.startTimer();
         try {
           socket.join(parsed.data.roomId);
-          addJoinedRoom(socket, parsed.data.roomId);
+          setUiJoinReason(socket, parsed.data.roomId, true);
 
           await redis.sadd(
             getRoomMembersKey(parsed.data.roomId),
@@ -620,8 +660,14 @@ export function registerSocketEvents(io: StudyServer) {
         return;
       }
 
+      setUiJoinReason(socket, parsed.data.roomId, false);
+      const reason = socket.data.roomJoinReasons[parsed.data.roomId];
+      if (reason?.video) {
+        await publishPresence(io, parsed.data.roomId);
+        return;
+      }
+
       socket.leave(parsed.data.roomId);
-      removeJoinedRoom(socket, parsed.data.roomId);
       await maybeRemovePresenceMember(io, socket, parsed.data.roomId);
     });
 
@@ -671,9 +717,23 @@ export function registerSocketEvents(io: StudyServer) {
 
         const key = getRoomVideoEnabledKey(parsed.data.roomId);
         if (parsed.data.enabled) {
+          socket.join(parsed.data.roomId);
+          setVideoJoinReason(socket, parsed.data.roomId, true);
+          await redis.sadd(
+            getRoomMembersKey(parsed.data.roomId),
+            socket.data.userId,
+          );
           const alreadyEnabled = await redis.sismember(key, socket.data.userId);
           const activeCount = await redis.scard(key);
           if (!alreadyEnabled && activeCount >= MAX_ACTIVE_VIDEO_USERS) {
+            setVideoJoinReason(socket, parsed.data.roomId, false);
+            if (!socket.data.roomJoinReasons[parsed.data.roomId]?.ui) {
+              socket.leave(parsed.data.roomId);
+              await redis.srem(
+                getRoomMembersKey(parsed.data.roomId),
+                socket.data.userId,
+              );
+            }
             socket.emit('room:error', toRoomError('Room video is full.'));
             ack?.({ ok: false, error: 'video_room_full' });
             return;
@@ -681,11 +741,15 @@ export function registerSocketEvents(io: StudyServer) {
           await redis.sadd(key, socket.data.userId);
           await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
         } else {
+          setVideoJoinReason(socket, parsed.data.roomId, false);
           await redis.srem(key, socket.data.userId);
           socket.to(parsed.data.roomId).emit('media:peer-left', {
             roomId: parsed.data.roomId,
             userId: socket.data.userId,
           });
+          if (!socket.data.roomJoinReasons[parsed.data.roomId]?.ui) {
+            socket.leave(parsed.data.roomId);
+          }
         }
         await publishPresence(io, parsed.data.roomId);
         ack?.({ ok: true });
@@ -726,6 +790,7 @@ export function registerSocketEvents(io: StudyServer) {
       if (!parsed.success) return;
       const access = await enforceRoomAccess(io, socket, parsed.data.roomId);
       if (!access.ok) return;
+      setVideoJoinReason(socket, parsed.data.roomId, false);
       await redis.srem(
         getRoomVideoEnabledKey(parsed.data.roomId),
         socket.data.userId,
@@ -734,6 +799,9 @@ export function registerSocketEvents(io: StudyServer) {
         roomId: parsed.data.roomId,
         userId: socket.data.userId,
       });
+      if (!socket.data.roomJoinReasons[parsed.data.roomId]?.ui) {
+        socket.leave(parsed.data.roomId);
+      }
       await publishPresence(io, parsed.data.roomId);
     });
 

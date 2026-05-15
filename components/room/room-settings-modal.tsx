@@ -41,7 +41,7 @@ export default function RoomSettingsModal({
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence initial={false}>
       {open && (
         <motion.div
           key="room-settings"

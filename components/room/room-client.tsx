@@ -118,11 +118,11 @@ export default function RoomClient({
     remoteStreams,
     starting: videoStarting,
     error: videoError,
+    enabled: selfCamOn,
     start: startVideo,
     stop: stopVideo,
-  } = useRoomVideo({ roomId, currentUserId, videoEnabledUserIds });
-
-  const selfCamOn = videoEnabledUserIds.includes(currentUserId);
+    sync: syncVideoPeers,
+  } = useRoomVideo({ roomId });
   const refreshTimerRefs = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const streamForMember = useCallback(
@@ -132,8 +132,11 @@ export default function RoomClient({
   );
 
   const hasVideoForMember = useCallback(
-    (userId: string) => videoEnabledUserIds.includes(userId),
-    [videoEnabledUserIds],
+    (userId: string) =>
+      userId === currentUserId
+        ? selfCamOn
+        : videoEnabledUserIds.includes(userId),
+    [currentUserId, selfCamOn, videoEnabledUserIds],
   );
 
   const toggleSelfCamera = useCallback(() => {
@@ -182,11 +185,12 @@ export default function RoomClient({
       setTodayMinutes(payload.todayMinutes);
       setTodaySeconds(payload.todaySeconds);
       setSessionStartedAt(payload.sessionStartedAt);
+      syncVideoPeers();
     };
 
     const onKicked = (payload: { roomId: string }) => {
       if (payload.roomId !== roomId) return;
-      stopVideo();
+      void stopVideo();
       router.push('/rooms');
     };
     const onConnect = () => {
@@ -204,16 +208,15 @@ export default function RoomClient({
       clearRefreshTimers();
       clearInterval(keepAliveId);
       socket.emit('room:leave', { roomId });
-      stopVideo();
       socket.off('presence', onPresence);
       socket.off('room:kicked', onKicked);
       socket.off('connect', onConnect);
     };
-  }, [roomId, router, stopVideo]);
+  }, [roomId, router, syncVideoPeers, stopVideo]);
 
   async function leaveMembership() {
     setLeaving(true);
-    stopVideo();
+    await stopVideo();
     try {
       await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
       router.push('/rooms');
@@ -224,7 +227,7 @@ export default function RoomClient({
 
   async function deleteRoomFromSettings() {
     setLeaving(true);
-    stopVideo();
+    await stopVideo();
     try {
       await fetch(`/api/rooms/${code}`, { method: 'DELETE' });
       setSettingsOpen(false);
@@ -281,7 +284,9 @@ export default function RoomClient({
   );
 
   const focusHasVideo = focusedMember
-    ? videoEnabledUserIds.includes(focusedMember.id)
+    ? focusedMember.id === currentUserId
+      ? selfCamOn
+      : videoEnabledUserIds.includes(focusedMember.id)
     : false;
 
   return (

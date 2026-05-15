@@ -1,45 +1,54 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from '@prisma/client';
 
 export type SerializedUserSettings = {
-  theme: "light" | "dark";
+  theme: 'light' | 'dark';
   soundEnabled: boolean;
   compactSidebar: boolean;
   sessionReminders: boolean;
   friendActivity: boolean;
   roomInvites: boolean;
   leaderboardUpdates: boolean;
+  todoDdayDate: string;
+  todoDdayTitle: string;
 };
 
 export const DEFAULT_USER_SETTINGS: SerializedUserSettings = {
-  theme: "light",
+  theme: 'light',
   soundEnabled: true,
   compactSidebar: false,
   sessionReminders: true,
   friendActivity: false,
   roomInvites: true,
   leaderboardUpdates: false,
+  todoDdayDate: '2026-06-01',
+  todoDdayTitle: 'D-Day milestone',
 };
 
 export function serializeUserSettings(
   settings: {
-    theme: "LIGHT" | "DARK";
+    theme: 'LIGHT' | 'DARK';
     soundEnabled: boolean;
     compactSidebar: boolean;
     sessionReminders: boolean;
     friendActivity: boolean;
     roomInvites: boolean;
     leaderboardUpdates: boolean;
+    todoDdayDate: string | null;
+    todoDdayTitle: string | null;
   } | null,
 ): SerializedUserSettings {
   if (!settings) return DEFAULT_USER_SETTINGS;
   return {
-    theme: settings.theme === "DARK" ? "dark" : "light",
+    theme: settings.theme === 'DARK' ? 'dark' : 'light',
     soundEnabled: settings.soundEnabled,
     compactSidebar: settings.compactSidebar,
     sessionReminders: settings.sessionReminders,
     friendActivity: settings.friendActivity,
     roomInvites: settings.roomInvites,
     leaderboardUpdates: settings.leaderboardUpdates,
+    todoDdayDate: settings.todoDdayDate ?? DEFAULT_USER_SETTINGS.todoDdayDate,
+    todoDdayTitle:
+      settings.todoDdayTitle ?? DEFAULT_USER_SETTINGS.todoDdayTitle,
   };
 }
 
@@ -59,6 +68,8 @@ export async function getOrCreateUserSettings(
       friendActivity: true,
       roomInvites: true,
       leaderboardUpdates: true,
+      todoDdayDate: true,
+      todoDdayTitle: true,
     },
   });
 
@@ -66,4 +77,3 @@ export async function getOrCreateUserSettings(
 }
 
 // — user-settings.ts: Prisma user_settings ↔ client JSON shape; defaults and upsert helper.
-

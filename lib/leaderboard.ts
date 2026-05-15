@@ -1,6 +1,6 @@
-import { unstable_cache } from "next/cache";
-import { prisma } from "@/lib/db";
-import { redis } from "@/lib/redis";
+import { unstable_cache } from 'next/cache';
+import { prisma } from '@/lib/db';
+import { redis } from '@/lib/redis';
 import {
   type Period,
   getDailyKey,
@@ -8,7 +8,7 @@ import {
   getMonthlyKey,
   getPeriodWindow,
   getPeriodTtlSeconds,
-} from "@/lib/periods";
+} from '@/lib/periods';
 
 export type { Period };
 
@@ -25,6 +25,22 @@ export type LeaderboardEntry = {
   image: string | null;
   totalMinutes: number;
 };
+
+function compareLeaderboardScores(
+  a: LeaderboardScoreRow,
+  b: LeaderboardScoreRow,
+) {
+  if (b.totalMinutes !== a.totalMinutes) return b.totalMinutes - a.totalMinutes;
+  return a.userId.localeCompare(b.userId);
+}
+
+export function normalizeLeaderboardScores(
+  scores: LeaderboardScoreRow[],
+  limit?: number,
+): LeaderboardScoreRow[] {
+  const normalized = [...scores].sort(compareLeaderboardScores);
+  return typeof limit === 'number' ? normalized.slice(0, limit) : normalized;
+}
 
 /** When `entries` is the ordered top-N list, avoids a separate DB rank query for users on the list. */
 export function rankFromLeaderboardEntries(
@@ -43,11 +59,11 @@ type LeaderboardFilter = {
 
 function lbRedisKey(period: Period, date: Date): string {
   switch (period) {
-    case "daily":
+    case 'daily':
       return `lb:daily:${getDailyKey(date)}`;
-    case "weekly":
+    case 'weekly':
       return `lb:weekly:${getWeeklyKey(date)}`;
-    case "monthly":
+    case 'monthly':
       return `lb:monthly:${getMonthlyKey(date)}`;
   }
 }
@@ -63,33 +79,39 @@ async function fromDbScores(
   if (userIds && userIds.length === 0) return [];
 
   const rows = await prisma.dailyStats.groupBy({
-    by: ["userId"],
+    by: ['userId'],
     where: {
       date: { gte: start, lt: end },
       ...(userIds ? { userId: { in: userIds } } : {}),
     },
     _sum: { totalMinutes: true },
-    orderBy: { _sum: { totalMinutes: "desc" } },
+    orderBy: { _sum: { totalMinutes: 'desc' } },
     take: limit,
   });
 
   if (!rows.length) return [];
 
-  return rows.map((r) => ({
-    userId: r.userId,
-    totalMinutes: r._sum.totalMinutes ?? 0,
-  }));
+  return normalizeLeaderboardScores(
+    rows.map((r) => ({
+      userId: r.userId,
+      totalMinutes: r._sum.totalMinutes ?? 0,
+    })),
+    limit,
+  );
 }
 
-async function attachRanksAndUsers(ordered: LeaderboardScoreRow[]): Promise<LeaderboardEntry[]> {
+async function attachRanksAndUsers(
+  ordered: LeaderboardScoreRow[],
+): Promise<LeaderboardEntry[]> {
   if (!ordered.length) return [];
+  const normalized = normalizeLeaderboardScores(ordered);
   const users = await prisma.user.findMany({
-    where: { id: { in: ordered.map((r) => r.userId) } },
+    where: { id: { in: normalized.map((r) => r.userId) } },
     select: { id: true, name: true, image: true },
   });
   const userMap = new Map(users.map((u) => [u.id, u]));
 
-  return ordered.map((r, i) => ({
+  return normalized.map((r, i) => ({
     rank: i + 1,
     userId: r.userId,
     name: userMap.get(r.userId)?.name ?? null,
@@ -98,9 +120,16 @@ async function attachRanksAndUsers(ordered: LeaderboardScoreRow[]): Promise<Lead
   }));
 }
 
-async function seedCache(key: string, scores: LeaderboardScoreRow[], ttl: number): Promise<void> {
+async function seedCache(
+  key: string,
+  scores: LeaderboardScoreRow[],
+  ttl: number,
+): Promise<void> {
   if (!redis || !scores.length) return;
-  const [first, ...rest] = scores.map((e) => ({ score: e.totalMinutes, member: e.userId }));
+  const [first, ...rest] = scores.map((e) => ({
+    score: e.totalMinutes,
+    member: e.userId,
+  }));
   const pipe = redis.pipeline();
   pipe.zadd(key, first, ...rest);
   pipe.expire(key, ttl);
@@ -131,9 +160,12 @@ async function getTopScores(
     if (raw.length > 0) {
       const pairs: LeaderboardScoreRow[] = [];
       for (let i = 0; i < raw.length; i += 2) {
-        pairs.push({ userId: raw[i] as string, totalMinutes: Number(raw[i + 1]) });
+        pairs.push({
+          userId: raw[i] as string,
+          totalMinutes: Number(raw[i + 1]),
+        });
       }
-      return pairs;
+      return normalizeLeaderboardScores(pairs, limit);
     }
   }
 
@@ -151,8 +183,36 @@ export async function getTopN(
   filter?: LeaderboardFilter,
 ): Promise<LeaderboardEntry[]> {
   const now = new Date();
-  const scores = await getTopScores(period, now, limit, filter, { seedRedisIfMissing: true });
+  const scores = await getTopScores(period, now, limit, filter, {
+    seedRedisIfMissing: true,
+  });
   return attachRanksAndUsers(scores);
+}
+
+async function getAllScoresForPeriod(
+  period: Period,
+  now: Date,
+  filter?: LeaderboardFilter,
+): Promise<LeaderboardScoreRow[]> {
+  const { start, end } = getPeriodWindow(period, now);
+  const userIds = filter?.userIds;
+  if (userIds && userIds.length === 0) return [];
+
+  const rows = await prisma.dailyStats.groupBy({
+    by: ['userId'],
+    where: {
+      date: { gte: start, lt: end },
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
+    _sum: { totalMinutes: true },
+  });
+
+  return normalizeLeaderboardScores(
+    rows.map((row) => ({
+      userId: row.userId,
+      totalMinutes: row._sum.totalMinutes ?? 0,
+    })),
+  );
 }
 
 export async function getUserRankAndScore(
@@ -163,56 +223,37 @@ export async function getUserRankAndScore(
   const now = new Date();
   const userIds = filter?.userIds;
   if (userIds && !userIds.includes(userId)) return null;
-  const key = lbRedisKey(period, now);
-
-  if (redis && !userIds) {
-    const [score, revRank] = await Promise.all([
-      redis.zscore(key, userId),
-      redis.zrevrank(key, userId),
-    ]);
-    if (score !== null && score !== undefined) {
-      return { rank: (revRank ?? 0) + 1, totalMinutes: Number(score) };
-    }
+  const scores = await getAllScoresForPeriod(period, now, filter);
+  const idx = scores.findIndex((entry) => entry.userId === userId);
+  if (idx >= 0) {
+    return { rank: idx + 1, totalMinutes: scores[idx]!.totalMinutes };
   }
-
-  const { start, end } = getPeriodWindow(period, now);
-  const myAgg = await prisma.dailyStats.aggregate({
-    where: {
-      userId,
-      date: { gte: start, lt: end },
-      ...(userIds ? { userId: { in: userIds } } : {}),
-    },
-    _sum: { totalMinutes: true },
-  });
-  const totalMinutes = myAgg._sum.totalMinutes ?? 0;
-
-  const aboveRows = await prisma.dailyStats.groupBy({
-    by: ["userId"],
-    where: {
-      date: { gte: start, lt: end },
-      NOT: { userId },
-      ...(userIds ? { userId: { in: userIds } } : {}),
-    },
-    _sum: { totalMinutes: true },
-    having: { totalMinutes: { _sum: { gt: totalMinutes } } },
-  });
-
-  return { rank: aboveRows.length + 1, totalMinutes };
+  return { rank: scores.length + 1, totalMinutes: 0 };
 }
 
-async function loadGlobalDailyTop100ScoresForPage(): Promise<LeaderboardScoreRow[]> {
-  return getTopScores("daily", new Date(), 100, undefined, { seedRedisIfMissing: true });
+async function loadGlobalDailyTop100ScoresForPage(): Promise<
+  LeaderboardScoreRow[]
+> {
+  return getTopScores('daily', new Date(), 100, undefined, {
+    seedRedisIfMissing: true,
+  });
 }
 
 /**
  * SSR leaderboard: caches ordered scores for the study day; name/image always loaded fresh from `users`
  * so avatar updates show immediately (see `attachRanksAndUsers`).
  */
-export async function getGlobalDailyLeaderboardTop100Cached(): Promise<LeaderboardEntry[]> {
+export async function getGlobalDailyLeaderboardTop100Cached(): Promise<
+  LeaderboardEntry[]
+> {
   const studyDay = getDailyKey(new Date());
-  const scores = await unstable_cache(loadGlobalDailyTop100ScoresForPage, ["lb-global-daily-top100-scores", studyDay], {
-    revalidate: 30,
-  })();
+  const scores = await unstable_cache(
+    loadGlobalDailyTop100ScoresForPage,
+    ['lb-global-daily-top100-scores', studyDay],
+    {
+      revalidate: 30,
+    },
+  )();
   return attachRanksAndUsers(scores);
 }
 
@@ -223,7 +264,7 @@ export async function bumpLeaderboards(
 ): Promise<void> {
   const client = redis;
   if (!client) return;
-  const periods: Period[] = ["daily", "weekly", "monthly"];
+  const periods: Period[] = ['daily', 'weekly', 'monthly'];
   await Promise.all(
     periods.map(async (period) => {
       const key = lbRedisKey(period, completedAt);

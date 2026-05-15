@@ -55,16 +55,16 @@ model Verification {
 }
 
 model User {
-  id                    String   @id @default(cuid())
-  email                 String   @unique
-  emailVerified         Boolean  @default(false)
-  name                  String?
-  image                 String?
-  bio                   String?
+  id                   String   @id @default(cuid())
+  email                String   @unique
+  emailVerified        Boolean  @default(false)
+  name                 String?
+  image                String?
+  bio                  String?
   /// Denormalized sum of completed session minutes; keep in sync when logging FocusSession.
-  lifetimeFocusMinutes  Int      @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  lifetimeFocusMinutes Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   accounts      Account[]
   sessions      Session[]
@@ -92,6 +92,8 @@ model UserSettings {
   friendActivity     Boolean  @default(false)
   roomInvites        Boolean  @default(true)
   leaderboardUpdates Boolean  @default(false)
+  todoDdayDate       String?
+  todoDdayTitle      String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -151,9 +153,9 @@ model FocusSession {
   completedAt DateTime @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   roomId String?
-  room   Room?  @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  room   Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
   @@index([userId, completedAt])
   @@map("focus_sessions")
@@ -167,9 +169,9 @@ model DailyStats {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, date])
   @@index([userId, date])
   @@index([date, userId])
-  @@unique([userId, date])
   @@map("daily_stats")
 }
 
@@ -185,18 +187,18 @@ model Streak {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  content   String
+  id          String   @id @default(cuid())
+  content     String
   clientNonce String?
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   roomId String
   room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  @@index([roomId, createdAt])
   @@unique([roomId, userId, clientNonce])
+  @@index([roomId, createdAt])
   @@map("messages")
 }
 
@@ -236,14 +238,14 @@ model Ping {
 }
 
 model LibraryItem {
-  id          String            @id @default(cuid())
-  url         String
-  mediaKind   LibraryMediaKind
-  videoId     String?
-  playlistId  String?
-  title       String?
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id         String           @id @default(cuid())
+  url        String
+  mediaKind  LibraryMediaKind
+  videoId    String?
+  playlistId String?
+  title      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)

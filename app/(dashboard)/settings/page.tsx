@@ -1,28 +1,24 @@
-import { requireSession } from "@/lib/session";
-import { prisma } from "@/lib/db";
-import SettingsClient from "@/components/settings/settings-client";
+import { requireSession } from '@/lib/session';
+import { prisma } from '@/lib/db';
+import { getOrCreateUserSettings } from '@/lib/user-settings';
+import SettingsClient from '@/components/settings/settings-client';
 
 export default async function SettingsPage() {
   const session = await requireSession();
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { name: true, email: true, image: true },
-  });
+  const [user, settings] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, email: true, image: true },
+    }),
+    getOrCreateUserSettings(prisma, session.user.id),
+  ]);
 
   return (
     <SettingsClient
-      initialName={user?.name ?? ""}
-      initialEmail={user?.email ?? ""}
+      initialName={user?.name ?? ''}
+      initialEmail={user?.email ?? ''}
       initialImage={user?.image ?? null}
-      initialSettings={{
-        theme: "light",
-        soundEnabled: true,
-        compactSidebar: false,
-        sessionReminders: true,
-        friendActivity: false,
-        roomInvites: true,
-        leaderboardUpdates: false,
-      }}
+      initialSettings={settings}
     />
   );
 }

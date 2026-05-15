@@ -81,6 +81,7 @@ export default function Leaderboard({
   const { streamForMember, hasVideoForMember } = useDashboardRoomVideo({
     roomId: activeBoard?.id ?? null,
     videoEnabledUserIds: activeVideoEnabledUserIds,
+    currentUserId,
   });
 
   useEffect(() => {

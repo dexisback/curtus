@@ -2,7 +2,7 @@ import { requireSession } from '@/lib/session';
 import { prisma } from '@/lib/db';
 import { getStudyDayStart, getWeekStart, getMonthStart } from '@/lib/periods';
 import SessionsLoadMore from '@/components/sessions-load-more';
-import { CalendarDays, Video } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import FriendsPanel, {
   type FriendItem,
 } from '@/components/profile/friends-panel';
@@ -211,9 +211,6 @@ export default async function ProfilePage() {
     { label: 'Longest Streak', value: `${streakRow?.longestStreak ?? 0}d` },
   ];
 
-  const uniqueRooms = Array.from(
-    new Set(recentSessions.map((s) => s.room?.name).filter(Boolean)),
-  ).slice(0, 6) as string[];
   const collaboratorCandidates = relatedRoomMemberships.flatMap((membership) =>
     membership.room.members
       .map((member) => member.user)
@@ -357,43 +354,10 @@ export default async function ProfilePage() {
             </div>
           </div>
 
-          {/* ── Friends + rooms ── */}
-          <div className="space-y-4">
-            <FriendsPanel
-              initialFriends={initialFriends}
-              fallbackNames={collaborators}
-            />
-            <div className="bg-[color:var(--panel-texture-bg)] bg-[image:var(--panel-texture-image)] bg-[length:340px_340px] rounded-2xl border border-border/50 p-4">
-              <p className="mb-3 flex items-center gap-2 text-[12px] font-semibold text-foreground">
-                <Video size={13} />
-                Rooms
-              </p>
-              <div className="space-y-2">
-                {uniqueRooms.length > 0 ? (
-                  uniqueRooms.map((roomName) => (
-                    <div
-                      key={roomName}
-                      className="flex items-center justify-between rounded-lg border border-border/50 bg-background/80 px-3 py-2"
-                    >
-                      <span className="text-[11.5px] text-foreground">
-                        {roomName}
-                      </span>
-                      <button
-                        type="button"
-                        className="app-cta-surface rounded-[6px] px-2 py-1 text-[10px] font-medium text-cta-foreground"
-                      >
-                        Manage
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">
-                    No room history yet.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          <FriendsPanel
+            initialFriends={initialFriends}
+            fallbackNames={collaborators}
+          />
         </div>
 
         {/* ── Recent sessions ── */}

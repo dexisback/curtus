@@ -276,6 +276,7 @@ io.use(async (socket, next) => {
         socket.data.userId = userId;
         socket.data.userName = userName ?? 'Unknown';
         socket.data.joinedRoomIds = [];
+        socket.data.roomJoinReasons = {};
         socket.data.requestId = requestId;
         socket.join(`user:${userId}`);
 

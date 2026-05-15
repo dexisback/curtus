@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CalendarDays, CheckSquare, Goal, Pencil, Plus, X } from 'lucide-react';
 import { useSound } from '@/components/sound-provider';
@@ -96,8 +96,12 @@ function AnimatedTrashIcon({ open }: { open: boolean }) {
 
 export default function TodoWorkspaceClient({
   initialTasks,
+  initialDdayDate,
+  initialDdayTitle,
 }: {
   initialTasks: TodoTask[];
+  initialDdayDate: string;
+  initialDdayTitle: string;
 }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [slicedId, setSlicedId] = useState<string | null>(null);
@@ -110,16 +114,75 @@ export default function TodoWorkspaceClient({
   const [modalDeadline, setModalDeadline] = useState('');
   const [modalTime, setModalTime] = useState('09:00');
   const [modalBusy, setModalBusy] = useState(false);
-  const [dDay, setDDay] = useState('2026-06-01');
-  const [dDayName, setDDayName] = useState('D-Day milestone');
+  const [dDay, setDDay] = useState(initialDdayDate);
+  const [dDayName, setDDayName] = useState(initialDdayTitle);
   const [weeklyGoal, setWeeklyGoal] = useState(12);
   const [monthlyGoal, setMonthlyGoal] = useState(42);
   const reduceMotion = useReducedMotion();
   const { play } = useSound();
   const opSeqRef = useRef<Map<string, number>>(new Map());
+  const ddayHydratedRef = useRef(false);
+  const ddaySaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ddaySnapshotRef = useRef({
+    todoDdayDate: initialDdayDate,
+    todoDdayTitle: initialDdayTitle,
+  });
 
   const done = tasks.filter((t) => t.isCompleted).length;
   const dValue = dateDiff(new Date(dDay + 'T12:00:00'));
+
+  useEffect(() => {
+    setDDay(initialDdayDate);
+  }, [initialDdayDate]);
+
+  useEffect(() => {
+    setDDayName(initialDdayTitle);
+  }, [initialDdayTitle]);
+
+  useEffect(() => {
+    if (!ddayHydratedRef.current) {
+      ddayHydratedRef.current = true;
+      return;
+    }
+
+    const nextPayload = {
+      todoDdayDate: dDay,
+      todoDdayTitle: dDayName.trim() || initialDdayTitle,
+    };
+    setDDayName(nextPayload.todoDdayTitle);
+
+    if (
+      ddaySnapshotRef.current.todoDdayDate === nextPayload.todoDdayDate &&
+      ddaySnapshotRef.current.todoDdayTitle === nextPayload.todoDdayTitle
+    ) {
+      return;
+    }
+
+    if (ddaySaveTimerRef.current) clearTimeout(ddaySaveTimerRef.current);
+
+    ddaySaveTimerRef.current = setTimeout(() => {
+      const previousSnapshot = ddaySnapshotRef.current;
+      ddaySnapshotRef.current = nextPayload;
+      void fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nextPayload),
+      })
+        .then(async (res) => {
+          if (res.ok) return;
+          ddaySnapshotRef.current = previousSnapshot;
+          play('error');
+        })
+        .catch(() => {
+          ddaySnapshotRef.current = previousSnapshot;
+          play('error');
+        });
+    }, 250);
+
+    return () => {
+      if (ddaySaveTimerRef.current) clearTimeout(ddaySaveTimerRef.current);
+    };
+  }, [dDay, dDayName, initialDdayTitle, play]);
 
   function openCreateModal() {
     setModalMode('create');
@@ -536,7 +599,7 @@ export default function TodoWorkspaceClient({
         </div>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {modalMode && (
           <motion.div
             className="fixed inset-0 z-[120] flex max-h-[100dvh] items-end justify-center overflow-y-auto overflow-x-hidden p-4 sm:items-center sm:p-6"

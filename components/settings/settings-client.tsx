@@ -299,125 +299,139 @@ export default function SettingsClient({
             </motion.button>
           </div>
 
-          <AnimatePresence initial={false} mode="wait">
-            {editingAccount ? (
-              <motion.div
-                key="account-edit"
-                initial={{ opacity: 0, x: 28, filter: 'blur(2px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: -14, filter: 'blur(2px)' }}
-                transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
-                className="will-change-[transform,opacity,filter]"
-              >
-                <div className="divide-y divide-border/40">
+          <div className="mt-0.5 min-h-[12.5rem]">
+            <AnimatePresence initial={false} mode="wait">
+              {editingAccount ? (
+                <motion.div
+                  key="account-edit"
+                  initial={{
+                    opacity: 0,
+                    y: 8,
+                    scale: 0.992,
+                    filter: 'blur(2px)',
+                  }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: 4, scale: 0.992, filter: 'blur(2px)' }}
+                  transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
+                  className="will-change-[transform,opacity,filter]"
+                >
+                  <div className="divide-y divide-border/40">
+                    <SettingRow
+                      label="Display name"
+                      description="How your name appears to other users"
+                      control={
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="w-52 rounded-md border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground"
+                        />
+                      }
+                    />
+                    <SettingRow
+                      label="Email address"
+                      description="Your login email (saved directly; verification flow not added yet)"
+                      control={
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-56 rounded-md border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground"
+                        />
+                      }
+                    />
+                    <SettingRow
+                      label="Avatar"
+                      description="Upload a profile picture from your computer"
+                      control={
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center rounded-[6px] border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground">
+                            Choose file
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) =>
+                                void onAvatarPicked(e.target.files?.[0] ?? null)
+                              }
+                            />
+                          </label>
+                          <span className="max-w-24 truncate text-[10px] text-muted-foreground">
+                            {pickedFileName || (image ? 'Selected' : 'No file')}
+                          </span>
+                        </div>
+                      }
+                    />
+                  </div>
+                  {(saveError || saveSuccess) && (
+                    <p
+                      className={
+                        'mt-3 text-[11px] ' +
+                        (saveError
+                          ? 'text-destructive'
+                          : 'text-muted-foreground')
+                      }
+                    >
+                      {saveError ?? saveSuccess}
+                    </p>
+                  )}
+                  <div className="mt-3 flex justify-end">
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.96 }}
+                      disabled={saveBusy || !name.trim() || !email.trim()}
+                      onClick={() => void saveAccount()}
+                      className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
+                    >
+                      {saveBusy ? 'Saving...' : 'Save account'}
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="account-read"
+                  initial={{
+                    opacity: 0,
+                    y: 8,
+                    scale: 0.992,
+                    filter: 'blur(2px)',
+                  }}
+                  animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: 4, scale: 0.992, filter: 'blur(2px)' }}
+                  transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
+                  className="divide-y divide-border/40 will-change-[transform,opacity,filter]"
+                >
                   <SettingRow
                     label="Display name"
                     description="How your name appears to other users"
                     control={
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-52 rounded-md border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground"
-                      />
+                      <span className="text-[12px] text-foreground/90">
+                        {name || '-'}
+                      </span>
                     }
                   />
                   <SettingRow
                     label="Email address"
-                    description="Your login email (saved directly; verification flow not added yet)"
+                    description="Your login email"
                     control={
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-56 rounded-md border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground"
-                      />
+                      <span className="text-[12px] text-foreground/90">
+                        {email || '-'}
+                      </span>
                     }
                   />
                   <SettingRow
                     label="Avatar"
                     description="Upload a profile picture from your computer"
                     control={
-                      <div className="flex items-center gap-2">
-                        <label className="inline-flex cursor-pointer items-center rounded-[6px] border border-border/70 bg-background px-3 py-1.5 text-[11.5px] text-foreground">
-                          Choose file
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) =>
-                              void onAvatarPicked(e.target.files?.[0] ?? null)
-                            }
-                          />
-                        </label>
-                        <span className="max-w-24 truncate text-[10px] text-muted-foreground">
-                          {pickedFileName || (image ? 'Selected' : 'No file')}
-                        </span>
-                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        {image ? 'Configured' : 'No avatar'}
+                      </span>
                     }
                   />
-                </div>
-                {(saveError || saveSuccess) && (
-                  <p
-                    className={
-                      'mt-3 text-[11px] ' +
-                      (saveError ? 'text-destructive' : 'text-muted-foreground')
-                    }
-                  >
-                    {saveError ?? saveSuccess}
-                  </p>
-                )}
-                <div className="mt-3 flex justify-end">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.96 }}
-                    disabled={saveBusy || !name.trim() || !email.trim()}
-                    onClick={() => void saveAccount()}
-                    className="app-cta-surface rounded-[6px] px-3 py-1.5 text-[11px] font-medium text-cta-foreground disabled:opacity-60"
-                  >
-                    {saveBusy ? 'Saving...' : 'Save account'}
-                  </motion.button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="account-read"
-                initial={{ opacity: 0, x: 28, filter: 'blur(2px)' }}
-                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                exit={{ opacity: 0, x: -14, filter: 'blur(2px)' }}
-                transition={{ type: 'spring', duration: 0.28, bounce: 0 }}
-                className="divide-y divide-border/40 will-change-[transform,opacity,filter]"
-              >
-                <SettingRow
-                  label="Display name"
-                  description="How your name appears to other users"
-                  control={
-                    <span className="text-[12px] text-foreground/90">
-                      {name || '-'}
-                    </span>
-                  }
-                />
-                <SettingRow
-                  label="Email address"
-                  description="Your login email"
-                  control={
-                    <span className="text-[12px] text-foreground/90">
-                      {email || '-'}
-                    </span>
-                  }
-                />
-                <SettingRow
-                  label="Avatar"
-                  description="Upload a profile picture from your computer"
-                  control={
-                    <span className="text-[11px] text-muted-foreground">
-                      {image ? 'Configured' : 'No avatar'}
-                    </span>
-                  }
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <div
