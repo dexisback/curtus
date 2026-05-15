@@ -46,9 +46,7 @@ function LoginPageContent() {
         window.location.assign(redirectUrl);
         return;
       }
-      setAuthError(
-        'OAuth sign-in could not start. Check auth callback URLs and try again.',
-      );
+      setAuthError('OAuth sign-in could not start.');
       setPendingProvider(null);
     } catch {
       setAuthError('OAuth sign-in failed. Please try again.');
