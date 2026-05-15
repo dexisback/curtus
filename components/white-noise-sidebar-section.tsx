@@ -66,7 +66,8 @@ export default function WhiteNoiseSidebarSection() {
   } = useWhiteNoise();
 
   // Keep deterministic SSR/client markup to avoid hydration mismatches.
-  const [expanded, setExpanded] = useState(true);
+  // Default should be compact; user can expand.
+  const [expanded, setExpanded] = useState(false);
 
   const persistExpanded = useCallback((next: boolean) => {
     setExpanded(next);

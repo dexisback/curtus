@@ -86,7 +86,7 @@
   /* L1 — large chrome panels (rooms/dashboard shells) */
   --panel-texture-bg: oklch(0.979 0.0068 78);
   /* Paper grain only — keep ≤ 0.04 for subconscious read */
-  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.065'/%3E%3C/svg%3E");
+  --panel-texture-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");
   /* Softer lift — diffused, not template-y */
   --shadow-ambient-sm:
     0 1px 2px rgb(22 25 37 / 0.034), 0 16px 42px rgb(112 82 62 / 0.048);
@@ -97,8 +97,8 @@
     inset 0 1px 0 rgb(255 255 255 / 0.36);
   --app-hatch: repeating-linear-gradient(
     -48deg,
-    rgb(22 25 37 / 0.03) 0px,
-    rgb(22 25 37 / 0.03) 1px,
+    rgb(22 25 37 / 0.02) 0px,
+    rgb(22 25 37 / 0.02) 1px,
     transparent 1px,
     transparent 11px
   );
