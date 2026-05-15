@@ -67,7 +67,12 @@ type TestIo = {
 
 type TestSocket = {
   id: string;
-  data: { userId: string; userName: string; joinedRoomIds: string[] };
+  data: {
+    userId: string;
+    userName: string;
+    joinedRoomIds: string[];
+    roomJoinReasons: Record<string, { ui: boolean; video: boolean }>;
+  };
   on: (event: string, handler: Handler) => HandlerMap;
   emit: (event: string, payload: unknown) => number;
   join: (room: string) => Set<string>;
@@ -99,7 +104,12 @@ function makeIoAndSocket() {
 
   const socket: TestSocket = {
     id: 'sock-1',
-    data: { userId: 'u1', userName: 'User 1', joinedRoomIds: [] as string[] },
+    data: {
+      userId: 'u1',
+      userName: 'User 1',
+      joinedRoomIds: [] as string[],
+      roomJoinReasons: {},
+    },
     on: (event: string, handler: Handler) => socketHandlers.set(event, handler),
     emit: (event: string, payload: unknown) =>
       socketSelfEmits.push({ event, payload }),

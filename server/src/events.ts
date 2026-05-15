@@ -428,6 +428,9 @@ function addJoinedRoom(socket: StudySocket, roomId: string) {
 }
 
 function getRoomJoinReason(socket: StudySocket, roomId: string) {
+  if (!socket.data.roomJoinReasons) {
+    socket.data.roomJoinReasons = {};
+  }
   const existing = socket.data.roomJoinReasons[roomId];
   if (existing) return existing;
   const next = { ui: false, video: false };
