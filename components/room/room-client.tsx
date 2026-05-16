@@ -118,11 +118,11 @@ export default function RoomClient({
     remoteStreams,
     starting: videoStarting,
     error: videoError,
-    enabled: selfCamOn,
     start: startVideo,
     stop: stopVideo,
-    sync: syncVideoPeers,
-  } = useRoomVideo({ roomId });
+  } = useRoomVideo({ roomId, currentUserId, videoEnabledUserIds });
+
+  const selfCamOn = videoEnabledUserIds.includes(currentUserId);
   const refreshTimerRefs = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   const streamForMember = useCallback(
@@ -193,7 +193,6 @@ export default function RoomClient({
       setTodayMinutes(payload.todayMinutes);
       setTodaySeconds(payload.todaySeconds);
       setSessionStartedAt(payload.sessionStartedAt);
-      syncVideoPeers();
     };
 
     const onKicked = (payload: { roomId: string }) => {
@@ -216,11 +215,12 @@ export default function RoomClient({
       clearRefreshTimers();
       clearInterval(keepAliveId);
       socket.emit('room:leave', { roomId });
+      stopVideo();
       socket.off('presence', onPresence);
       socket.off('room:kicked', onKicked);
       socket.off('connect', onConnect);
     };
-  }, [roomId, router, syncVideoPeers, stopVideo]);
+  }, [roomId, router, stopVideo]);
 
   async function leaveMembership() {
     setLeaving(true);

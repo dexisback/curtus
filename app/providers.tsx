@@ -1,7 +1,7 @@
 'use client';
 
 import { ServerUserSettingsProvider } from '@/components/server-user-settings';
-import { RoomVideoProvider } from '@/components/room-video-provider';
+
 import { SoundProvider } from '@/components/sound-provider';
 import { StudyTimerProvider } from '@/components/study-timer-provider';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -21,12 +21,10 @@ export default function Providers({
       <ThemeProvider>
         <SoundProvider>
           <StudyTimerProvider>
-            <RoomVideoProvider>
-              <WhiteNoiseProvider>
-                {children}
-                <StudyTimerInactivityGuard />
-              </WhiteNoiseProvider>
-            </RoomVideoProvider>
+            <WhiteNoiseProvider>
+              {children}
+              <StudyTimerInactivityGuard />
+            </WhiteNoiseProvider>
           </StudyTimerProvider>
         </SoundProvider>
       </ThemeProvider>
