@@ -21,7 +21,7 @@ const patchSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
-  todoDdayTitle: z.string().trim().min(1).max(120).optional(),
+  todoDdayTitle: z.string().trim().max(120).optional(),
 });
 
 export const GET = withApi(async () => {

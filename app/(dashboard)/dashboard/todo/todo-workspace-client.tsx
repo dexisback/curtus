@@ -147,9 +147,9 @@ export default function TodoWorkspaceClient({
 
     const nextPayload = {
       todoDdayDate: dDay,
-      todoDdayTitle: dDayName.trim() || initialDdayTitle,
+      // Allow clearing the title completely; server will accept empty string.
+      todoDdayTitle: dDayName.trim(),
     };
-    setDDayName(nextPayload.todoDdayTitle);
 
     if (
       ddaySnapshotRef.current.todoDdayDate === nextPayload.todoDdayDate &&

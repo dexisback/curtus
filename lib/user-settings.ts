@@ -47,8 +47,7 @@ export function serializeUserSettings(
     roomInvites: settings.roomInvites,
     leaderboardUpdates: settings.leaderboardUpdates,
     todoDdayDate: settings.todoDdayDate ?? DEFAULT_USER_SETTINGS.todoDdayDate,
-    todoDdayTitle:
-      settings.todoDdayTitle ?? DEFAULT_USER_SETTINGS.todoDdayTitle,
+    todoDdayTitle: settings.todoDdayTitle ?? '',
   };
 }
 

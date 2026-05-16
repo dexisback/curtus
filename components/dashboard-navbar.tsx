@@ -1,6 +1,7 @@
 'use client';
 
 import { Menu, Play, Square } from 'lucide-react';
+import { useServerUserSettings } from '@/components/server-user-settings';
 import { motion } from 'motion/react';
 import { useMobileNav } from '@/components/mobile-nav-context';
 import { useSound } from '@/components/sound-provider';
@@ -18,6 +19,23 @@ type UserLite = {
 export default function DashboardNavbar({ user }: { user: UserLite }) {
   const { openMobileNav, toggleMobileNav, mobileNavOpen } = useMobileNav();
   const { active, redisAvailable, busy, toggle } = useStudyTimer();
+  const settings = useServerUserSettings();
+
+  const ddayText = (() => {
+    const date = settings?.todoDdayDate;
+    if (!date) return null;
+    const target = new Date(`${date}T12:00:00`);
+    if (Number.isNaN(target.getTime())) return null;
+    const now = new Date();
+    const today = new Date(now);
+    today.setHours(12, 0, 0, 0);
+    const diffDays = Math.round(
+      (target.getTime() - today.getTime()) / 86_400_000,
+    );
+    const formatted =
+      diffDays >= 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
+    return formatted;
+  })();
   const { play } = useSound();
 
   return (
@@ -42,6 +60,16 @@ export default function DashboardNavbar({ user }: { user: UserLite }) {
         className="shadow-float relative z-[138] ml-auto flex w-fit max-w-[min(100%,20rem)] items-center gap-0.5 rounded-2xl border border-border/50 bg-card/92 py-1 pl-1 pr-1 backdrop-blur-md
           lg:ml-0"
       >
+        {ddayText ? (
+          <div
+            className="hidden sm:flex items-center justify-center px-2.5 h-10 rounded-xl bg-transparent text-[11px] font-semibold tabular-nums text-muted-foreground"
+            title="Days to your D-Day"
+            aria-label={`D-Day countdown: ${ddayText}`}
+          >
+            {ddayText}
+          </div>
+        ) : null}
+
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}

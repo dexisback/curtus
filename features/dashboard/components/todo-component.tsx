@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
 import { CheckSquare2 } from 'lucide-react';
 import { useSound } from '@/components/sound-provider';
@@ -67,6 +68,7 @@ export default function TodoComponent({
   const scrollRef = useRef<HTMLDivElement>(null);
   const nowIndicatorRef = useRef<HTMLDivElement>(null);
   const [tasks, setTasks] = useState(initialTasks);
+  const pathname = usePathname();
   const opSeqRef = useRef<Map<string, number>>(new Map());
   const { play } = useSound();
 
@@ -87,6 +89,42 @@ export default function TodoComponent({
       scrollRef.current.scrollLeft = offset;
     }
   }, [nowLeftPx]);
+
+  // Keep dashboard strip in sync after creating/editing todos on /dashboard/todo.
+  // TodoWorkspaceClient updates via /api/tasks but dashboard data is server-rendered,
+  // so we pull fresh items client-side when we return.
+  useEffect(() => {
+    let aborted = false;
+
+    async function refreshTodos() {
+      try {
+        const res = await fetch('/api/tasks?limit=24', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { items?: TaskItem[] };
+        if (!aborted && Array.isArray(data.items)) {
+          setTasks(data.items);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const onFocus = () => void refreshTodos();
+    window.addEventListener('focus', onFocus);
+
+    // Also refresh when navigating back to /dashboard.
+    if (pathname === '/dashboard') {
+      void refreshTodos();
+    }
+
+    return () => {
+      aborted = true;
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [pathname]);
 
   return (
     <div className="h-full min-h-0 w-full min-w-0 pt-0.5 pb-2.5">
