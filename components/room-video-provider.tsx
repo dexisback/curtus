@@ -472,7 +472,6 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       leaveRoomIfIdle,
       patchRoomView,
       stopLocalStreamIfUnused,
-      syncRoomVideoPeers,
     ],
   );
 
