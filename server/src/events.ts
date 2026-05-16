@@ -93,7 +93,10 @@ export type SocketData = {
 };
 
 export type ClientToServerEvents = {
-  'room:join': (payload: z.infer<typeof roomEventSchema>) => void;
+  'room:join': (
+    payload: z.infer<typeof roomEventSchema>,
+    ack?: (response: { ok: boolean; error?: string }) => void,
+  ) => void;
   'room:leave': (payload: z.infer<typeof roomEventSchema>) => void;
   'chat:send': (
     payload: z.infer<typeof chatEventSchema>,
@@ -587,74 +590,90 @@ export function registerSocketEvents(io: StudyServer) {
         },
       );
 
-    socket.on('room:join', async (payload: unknown) => {
-      await observeEvent('room.join', async () => {
-        const parsed = roomEventSchema.safeParse(payload);
-        if (!parsed.success) {
-          socket.emit('room:error', toRoomError('Invalid room join payload.'));
-          roomJoinFailuresTotal.inc({ reason: 'invalid_payload' });
-          return;
-        }
+    socket.on(
+      'room:join',
+      async (
+        payload: unknown,
+        ack?: (response: { ok: boolean; error?: string }) => void,
+      ) => {
+        await observeEvent('room.join', async () => {
+          const parsed = roomEventSchema.safeParse(payload);
+          if (!parsed.success) {
+            socket.emit(
+              'room:error',
+              toRoomError('Invalid room join payload.'),
+            );
+            roomJoinFailuresTotal.inc({ reason: 'invalid_payload' });
+            ack?.({ ok: false, error: 'invalid_payload' });
+            return;
+          }
 
-        if (
-          !(await socketAllow(
-            socketLimiters.roomJoin,
-            `room:join:${socket.data.userId}`,
-          ))
-        ) {
-          socket.emit('room:error', { message: 'rate_limited' });
-          roomJoinFailuresTotal.inc({ reason: 'rate_limited' });
-          return;
-        }
+          if (
+            !(await socketAllow(
+              socketLimiters.roomJoin,
+              `room:join:${socket.data.userId}`,
+            ))
+          ) {
+            socket.emit('room:error', { message: 'rate_limited' });
+            roomJoinFailuresTotal.inc({ reason: 'rate_limited' });
+            ack?.({ ok: false, error: 'rate_limited' });
+            return;
+          }
 
-        const membership = await prisma.roomMember.findUnique({
-          where: {
-            userId_roomId: {
-              userId: socket.data.userId,
-              roomId: parsed.data.roomId,
+          const membership = await prisma.roomMember.findUnique({
+            where: {
+              userId_roomId: {
+                userId: socket.data.userId,
+                roomId: parsed.data.roomId,
+              },
             },
-          },
-          select: { userId: true },
-        });
-
-        if (!membership) {
-          socket.emit(
-            'room:error',
-            toRoomError('Join the room first via the app.'),
-          );
-          socketLog.warn('Room join denied: not member', {
-            event_name: 'room.join.denied',
-            room_id: parsed.data.roomId,
-            error_code: 'NOT_MEMBER',
+            select: { userId: true },
           });
-          roomJoinFailuresTotal.inc({ reason: 'not_member' });
-          return;
-        }
 
-        // Check if user was kicked since last connect
-        const wasKicked = await checkAndEvictIfKicked(
-          io,
-          socket,
-          parsed.data.roomId,
-        );
-        if (wasKicked) return;
+          if (!membership) {
+            socket.emit(
+              'room:error',
+              toRoomError('Join the room first via the app.'),
+            );
+            socketLog.warn('Room join denied: not member', {
+              event_name: 'room.join.denied',
+              room_id: parsed.data.roomId,
+              error_code: 'NOT_MEMBER',
+            });
+            roomJoinFailuresTotal.inc({ reason: 'not_member' });
+            ack?.({ ok: false, error: 'not_member' });
+            return;
+          }
 
-        const joinDone = roomJoinDurationMs.startTimer();
-        try {
-          socket.join(parsed.data.roomId);
-          setUiJoinReason(socket, parsed.data.roomId, true);
-
-          await redis.sadd(
-            getRoomMembersKey(parsed.data.roomId),
-            socket.data.userId,
+          // Check if user was kicked since last connect
+          const wasKicked = await checkAndEvictIfKicked(
+            io,
+            socket,
+            parsed.data.roomId,
           );
-          await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
-          await publishPresence(io, parsed.data.roomId);
-        } finally {
-          joinDone();
-        }
-      });
-    });
+          if (wasKicked) {
+            ack?.({ ok: false, error: 'kicked' });
+            return;
+          }
+
+          const joinDone = roomJoinDurationMs.startTimer();
+          try {
+            socket.join(parsed.data.roomId);
+            setUiJoinReason(socket, parsed.data.roomId, true);
+
+            await redis.sadd(
+              getRoomMembersKey(parsed.data.roomId),
+              socket.data.userId,
+            );
+            await syncKeyExpiry(socket.data.userId, parsed.data.roomId);
+            await publishPresence(io, parsed.data.roomId);
+            ack?.({ ok: true });
+          } finally {
+            joinDone();
+          }
+        });
+      },
+    );
 
     socket.on('room:leave', async (payload: unknown) => {
       const parsed = roomEventSchema.safeParse(payload);

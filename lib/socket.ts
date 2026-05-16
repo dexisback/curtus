@@ -46,7 +46,10 @@ type ServerToClientEvents = {
 };
 
 type ClientToServerEvents = {
-  'room:join': (payload: { roomId: string }) => void;
+  'room:join': (
+    payload: { roomId: string },
+    ack?: (response: { ok: boolean; error?: string }) => void,
+  ) => void;
   'room:leave': (payload: { roomId: string }) => void;
   'chat:send': (
     payload: { roomId: string; content: string; clientNonce: string },

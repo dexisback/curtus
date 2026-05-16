@@ -163,10 +163,18 @@ export default function RoomClient({
       );
     };
     const joinRoom = () => {
-      socket.emit('room:join', { roomId });
-      // room:join persistence is async on the server; burst refreshes avoid stale state
-      // when refresh arrives before membership is committed.
-      queuePresenceRefreshBurst();
+      socket.emit(
+        'room:join',
+        { roomId },
+        (response: { ok: boolean; error?: string }) => {
+          if (response.ok) {
+            // Join succeeded, request presence update
+            queuePresenceRefreshBurst();
+          } else {
+            console.error('Room join failed:', response.error);
+          }
+        },
+      );
     };
     joinRoom();
 

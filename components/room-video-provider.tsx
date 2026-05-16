@@ -225,13 +225,30 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const ensureRoomJoined = useCallback(
-    (roomId: string) => {
+    async (roomId: string): Promise<{ ok: boolean; error?: string }> => {
       const runtime = getOrCreateRoom(roomId);
-      if (runtime.joined) return runtime;
+      if (runtime.joined) return { ok: true };
+
       const socket = connectWithAuth();
-      socket?.emit('room:join', { roomId });
-      runtime.joined = true;
-      return runtime;
+      if (!socket) return { ok: false, error: 'socket_unavailable' };
+
+      return new Promise((resolve) => {
+        const timeout = window.setTimeout(
+          () => resolve({ ok: false, error: 'join_timeout' }),
+          8000,
+        );
+        socket.emit(
+          'room:join',
+          { roomId },
+          (response: { ok: boolean; error?: string }) => {
+            window.clearTimeout(timeout);
+            if (response.ok) {
+              runtime.joined = true;
+            }
+            resolve(response);
+          },
+        );
+      });
     },
     [getOrCreateRoom],
   );
@@ -296,12 +313,32 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       };
 
       peer.onconnectionstatechange = () => {
+        console.log(
+          `[WebRTC] Peer ${peerId} connection state:`,
+          peer.connectionState,
+        );
         if (
           peer.connectionState === 'failed' ||
           peer.connectionState === 'closed' ||
           peer.connectionState === 'disconnected'
         ) {
+          console.warn(
+            `[WebRTC] Closing peer ${peerId} due to:`,
+            peer.connectionState,
+          );
           closePeer(roomId, peerId);
+        }
+      };
+
+      peer.oniceconnectionstatechange = () => {
+        console.log(
+          `[WebRTC] Peer ${peerId} ICE state:`,
+          peer.iceConnectionState,
+        );
+        if (peer.iceConnectionState === 'failed') {
+          console.error(
+            `[WebRTC] ICE connection failed for peer ${peerId}. May need TURN server.`,
+          );
         }
       };
 
@@ -319,6 +356,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      console.log('[Video] Syncing video peers for room:', roomId);
       runtime.syncInFlight = true;
       const run = async () => {
         try {
@@ -327,15 +365,16 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
             const socket = connectWithAuth();
             if (!socket) return;
 
+            console.log('[Video] Emitting media:join for room:', roomId);
             const joined = await new Promise<{
               ok: boolean;
               peers?: string[];
               error?: string;
             }>((resolve) => {
-              const timeout = window.setTimeout(
-                () => resolve({ ok: false, error: 'socket_timeout' }),
-                8_000,
-              );
+              const timeout = window.setTimeout(() => {
+                console.error('[Video] media:join timeout');
+                resolve({ ok: false, error: 'socket_timeout' });
+              }, 8_000);
               socket.emit(
                 'media:join',
                 { roomId },
@@ -345,6 +384,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
                   error?: string;
                 }) => {
                   window.clearTimeout(timeout);
+                  console.log('[Video] media:join response:', response);
                   resolve(response);
                 },
               );
@@ -381,11 +421,11 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
 
   const observeRoom = useCallback(
     (roomId: string) => {
-      const runtime = ensureRoomJoined(roomId);
+      const runtime = getOrCreateRoom(roomId);
       runtime.observerCount += 1;
       syncRoomVideoPeers(roomId);
     },
-    [ensureRoomJoined, syncRoomVideoPeers],
+    [getOrCreateRoom, syncRoomVideoPeers],
   );
 
   const unobserveRoom = useCallback(
@@ -402,15 +442,12 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
 
   const disableRoomVideo = useCallback(
     async (roomId: string) => {
-      const runtime = roomRefs.current.get(roomId);
-      if (!runtime) return;
+      const runtime = getOrCreateRoom(roomId);
       patchRoomView(roomId, (prev) => ({
         ...prev,
         videoEnabled: false,
         starting: false,
-        error: null,
       }));
-      closeAllPeers(roomId);
 
       const socket = connectWithAuth();
       await new Promise<void>((resolve) => {
@@ -423,9 +460,8 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         );
       });
 
-      if (runtime.observerCount > 0) {
-        syncRoomVideoPeers(roomId);
-      } else {
+      closeAllPeers(roomId);
+      if (runtime.observerCount === 0) {
         leaveRoomIfIdle(roomId);
       }
       stopLocalStreamIfUnused();
@@ -457,7 +493,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
 
   const enableRoomVideo = useCallback(
     async (roomId: string) => {
-      const runtime = ensureRoomJoined(roomId);
+      console.log('[Video] Starting video for room:', roomId);
       patchRoomView(roomId, (prev) => ({
         ...prev,
         starting: true,
@@ -465,6 +501,15 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       }));
 
       try {
+        // CRITICAL: Wait for room join to complete before enabling video
+        console.log('[Video] Ensuring room is joined...');
+        const joinResult = await ensureRoomJoined(roomId);
+        if (!joinResult.ok) {
+          console.error('[Video] Room join failed:', joinResult.error);
+          throw new Error(`Room join failed: ${joinResult.error || 'unknown'}`);
+        }
+        console.log('[Video] Room joined successfully');
+
         await ensureLocalStream();
         const socket = connectWithAuth();
         if (!socket) throw new Error('Socket unavailable.');
@@ -487,6 +532,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         );
 
         if (!allowed.ok) {
+          console.error('[Video] Video state request failed:', allowed.error);
           throw new Error(
             allowed.error === 'video_room_full'
               ? 'Room video is full.'
@@ -497,6 +543,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
                   : 'Could not start video.',
           );
         }
+        console.log('[Video] Video state enabled successfully');
 
         patchRoomView(roomId, (prev) => ({
           ...prev,
@@ -507,12 +554,14 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         closeAllPeers(roomId);
         syncRoomVideoPeers(roomId);
       } catch (error) {
+        console.error('[Video] Failed to enable video:', error);
         patchRoomView(roomId, (prev) => ({
           ...prev,
           starting: false,
           error: describeMediaError(error),
         }));
-        if (runtime.observerCount === 0) {
+        const runtime = roomRefs.current.get(roomId);
+        if (runtime && runtime.observerCount === 0) {
           leaveRoomIfIdle(roomId);
         }
         stopLocalStreamIfUnused();
@@ -554,13 +603,18 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       fromUserId: string;
       description: RTCSessionDescriptionInit;
     }) => {
+      console.log('[WebRTC] Received offer from:', payload.fromUserId);
       const runtime = roomRefs.current.get(payload.roomId);
-      if (!runtime || !shouldRemainJoined(runtime)) return;
+      if (!runtime || !shouldRemainJoined(runtime)) {
+        console.warn('[WebRTC] Ignoring offer - room not active');
+        return;
+      }
       const peer = createPeer(payload.roomId, payload.fromUserId);
       await peer.setRemoteDescription(payload.description);
       await addPendingCandidates(payload.roomId, payload.fromUserId, peer);
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
+      console.log('[WebRTC] Sending answer to:', payload.fromUserId);
       socket.emit('media:answer', {
         roomId: payload.roomId,
         toUserId: payload.fromUserId,
@@ -573,11 +627,16 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
       fromUserId: string;
       description: RTCSessionDescriptionInit;
     }) => {
+      console.log('[WebRTC] Received answer from:', payload.fromUserId);
       const runtime = roomRefs.current.get(payload.roomId);
       const peer = runtime?.peers.get(payload.fromUserId);
-      if (!runtime || !peer) return;
+      if (!runtime || !peer) {
+        console.warn('[WebRTC] Ignoring answer - no peer found');
+        return;
+      }
       await peer.setRemoteDescription(payload.description);
       await addPendingCandidates(payload.roomId, payload.fromUserId, peer);
+      console.log('[WebRTC] Answer processed for:', payload.fromUserId);
     };
 
     const onIce = async (payload: {
@@ -610,9 +669,19 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         runtime.joined = false;
         closeAllPeers(roomId);
         if (!shouldRemainJoined(runtime)) continue;
-        ensureRoomJoined(roomId);
-        if (runtime.view.videoEnabled) {
-          void (async () => {
+
+        // CRITICAL: Wait for room join before restoring video state
+        void (async () => {
+          const joinResult = await ensureRoomJoined(roomId);
+          if (!joinResult.ok) {
+            console.error(
+              'Failed to rejoin room on reconnect:',
+              joinResult.error,
+            );
+            return;
+          }
+
+          if (runtime.view.videoEnabled) {
             const reconnectSocket = connectWithAuth();
             await new Promise<void>((resolve) => {
               reconnectSocket?.emit(
@@ -621,11 +690,9 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
                 () => resolve(),
               );
             });
-            syncRoomVideoPeers(roomId);
-          })();
-        } else {
+          }
           syncRoomVideoPeers(roomId);
-        }
+        })();
       }
       socket.emit('presence:refresh');
     };
