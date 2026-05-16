@@ -45,6 +45,8 @@ Whether you're studying for exams or just need a quiet place to get work done al
 <div align="center">  
 <img width="1914" height="933" alt="settings" src="https://github.com/user-attachments/assets/99df9931-5aa1-44f0-8d9b-9a092abb2fc4" />
 <img width="1903" height="919" alt="leaderboard-final" src="https://github.com/user-attachments/assets/faceaad7-24eb-40bb-9e08-962f4974781f" />
+<img width="1080" height="530" alt="room-final" src="https://github.com/user-attachments/assets/d0a41b15-91f8-4e6f-91aa-53284b6bef9d" />
+
 
 </div>
 
