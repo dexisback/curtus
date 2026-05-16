@@ -50,6 +50,33 @@ const DEFAULT_ROOM_VIDEO_VIEW: RoomVideoView = {
 
 const RoomVideoContext = createContext<RoomVideoContextValue | null>(null);
 
+function describeMediaError(error: unknown): string {
+  if (error && typeof error === 'object' && 'name' in error) {
+    const name = String((error as { name?: unknown }).name ?? '');
+    switch (name) {
+      case 'NotAllowedError':
+      case 'SecurityError':
+        return 'Camera permission denied.';
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        return 'No camera found.';
+      case 'NotReadableError':
+      case 'TrackStartError':
+        return 'Camera is already in use.';
+      case 'OverconstrainedError':
+      case 'ConstraintNotSatisfiedError':
+        return 'Camera does not meet the required constraints.';
+      case 'NotSupportedError':
+        return 'Camera is not supported in this browser.';
+      default:
+        break;
+    }
+  }
+  return error instanceof Error && error.message
+    ? error.message
+    : 'Could not start camera.';
+}
+
 function getIceServers(): RTCIceServer[] {
   const fallback: RTCIceServer[] = [{ urls: 'stun:stun.l.google.com:19302' }];
   const raw = process.env.NEXT_PUBLIC_RTC_ICE_SERVERS_JSON;
@@ -479,8 +506,7 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
         patchRoomView(roomId, (prev) => ({
           ...prev,
           starting: false,
-          error:
-            error instanceof Error ? error.message : 'Could not start video.',
+          error: describeMediaError(error),
         }));
         if (runtime.observerCount === 0) {
           leaveRoomIfIdle(roomId);

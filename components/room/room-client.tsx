@@ -448,6 +448,7 @@ export default function RoomClient({
                     currentUserId={currentUserId}
                     selfCameraOn={selfCamOn}
                     selfCameraStarting={videoStarting}
+                    selfCameraError={videoError}
                     onToggleSelfCamera={toggleSelfCamera}
                   />
                 </motion.div>

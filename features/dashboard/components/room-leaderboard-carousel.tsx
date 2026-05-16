@@ -62,6 +62,7 @@ export default function RoomLeaderboardCarousel({
   selfCameraOn,
   selfCameraStarting,
   onToggleSelfCamera,
+  selfCameraError,
 }: {
   boards: RoomTimerBoard[];
   compact?: boolean;
@@ -73,6 +74,7 @@ export default function RoomLeaderboardCarousel({
   currentUserId?: string | null;
   selfCameraOn?: boolean;
   selfCameraStarting?: boolean;
+  selfCameraError?: string | null;
   onToggleSelfCamera?: () => void;
 }) {
   const [index, setIndex] = useState(0);
@@ -177,6 +179,9 @@ export default function RoomLeaderboardCarousel({
               currentUserId && member.id === currentUserId,
             );
             const showSelfCamToggle = videoMode && isSelf && onToggleSelfCamera;
+            const showSelfError = Boolean(
+              isSelf && selfCameraError && !hasVideo,
+            );
             const cardClickable = Boolean(onMemberClick);
 
             return (
@@ -229,6 +234,11 @@ export default function RoomLeaderboardCarousel({
                         {formatTimer(displaySeconds)}
                       </p>
                     </div>
+                    {showSelfError ? (
+                      <p className="mt-2 line-clamp-2 text-[11px] text-rose-600">
+                        {selfCameraError}
+                      </p>
+                    ) : null}
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center px-2 py-2">
