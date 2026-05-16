@@ -48,6 +48,18 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 }
 
 const httpServer = createServer(async (request, response) => {
+  const requestUrl = request.url ?? '/';
+  const pathname = (() => {
+    try {
+      return new URL(requestUrl, 'http://localhost').pathname;
+    } catch {
+      return requestUrl;
+    }
+  })();
+  const normalizedPath =
+    pathname.endsWith('/') && pathname.length > 1
+      ? pathname.slice(0, -1)
+      : pathname;
   const originHeader = request.headers.origin;
   const allowedOrigin =
     typeof originHeader === 'string' && isAllowedOrigin(originHeader)
@@ -68,7 +80,7 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
-  if (request.url === '/health') {
+  if (normalizedPath === '/health') {
     try {
       const [dbOk, redisOk] = await Promise.all([
         prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
@@ -122,7 +134,7 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
-  if (request.url === '/metrics') {
+  if (normalizedPath === '/metrics') {
     try {
       const body = await renderMetrics();
       response.writeHead(200, {
@@ -147,7 +159,7 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
-  if (request.url === '/diag') {
+  if (normalizedPath === '/diag') {
     const body = JSON.stringify(
       {
         timestamp: new Date().toISOString(),
