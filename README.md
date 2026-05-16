@@ -36,15 +36,16 @@ Whether you're studying for exams or just need a quiet place to get work done al
 
 ## Screenshots
 
-<!-- TODO: Replace these placeholder images with your actual screenshots from the public folder -->
+
 <div align="center">
-  <img src="https://via.placeholder.com/400x250?text=Dashboard+View" alt="Dashboard View" width="48%" />
-  <img src="https://via.placeholder.com/400x250?text=Study+Room" alt="Study Room View" width="48%" />
+  <img width="1895" height="916" alt="dashboard-final" src="https://github.com/user-attachments/assets/54d8f949-b5bf-4857-8626-4ceb9990ab63" />
+
 </div>
 <br />
-<div align="center">
-  <img src="https://via.placeholder.com/400x250?text=Settings+Panel" alt="Settings Panel" width="48%" />
-  <img src="https://via.placeholder.com/400x250?text=Leaderboard" alt="Leaderboard View" width="48%" />
+<div align="center">  
+<img width="1914" height="933" alt="settings" src="https://github.com/user-attachments/assets/99df9931-5aa1-44f0-8d9b-9a092abb2fc4" />
+<img width="1903" height="919" alt="leaderboard-final" src="https://github.com/user-attachments/assets/faceaad7-24eb-40bb-9e08-962f4974781f" />
+
 </div>
 
 ---
