@@ -14,15 +14,7 @@
 
 <br />
 
-<!-- 
-  SPACE FOR YOUR DEMO VIDEO 
-  Once your video is ready, embed it below. 
-  Example:
-  <video src="https://your-domain.com/demo.mp4" controls width="100%"></video>
--->
-<div align="center">
-  <img src="https://via.placeholder.com/800x450?text=Demo+Video+Coming+Soon" alt="Demo Video Placeholder" width="800" />
-</div>
+
 
 <br />
 
