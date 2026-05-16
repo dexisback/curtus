@@ -15,7 +15,7 @@ export function useDashboardRoomVideo({
 }: UseDashboardRoomVideoOptions) {
   return {
     remoteStreams: {},
-    streamForMember: (_userId: string) => null as MediaStream | null,
+    streamForMember: () => null as MediaStream | null,
     hasVideoForMember: (userId: string) =>
       Boolean(roomId) &&
       (userId === currentUserId
