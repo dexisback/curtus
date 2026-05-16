@@ -899,22 +899,43 @@ export function registerSocketEvents(io: StudyServer) {
           return;
         }
 
-        const message = await prisma.message.upsert({
-          where: {
-            roomId_userId_clientNonce: {
+        let message;
+        try {
+          message = await prisma.message.upsert({
+            where: {
+              roomId_userId_clientNonce: {
+                roomId: parsed.data.roomId,
+                userId: socket.data.userId,
+                clientNonce: parsed.data.clientNonce,
+              },
+            },
+            update: {},
+            create: {
+              content: parsed.data.content,
+              clientNonce: parsed.data.clientNonce,
               roomId: parsed.data.roomId,
               userId: socket.data.userId,
-              clientNonce: parsed.data.clientNonce,
             },
-          },
-          update: {},
-          create: {
-            content: parsed.data.content,
-            clientNonce: parsed.data.clientNonce,
-            roomId: parsed.data.roomId,
-            userId: socket.data.userId,
-          },
-        });
+          });
+        } catch (err) {
+          // If the client retries and the unique row is created between checks,
+          // Prisma can throw a unique constraint error. Treat as idempotent.
+          const code = (err as { code?: string } | null)?.code;
+          if (code === 'P2002') {
+            message = await prisma.message.findFirst({
+              where: {
+                roomId: parsed.data.roomId,
+                userId: socket.data.userId,
+                clientNonce: parsed.data.clientNonce,
+              },
+              orderBy: { createdAt: 'desc' },
+            });
+          }
+          if (!message) {
+            ack?.({ ok: false, error: 'chat_persist_failed' });
+            return;
+          }
+        }
 
         const chatPayload = {
           id: message.id,

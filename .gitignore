@@ -65,3 +65,9 @@ sounds/**
 sounds/**/*
 /skills-lock.json
 
+
+DOMAIN_MIGRATION_FIXES.md
+MIGRATION_CHECKLIST.md
+MIGRATION_SUMMARY.md
+QUICK_FIX_GUIDE.md
+START_HERE.md

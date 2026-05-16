@@ -147,6 +147,32 @@ const httpServer = createServer(async (request, response) => {
     return;
   }
 
+  if (request.url === '/diag') {
+    const body = JSON.stringify(
+      {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV ?? 'unknown',
+        origins: socketCorsOrigins,
+        originCount: socketCorsOrigins.length,
+        rawCorsOrigins: process.env.CORS_ORIGINS ?? null,
+      },
+      null,
+      2,
+    );
+
+    response.writeHead(200, {
+      'content-type': 'application/json; charset=utf-8',
+      'content-length': Buffer.byteLength(body),
+      ...(allowedOrigin
+        ? { 'access-control-allow-origin': allowedOrigin }
+        : {}),
+      ...(allowedOrigin ? { 'access-control-allow-credentials': 'true' } : {}),
+      vary: 'Origin',
+    });
+    response.end(body);
+    return;
+  }
+
   response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
   response.end('Not found');
 });
