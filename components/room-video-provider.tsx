@@ -490,7 +490,11 @@ export function RoomVideoProvider({ children }: { children: React.ReactNode }) {
           throw new Error(
             allowed.error === 'video_room_full'
               ? 'Room video is full.'
-              : 'Could not start video.',
+              : allowed.error === 'not_in_room'
+                ? 'Join the room first.'
+                : allowed.error === 'socket_timeout'
+                  ? 'Socket timeout. Refresh and try again.'
+                  : 'Could not start video.',
           );
         }
 
