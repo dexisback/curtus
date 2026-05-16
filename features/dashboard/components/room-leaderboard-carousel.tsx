@@ -234,11 +234,6 @@ export default function RoomLeaderboardCarousel({
                         {formatTimer(displaySeconds)}
                       </p>
                     </div>
-                    {showSelfError ? (
-                      <p className="mt-2 line-clamp-2 text-[11px] text-rose-600">
-                        {selfCameraError}
-                      </p>
-                    ) : null}
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center px-2 py-2">
@@ -259,6 +254,11 @@ export default function RoomLeaderboardCarousel({
                     <p className="tabular-nums text-[12px] font-semibold tracking-tight text-foreground">
                       {formatTimer(displaySeconds)}
                     </p>
+                    {showSelfError ? (
+                      <p className="mt-1 line-clamp-2 text-center text-[10px] text-rose-600">
+                        {selfCameraError}
+                      </p>
+                    ) : null}
                   </div>
                 )}
 
