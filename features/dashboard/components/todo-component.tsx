@@ -37,6 +37,7 @@ type TaskItem = {
   id: string;
   title: string;
   type: TaskType;
+  deadline?: string;
   isCompleted: boolean;
 };
 
@@ -212,8 +213,16 @@ export default function TodoComponent({
 
             <div className="absolute inset-0 pointer-events-none">
               {tasks.map((task, i) => {
-                const startHour = 8 + (i % 10);
-                const startMin = i % 2 === 0 ? 0 : 30;
+                let startHour: number;
+                let startMin: number;
+                if (task.deadline) {
+                  const d = new Date(task.deadline);
+                  startHour = Math.max(6, d.getHours());
+                  startMin = d.getHours() < 6 ? 0 : d.getMinutes();
+                } else {
+                  startHour = 8 + (i % 10);
+                  startMin = i % 2 === 0 ? 0 : 30;
+                }
                 const endHour = Math.min(23, startHour + 1);
                 const endMin = startMin;
                 const left = taskLeftPx(startHour, startMin);

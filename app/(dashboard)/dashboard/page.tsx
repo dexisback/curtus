@@ -27,6 +27,7 @@ async function DashboardHomeContent() {
             id: task.id,
             title: task.title,
             type: task.type,
+            deadline: task.deadline?.toISOString(),
             isCompleted: task.isCompleted,
           }))}
         />

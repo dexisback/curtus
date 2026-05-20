@@ -14,6 +14,7 @@ export default async function TodoPage() {
       select: {
         id: true,
         title: true,
+        description: true,
         type: true,
         deadline: true,
         isCompleted: true,
@@ -27,8 +28,9 @@ export default async function TodoPage() {
       initialTasks={tasks.map((task) => ({
         id: task.id,
         title: task.title,
+        description: task.description ?? undefined,
         type: task.type as TaskType,
-        deadline: task.deadline?.toISOString().slice(0, 10),
+        deadline: task.deadline?.toISOString(),
         isCompleted: task.isCompleted,
       }))}
       initialDdayDate={settings.todoDdayDate}

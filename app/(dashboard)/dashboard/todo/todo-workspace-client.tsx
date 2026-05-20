@@ -450,15 +450,16 @@ export default function TodoWorkspaceClient({
                         >
                           {task.title}
                         </p>
-                        <span
-                          className="mt-1 inline-block rounded-full px-2 py-0.5 text-[9.5px]"
-                          style={{
-                            color: TYPE_META[task.type].color,
-                            background: TYPE_META[task.type].bg,
-                          }}
+                        <p
+                          className="mt-1 text-[10.5px] leading-relaxed text-muted-foreground line-clamp-2"
+                          title={
+                            task.description?.trim() ||
+                            TYPE_META[task.type].label
+                          }
                         >
-                          {TYPE_META[task.type].label}
-                        </span>
+                          {task.description?.trim() ||
+                            TYPE_META[task.type].label}
+                        </p>
                       </div>
                     </motion.button>
 
