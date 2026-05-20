@@ -226,3 +226,6 @@ A massive thank you to the **[Yeolpumta (YPT)](https://www.yeolpumta.com/en/)** 
 Curtus is licensed under the **AGPL-3.0 License**.
 
 > **Important**: If you run a modified version of this software as a network service, the AGPL generally requires you to make the corresponding source code available to users of that service. Make sure you understand your obligations before deploying a modified build. See the [`LICENSE`](LICENSE) file for more details.
+---
+
+Built with ❣️ by @dextertwts/amaan
